@@ -1,0 +1,116 @@
+---
+layout: ../../layouts/BaseLayout.astro
+title: 第5章 同型定理
+description: 核・像・剰余群を結ぶ群論の背骨。第一同型定理（準同型定理）とその証明、第二・第三同型定理、対応定理。
+---
+
+import Term from "../../components/assets/Term.astro";
+import Statement from "../../components/assets/Statement.astro";
+
+# 第5章 同型定理
+
+## 「つぶれた分だけ小さくなる」を定理にする
+
+準同型 $\varphi:G\to G'$ は、$G$ の情報の一部を「つぶし」ます。つぶれる部分が核 $\ker\varphi$、残る部分が像 $\operatorname{im}\varphi$。
+[線形代数の次元定理](/linear-algebra/3)が「入力＝つぶれる分＋残る分」を主張したように、群でも
+**「$G$ を核でつぶした剰余群 $G/\ker\varphi$ は、像 $\operatorname{im}\varphi$ とぴったり同型」**が成り立ちます。
+
+これが第一同型定理（準同型定理）で、群論で最も使う道具です。「$G/N$ が○○と同型」を示したいとき、
+$G$ から○○への準同型で核が $N$ になるものを一本作ればよい——構造の同定が、写像を一本引くだけの作業になります。
+この章では第一〜第三同型定理と対応定理を、すべて証明とともに整えます。抽象代数のあらゆる場面
+（[環論](/ring-theory)・[加群論](/module-theory)）で同じ定理が繰り返し現れる、普遍的な骨格です。
+
+> 第一同型定理：$G/\ker\varphi\cong\operatorname{im}\varphi$。「核でつぶした群」＝「像」。構造同定の万能ツール。
+
+## 第一同型定理（準同型定理）
+
+<Statement kind="theorem" title="第一同型定理">
+準同型 $\varphi:G\to G'$ に対し、$\ker\varphi\trianglelefteq G$ であり
+$$G/\ker\varphi\ \cong\ \operatorname{im}\varphi.$$
+明示的には $\bar\varphi(g\ker\varphi)=\varphi(g)$ が同型を与える。
+</Statement>
+
+<Statement kind="proof">
+$N=\ker\varphi$ とおく（前章より $N\trianglelefteq G$、剰余群 $G/N$ が作れる）。写像 $\bar\varphi:G/N\to G',\ \bar\varphi(gN)=\varphi(g)$ を考える。
+
+**well-defined**：$gN=g'N$ なら $g'=gn\ (n\in N)$、$\varphi(g')=\varphi(g)\varphi(n)=\varphi(g)e'=\varphi(g)$。代表元によらない。
+
+**準同型**：$\bar\varphi(gN\cdot hN)=\bar\varphi(ghN)=\varphi(gh)=\varphi(g)\varphi(h)=\bar\varphi(gN)\bar\varphi(hN)$。
+
+**単射**：$\bar\varphi(gN)=e'$ なら $\varphi(g)=e'$、つまり $g\in N$、すなわち $gN=N$（$G/N$ の単位元）。核が自明ゆえ単射。
+
+**像**：$\bar\varphi$ の像は $\varphi$ の像に等しく $\operatorname{im}\varphi$。よって $\bar\varphi:G/N\to\operatorname{im}\varphi$ は全単射準同型＝同型。∎
+</Statement>
+
+証明の各行が前章で仕込んだ事実（核が正規、剰余群が作れる、well-defined 性）を使っています。実用では
+「$\varphi$ を作る→核を計算する→第一同型定理」の3手で構造が決まります。
+
+<Statement kind="example" title="第一同型定理の使い方">
+- $\det:GL_n(\mathbb R)\to\mathbb R^\times$ は準同型で核が $SL_n(\mathbb R)$（行列式 $1$）。よって $GL_n(\mathbb R)/SL_n(\mathbb R)\cong\mathbb R^\times$。
+- $\varphi:\mathbb Z\to\mathbb Z_n,\ k\mapsto k\bmod n$ は核 $n\mathbb Z$、全射。よって $\mathbb Z/n\mathbb Z\cong\mathbb Z_n$。
+- 符号写像 $\operatorname{sgn}:S_n\to\{\pm1\}$（第9章）は核が交代群 $A_n$。よって $S_n/A_n\cong\mathbb Z_2$、$[S_n:A_n]=2$。
+</Statement>
+
+「$G/N\cong H$」を示す標準戦略：**$G$ から $H$ への全射準同型で核が $N$ のものを1本作る**。以後、多くの場面でこれを使います。
+
+## 第二・第三同型定理
+
+第一定理を土台に、部分群と剰余群の絡み合いを記述する2つの定理が出ます。
+
+<Statement kind="theorem" title="第二同型定理（ダイヤモンド）">
+$H\le G$、$N\trianglelefteq G$ とすると、$HN$ は部分群、$N\trianglelefteq HN$、$H\cap N\trianglelefteq H$ であり
+$$H/(H\cap N)\ \cong\ HN/N.$$
+</Statement>
+
+<Statement kind="proof">
+$HN=\{hn:h\in H,n\in N\}$ が部分群であることは $N$ の正規性から従う。合成
+$H\hookrightarrow HN\xrightarrow{\pi} HN/N$（$\pi$ は自然な全射）を $\psi$ とする。$\psi$ は全射
+（$hnN=hN=\psi(h)$）。核は $\{h\in H:hN=N\}=\{h\in H:h\in N\}=H\cap N$。第一同型定理より
+$H/(H\cap N)\cong HN/N$。∎
+</Statement>
+
+<Statement kind="theorem" title="第三同型定理">
+$N\trianglelefteq G$、$K\trianglelefteq G$、$N\subseteq K$ とすると、$K/N\trianglelefteq G/N$ であり
+$$(G/N)\big/(K/N)\ \cong\ G/K.$$
+</Statement>
+
+<Statement kind="proof">
+写像 $G/N\to G/K,\ gN\mapsto gK$ を考える。$N\subseteq K$ ゆえ well-defined（$gN=g'N\Rightarrow g^{-1}g'\in N\subseteq K\Rightarrow gK=g'K$）、
+準同型で全射。核は $\{gN:gK=K\}=\{gN:g\in K\}=K/N$。第一同型定理より $(G/N)/(K/N)\cong G/K$。∎
+</Statement>
+
+第三定理は「**約分**」です：$\dfrac{G/N}{K/N}=\dfrac{G}{K}$。剰余を二段階で取っても、一気に取っても同じ。
+どちらの証明も「適切な準同型を作り、核を見て、第一定理」というワンパターンで回るのが美しいところです。
+
+## 対応定理
+
+$G/N$ の部分群と、$G$ の（$N$ を含む）部分群が完全に対応します。剰余群の中身を、元の群の言葉で読むための辞書です。
+
+<Statement kind="theorem" title="対応定理（格子同型定理）">
+$N\trianglelefteq G$ とする。$N$ を含む $G$ の部分群 $K$ と、$G/N$ の部分群 $\bar K=K/N$ が
+包含関係を保って**一対一に対応**する。さらに $K\trianglelefteq G\iff K/N\trianglelefteq G/N$。
+</Statement>
+
+<Statement kind="proof">
+自然な全射 $\pi:G\to G/N$ による対応 $K\mapsto\pi(K)=K/N$ と、逆に $\bar K\mapsto\pi^{-1}(\bar K)$ が互いに逆で、
+包含・正規性を保つことを確かめる（$\pi$ が全射準同型であることから直接従う）。∎
+</Statement>
+
+対応定理のおかげで「$G/N$ を調べる」ことが「$N$ を含む $G$ の部分群を調べる」ことに翻訳できます。これは
+[ガロア理論の基本定理](/field-and-galois)（中間体と部分群の対応）の群論版の原型であり、第11章の組成列でも効きます。
+
+## つまずきポイント
+
+<Statement kind="remark" title="よくある誤解">
+- **第一同型定理は「作った準同型の核を見る」道具。** $G/N$ の正体を知りたければ、核が $N$ の準同型を探す。逆算の発想が実用の鍵。
+- **第二定理は $N$ が正規、$H$ は部分群でよい。** $H$ の正規性は不要。$HN$ が部分群になるのに $N$ の正規性を使う。
+- **第三定理の約分は $N\subseteq K$ が前提。** 両方 $G$ で正規かつ入れ子。これが崩れると剰余の剰余は定義できない。
+</Statement>
+
+## この章のまとめ
+
+- **第一同型定理** $G/\ker\varphi\cong\operatorname{im}\varphi$ が背骨。「$G/N\cong H$」は「核 $N$ の全射準同型 $G\to H$ を1本作る」で示す。
+- **第二同型定理** $H/(H\cap N)\cong HN/N$、**第三同型定理** $(G/N)/(K/N)\cong G/K$（約分）。どちらも「準同型を作り核を見て第一定理」で証明。
+- **対応定理**で $G/N$ の部分群が $N$ を含む $G$ の部分群と一対一対応。剰余群を元の群の言葉で読む辞書。ガロア対応・組成列の原型。
+
+前半（群の基本構造）が完成しました。次章から**群作用**——群を「対象に働きかけるもの」として捉え、軌道と安定化群へ進みます。

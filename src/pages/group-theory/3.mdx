@@ -1,0 +1,127 @@
+---
+layout: ../../layouts/BaseLayout.astro
+title: 第3章 剰余類とラグランジュの定理
+description: 部分群が群を等しい大きさに分割する。剰余類、指数、ラグランジュの定理と証明、そして元の位数・フェルマーの小定理への帰結。
+---
+
+import Term from "../../components/assets/Term.astro";
+import Statement from "../../components/assets/Statement.astro";
+import GroupExplorer from "../../components/interactive/GroupExplorer.astro";
+
+# 第3章 剰余類とラグランジュの定理
+
+## 部分群は、群をきれいに“タイル張り”する
+
+群論で最初に現れる、そして最も使う定理がラグランジュの定理です。主張は驚くほど単純——
+**部分群の大きさは、群全体の大きさを必ず割り切る**。位数 $12$ の群に、位数 $5$ の部分群は存在しえない。
+
+なぜこんなことが言えるのか。カギは、部分群 $H$ が群 $G$ を**等しい大きさのかけら（剰余類）に分割する**ことです。
+$G$ が $H$ と同じサイズのタイルで隙間なく敷き詰められるなら、$|G|$ は $|H|$ の倍数になる——直感的にはこれだけ。
+この「タイル張り」を厳密にするのが剰余類の理論で、そこから元の位数の制約、さらには数論のフェルマーの小定理まで、
+一気に流れ出します。
+
+> 部分群 $H$ は $G$ を $|H|$ 個ずつの**剰余類**に分割する。ゆえに $|H|$ は $|G|$ を割る（ラグランジュ）。
+
+## 剰余類
+
+<Statement kind="definition" title="左剰余類・右剰余類">
+$H\le G$ と $a\in G$ に対し、$aH=\{ah:h\in H\}$ を $a$ を含む<Term>左剰余類</Term>、$Ha=\{ha:h\in H\}$ を<Term>右剰余類</Term>という。
+</Statement>
+
+左剰余類 $aH$ は「$H$ を $a$ で平行移動したかけら」。これらが $G$ をきれいに分割することを示します。
+
+<Statement kind="lemma" title="剰余類は G を分割する">
+左剰余類の全体は $G$ の分割をなす：（a）各 $a$ は $aH$ に属す（$a=ae$）。（b）2つの左剰余類は一致するか、交わらない。
+（c）どの左剰余類も $|H|$ と同じ大きさ。
+</Statement>
+
+<Statement kind="proof">
+（b）$aH\cap bH\ne\emptyset$ とし $ah_1=bh_2$ とする。すると $a=bh_2h_1^{-1}\in bH$、任意の $ah\in aH$ は
+$ah=bh_2h_1^{-1}h\in bH$ なので $aH\subseteq bH$。対称に $bH\subseteq aH$、よって $aH=bH$。交われば一致する。
+（c）写像 $H\to aH,\ h\mapsto ah$ は全射で、消去律（$ah=ah'\Rightarrow h=h'$）より単射。ゆえに全単射で $|aH|=|H|$。∎
+</Statement>
+
+証明の心臓は2つ。「交われば一致」（(b)）が**分割**を保証し、「$h\mapsto ah$ が全単射」（(c)、消去律が効く）が
+**各かけらが同じ大きさ**を保証する。これで $G$ が $|H|$ サイズのタイルで敷き詰められました。下で確かめてください。
+部分群 $\langle g\rangle$ を選ぶと、$G$ が等しい大きさの色ブロック（剰余類）に分かれます。
+
+<GroupExplorer />
+
+## ラグランジュの定理
+
+<Statement kind="definition" title="指数">
+$H\le G$ の左剰余類の個数を $H$ の<Term>指数</Term> $[G:H]$ という。
+</Statement>
+
+<Statement kind="theorem" title="ラグランジュの定理">
+有限群 $G$ と部分群 $H\le G$ について
+$$|G|=[G:H]\cdot|H|.$$
+とくに $|H|$ は $|G|$ を割り切る。
+</Statement>
+
+<Statement kind="proof">
+左剰余類は $G$ を分割し（補題(a)(b)）、どれも大きさ $|H|$（補題(c)）。剰余類が $[G:H]$ 個あるので、
+それらの和集合＝ $G$ の要素数は $[G:H]\cdot|H|$。∎
+</Statement>
+
+たった数行。剰余類が「同じ大きさで分割する」ことさえ言えれば、割り算の関係は自動です。
+なお、左剰余類の個数と右剰余類の個数は等しい（$aH\mapsto Ha^{-1}$ が全単射）ので、指数は左右で同じです。
+
+## 元の位数への帰結
+
+ラグランジュを元の位数（第2章）に適用すると、強力な制約が出ます。
+
+<Statement kind="corollary" title="元の位数は群の位数を割る">
+有限群 $G$ の任意の元 $a$ について、$\mathrm{ord}(a)$ は $|G|$ を割り切る。したがって $a^{|G|}=e$。
+</Statement>
+
+<Statement kind="proof">
+$\mathrm{ord}(a)=|\langle a\rangle|$（第2章）で、$\langle a\rangle\le G$ だからラグランジュより $\mathrm{ord}(a)\mid|G|$。
+$|G|=\mathrm{ord}(a)\cdot k$ と書けば $a^{|G|}=(a^{\mathrm{ord}(a)})^k=e$。∎
+</Statement>
+
+<Statement kind="corollary" title="素数位数の群は巡回群">
+$|G|=p$（素数）なら $G$ は巡回群 $\mathbb Z_p$。特に単純（自明でない部分群をもたない）。
+</Statement>
+
+<Statement kind="proof">
+$e\ne a\in G$ をとると $\mathrm{ord}(a)\mid p$ かつ $\mathrm{ord}(a)>1$ なので $\mathrm{ord}(a)=p$。よって $\langle a\rangle$ は位数 $p=|G|$、
+すなわち $G=\langle a\rangle\cong\mathbb Z_p$。部分群の位数は $p$ の約数 $1,p$ しかないので自明なものだけ。∎
+</Statement>
+
+「位数が素数なら、群の形は一つに決まる」。群の位数を素因数分解して構造を絞る——この戦略が、第8章のシロー理論で
+本格化します。ラグランジュはその第一歩です。
+
+## 数論への応用：フェルマーの小定理
+
+抽象的なラグランジュの定理から、整数論の古典的定理が転がり出ます。
+
+<Statement kind="theorem" title="オイラーの定理・フェルマーの小定理">
+$n$ と互いに素な整数 $a$ について $a^{\varphi(n)}\equiv1\pmod n$（オイラー）。特に $p$ が素数で $p\nmid a$ なら
+$a^{p-1}\equiv1\pmod p$（フェルマーの小定理）。
+</Statement>
+
+<Statement kind="proof">
+$\bmod\,n$ で可逆な剰余類全体 $(\mathbb Z/n\mathbb Z)^\times$ は、乗法について位数 $\varphi(n)$ の群をなす（第2章の $\varphi$）。
+$a$ が $n$ と互いに素なら $a$ の類はこの群の元で、系「$a^{|G|}=e$」より $a^{\varphi(n)}\equiv1\pmod n$。
+$n=p$ なら $\varphi(p)=p-1$。∎
+</Statement>
+
+フェルマーの小定理——RSA暗号の土台でもある——が、**「元の位数は群の位数を割る」の一例**にすぎないと分かります。
+整数の合同という一見別世界の話が、群の言葉で一行に収まる。抽象化のご利益です。
+
+## つまずきポイント
+
+<Statement kind="remark" title="よくある誤解">
+- **ラグランジュの逆は成り立たない。** 「$d\mid|G|$ なら位数 $d$ の部分群がある」は一般には偽（位数 $12$ の交代群 $A_4$ に位数 $6$ の部分群は無い）。存在を保証するのはアーベル群やシロー部分群など特別な場合。
+- **剰余類は部分群とは限らない。** $aH$ が部分群になるのは $a\in H$（＝ $aH=H$）のときだけ。剰余類は「$H$ をずらしたかけら」。
+- **左剰余類と右剰余類は一般に違う。** $aH\ne Ha$ でありうる。一致するのが正規部分群（次章）。個数（指数）は左右で等しい。
+</Statement>
+
+## この章のまとめ
+
+- 部分群 $H$ は $G$ を**等しい大きさの剰余類**に分割する（交われば一致＋消去律で同サイズ）。ゆえに $|G|=[G:H]\cdot|H|$（**ラグランジュの定理**）。
+- 帰結：**元の位数は群の位数を割る**（$a^{|G|}=e$）、**素数位数の群は巡回で単純**。位数の素因数分解で構造を絞る戦略の起点。
+- 応用として**フェルマーの小定理・オイラーの定理**が $(\mathbb Z/n\mathbb Z)^\times$ への系として出る。
+
+次章は、左右の剰余類が一致する特別な部分群——**正規部分群**と、それで割って作る**剰余群**を扱います。

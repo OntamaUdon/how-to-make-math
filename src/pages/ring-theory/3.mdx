@@ -1,0 +1,120 @@
+---
+layout: ../../layouts/BaseLayout.astro
+title: 第3章 環準同型と同型定理
+description: 環の構造を保つ写像。準同型、核はイデアル・像は部分環、第一〜第三同型定理と対応定理。
+---
+
+import Term from "../../components/assets/Term.astro";
+import Statement from "../../components/assets/Statement.astro";
+
+# 第3章 環準同型と同型定理
+
+## 「核はイデアル」——群論と完全に平行
+
+[群論の同型定理](/group-theory/5)を思い出してください。準同型の核は正規部分群で、$G/\ker\cong\operatorname{im}$ が成り立ちました。
+環でもまったく同じ物語が展開します。環準同型の**核はイデアル**（正規部分群の役割）で、
+$R/\ker\cong\operatorname{im}$（第一同型定理）が成り立つ。
+
+この平行性は偶然ではありません。群では「正規部分群 ↔ 準同型の核」、環では「イデアル ↔ 準同型の核」——
+どちらも「割れる部分構造は、ちょうど写像の核である」という同じ原理の現れです（究極的には
+[圏論](/category-theory)・[加群論](/module-theory)で統一されます）。この章では、環の同型定理を証明とともに整え、
+「$R/I\cong{}$何か」を示す標準的な手法を確立します。以後の環論・体論のあらゆる計算で使う道具です。
+
+> 環準同型の**核はイデアル**、**像は部分環**。$R/\ker\varphi\cong\operatorname{im}\varphi$（第一同型定理）。群論と完全に平行。
+
+## 環準同型
+
+<Statement kind="definition" title="環準同型・核・像">
+写像 $\varphi:R\to S$ が<Term>環準同型</Term>とは、和・積・単位元を保つこと：
+$$\varphi(a+b)=\varphi(a)+\varphi(b),\quad \varphi(ab)=\varphi(a)\varphi(b),\quad \varphi(1_R)=1_S.$$
+全単射な準同型を<Term>同型</Term>という。<Term>核</Term> $\ker\varphi=\{a:\varphi(a)=0\}$、<Term>像</Term> $\operatorname{im}\varphi=\{\varphi(a)\}$。
+</Statement>
+
+$\varphi(1)=1$ を要求するのが環準同型の作法です（これがないと自明な写像 $a\mapsto0$ まで準同型になってしまう）。
+
+<Statement kind="example" title="環準同型の例">
+- 自然な全射 $\mathbb Z\to\mathbb Z_n,\ k\mapsto k\bmod n$（核 $n\mathbb Z$）。
+- <Term>評価写像</Term> $\mathrm{ev}_a:R[x]\to R,\ f(x)\mapsto f(a)$（多項式に $a$ を代入。核は $a$ を根にもつ多項式全体）。
+- 包含 $\mathbb Z\hookrightarrow\mathbb Q$（核 $\{0\}$、単射）。
+</Statement>
+
+<Statement kind="proposition" title="核はイデアル・像は部分環">
+環準同型 $\varphi:R\to S$ について、$\ker\varphi$ は $R$ のイデアル、$\operatorname{im}\varphi$ は $S$ の部分環。
+$\varphi$ が単射 $\iff\ker\varphi=\{0\}$。
+</Statement>
+
+<Statement kind="proof">
+$\ker\varphi$ が加法部分群なのは群論と同じ。イデアル性：$a\in\ker\varphi,\ r\in R$ なら
+$\varphi(ra)=\varphi(r)\varphi(a)=\varphi(r)\cdot0=0$、ゆえ $ra\in\ker\varphi$（吸い込む）。
+$\operatorname{im}\varphi$ が部分環：$\varphi(a)\varphi(b)=\varphi(ab)\in\operatorname{im}$、$\varphi(1)=1\in\operatorname{im}$。
+単射判定は加法群として群論と同じ。∎
+</Statement>
+
+「核が吸い込む（イデアル）」のは、$\varphi(ra)=\varphi(r)\cdot0=0$ という一行から。掛け算を保つことが、
+核を単なる部分群でなくイデアルにするのです。
+
+## 第一同型定理
+
+<Statement kind="theorem" title="第一同型定理（環）">
+環準同型 $\varphi:R\to S$ に対し、$\ker\varphi$ はイデアルで
+$$R/\ker\varphi\ \cong\ \operatorname{im}\varphi,\qquad \bar\varphi(a+\ker\varphi)=\varphi(a).$$
+</Statement>
+
+<Statement kind="proof">
+$I=\ker\varphi$ とおく。$\bar\varphi:R/I\to S,\ \bar\varphi(a+I)=\varphi(a)$ を考える。
+**well-defined**：$a+I=a'+I$ なら $a'-a\in I$、$\varphi(a')-\varphi(a)=\varphi(a'-a)=0$。
+**環準同型**：$\bar\varphi((a+I)(b+I))=\bar\varphi(ab+I)=\varphi(ab)=\varphi(a)\varphi(b)=\bar\varphi(a+I)\bar\varphi(b+I)$、和・単位元も同様。
+**単射**：$\bar\varphi(a+I)=0\Rightarrow\varphi(a)=0\Rightarrow a\in I\Rightarrow a+I=I$（零元）。
+**像**：$\operatorname{im}\bar\varphi=\operatorname{im}\varphi$。よって $\bar\varphi:R/I\to\operatorname{im}\varphi$ は同型。∎
+</Statement>
+
+群論の証明と一字一句平行です。使い方も同じ——「$R/I\cong T$」を示すには、$R$ から $T$ への全射準同型で核が $I$ のものを一本作る。
+
+<Statement kind="example" title="第一同型定理の使い方">
+- $\mathbb Z\to\mathbb Z_n$（核 $n\mathbb Z$、全射）より $\mathbb Z/n\mathbb Z\cong\mathbb Z_n$。
+- $\mathrm{ev}_i:\mathbb R[x]\to\mathbb C,\ f\mapsto f(i)$ は全射（$a+bx\mapsto a+bi$）で核 $=(x^2+1)$（$i$ を根にもつ実係数多項式は $x^2+1$ の倍数）。
+  よって $\mathbb R[x]/(x^2+1)\cong\mathbb C$——第2章で見た同型が、評価写像＋第一同型定理で自動的に出る。
+- $K[x]\to K,\ f\mapsto f(a)$ より $K[x]/(x-a)\cong K$。
+</Statement>
+
+## 第二・第三同型定理と対応定理
+
+群論と同様、部分構造の絡み合いを記述する定理群が続きます。
+
+<Statement kind="theorem" title="第二・第三同型定理">
+$S$ を部分環、$I$ をイデアルとすると $S+I$ は部分環、$I$ は $S+I$ のイデアル、$S\cap I$ は $S$ のイデアルで
+$$S/(S\cap I)\ \cong\ (S+I)/I.$$
+イデアル $I\subseteq J$（ともに $R$ のイデアル）について
+$$(R/I)\big/(J/I)\ \cong\ R/J.$$
+</Statement>
+
+証明はいずれも「適切な準同型を作り、核を見て第一同型定理」で、群論と平行（省略）。第三定理は
+「イデアルで二段階に割っても一気に割っても同じ」という**約分**です。そして剰余環の内部を元の環の言葉で読む辞書：
+
+<Statement kind="theorem" title="対応定理（イデアルの対応）">
+$I\trianglelefteq R$ とする。$I$ を含む $R$ のイデアル $J$ と、$R/I$ のイデアル $J/I$ が包含を保って**一対一に対応**する。
+</Statement>
+
+<Statement kind="proof">
+自然な全射 $\pi:R\to R/I$ による $J\mapsto\pi(J)=J/I$ と $\bar J\mapsto\pi^{-1}(\bar J)$ が互いに逆で包含を保つ
+（$\pi$ が全射準同型ゆえ）。∎
+</Statement>
+
+対応定理は次章で決定的です。「$R/I$ が体か整域か」を「$I$ を含むイデアルの様子」で判定する——
+極大イデアル・素イデアルの理論（第4章）が、この対応の上に建ちます。
+
+## つまずきポイント
+
+<Statement kind="remark" title="よくある誤解">
+- **核はイデアル、像は部分環（非対称）。** 掛け算を保つことで核が吸い込み性をもつ。像はイデアルとは限らない（$\mathbb Z\hookrightarrow\mathbb Q$ の像 $\mathbb Z$ は $\mathbb Q$ のイデアルでない）。
+- **$\varphi(1)=1$ を要求する。** これを落とすと零写像も「準同型」になり理論が壊れる。
+- **「$R/I\cong T$」は全射準同型 $R\to T$ で核 $I$ を作って示す。** 逆算の発想（群論と同じ）が実用の鍵。$\mathbb R[x]/(x^2+1)\cong\mathbb C$ が好例。
+</Statement>
+
+## この章のまとめ
+
+- 環準同型は**和・積・$1$ を保つ**。**核はイデアル**（掛け算を保つゆえ吸い込む）、**像は部分環**。単射 $\iff$ 核が自明。
+- **第一同型定理** $R/\ker\varphi\cong\operatorname{im}\varphi$。「$R/I\cong T$」は核 $I$ の全射を作って示す。$\mathbb Z/(n)\cong\mathbb Z_n$、$\mathbb R[x]/(x^2+1)\cong\mathbb C$。
+- **第二・第三同型定理**（約分）と**対応定理**（$R/I$ のイデアル ↔ $I$ を含む $R$ のイデアル）。次章の素・極大イデアルの土台。
+
+次章は、イデアルの中でも特別な——**素イデアルと極大イデアル**、そして整域・体との対応を確立します。

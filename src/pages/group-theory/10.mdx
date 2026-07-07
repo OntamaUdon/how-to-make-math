@@ -1,0 +1,103 @@
+---
+layout: ../../layouts/BaseLayout.astro
+title: 第10章 有限アーベル群の基本定理
+description: 有限アーベル群を完全に分類する。巡回群の直積への分解、不変因子と初等因子、一意性、そして加群論・線形代数との統一。
+---
+
+import Term from "../../components/assets/Term.astro";
+import Statement from "../../components/assets/Statement.astro";
+
+# 第10章 有限アーベル群の基本定理
+
+## 可換な有限群は、完全に分類できる
+
+一般の有限群の分類は途方もなく難しい（有限単純群の分類は数千ページを要した20世紀の金字塔）。ところが
+**可換**（アーベル）に限ると、状況は一変します。有限アーベル群は、巡回群の直積として**完全に、一意に**書き下せる。
+位数を決めれば、その位数のアーベル群を全部リストアップできるのです。
+
+たとえば位数 $8$ のアーベル群は $\mathbb Z_8$、$\mathbb Z_4\times\mathbb Z_2$、$\mathbb Z_2\times\mathbb Z_2\times\mathbb Z_2$ のちょうど3種類。
+この完全な分類定理は、それ自体美しいだけでなく、[線形代数のジョルダン標準形](/linear-algebra/9)や
+[加群論の構造定理](/module-theory)と**同じ定理の一つの顔**であることが分かります。バラバラに見えた分類が、
+一つの原理（PID 上の加群の構造定理）に統一される——その入り口です。
+
+> 有限アーベル群は巡回群の直積に一意分解される。位数を決めれば全部列挙できる。加群論・線形代数と同根。
+
+## 直積と直和
+
+<Statement kind="definition" title="アーベル群の直積">
+アーベル群 $A_1,\dots,A_k$ の<Term>直積</Term> $A_1\times\cdots\times A_k$ は、成分ごとの演算をもつ群。加法的に
+<Term>直和</Term> $A_1\oplus\cdots\oplus A_k$ とも書く。$|A_1\times\cdots\times A_k|=\prod|A_i|$。
+</Statement>
+
+分解の第一段は、群を素数ごとの部分に割ること。整数の素因数分解に対応します。
+
+<Statement kind="theorem" title="準素分解">
+有限アーベル群 $A$（$|A|=p_1^{n_1}\cdots p_r^{n_r}$）は、その $p$-シロー部分群
+$A_{p_i}=\{a\in A:p_i^{n_i}a=0\}$ の直和に一意分解される：$A=A_{p_1}\oplus\cdots\oplus A_{p_r}$。
+</Statement>
+
+<Statement kind="proof">
+アーベル群では全部分群が正規で、位数の互いに素な部分群 $A_{p_i}$ は交わりが $\{0\}$、和が $A$（中国剰余定理に相当）。
+各 $a\in A$ について、$p_i^{n_i}$ を法とした係数で $a=\sum a_{p_i}$（$a_{p_i}\in A_{p_i}$）と一意に分解できる。∎
+</Statement>
+
+これで問題は「$p$ 群（位数が $p$ べきのアーベル群）の分類」に帰着します。
+
+## 基本定理：2つの標準形
+
+<Statement kind="theorem" title="有限アーベル群の基本定理">
+任意の有限アーベル群 $A$ は、次の**2通り**の標準形で巡回群の直積に一意分解される：
+
+（<Term>初等因子形</Term>）素数べき位数の巡回群の直積
+$$A\cong \bigoplus_{i} \mathbb Z_{p_i^{e_i}}\quad(\text{素数べき}\ p_i^{e_i}\ \text{の重複を込めて一意}).$$
+（<Term>不変因子形</Term>）$d_1\mid d_2\mid\cdots\mid d_k$ となる整数を用いて
+$$A\cong \mathbb Z_{d_1}\times\mathbb Z_{d_2}\times\cdots\times\mathbb Z_{d_k}\quad(d_1\mid\cdots\mid d_k\ \text{は一意}).$$
+</Statement>
+
+<Statement kind="proof">
+（存在の要点。）準素分解で $p$ 群に帰着。$p$ 群 $A$ については、最大位数の元 $a_1$ をとると $\langle a_1\rangle$ が
+直和因子として分離でき（$A=\langle a_1\rangle\oplus A'$）、$A'$ に帰納法を適用して巡回群の直和 $\bigoplus\mathbb Z_{p^{e_i}}$ を得る。
+初等因子をまとめ直すと不変因子形になる。一意性は、各 $p$ と各べき $k$ について「位数 $p^k$ 以上の元が張る部分の
+$\dim$（$\bmod\,p$ 次元）」が同型不変量として初等因子を復元することから従う。∎
+</Statement>
+
+2つの標準形は同じ群の別表現で、初等因子を「各素数のべきを大きさ順にまとめて掛ける」と不変因子に変換できます。
+
+<Statement kind="example" title="位数 8 と位数 360 の分類">
+**位数 $8=2^3$**：初等因子形は $\mathbb Z_8$／$\mathbb Z_4\oplus\mathbb Z_2$／$\mathbb Z_2\oplus\mathbb Z_2\oplus\mathbb Z_2$ の3通り（$2^3$ の分割 $3,\,2{+}1,\,1{+}1{+}1$ に対応）。
+**位数 $360=2^3\cdot3^2\cdot5$**：$2$ 部分が3通り、$3$ 部分（$3^2$）が $\mathbb Z_9$／$\mathbb Z_3\oplus\mathbb Z_3$ の2通り、$5$ 部分が1通り。
+計 $3\times2\times1=6$ 種類。各素数べきの**分割の個数の積**がアーベル群の総数。
+</Statement>
+
+「位数 $n$ のアーベル群は何種類か」が、$n$ の各素因数のべきの**分割数**の積で即座に分かる。分類が
+組合せの問題（自然数の分割）に完全に翻訳されるのです。
+
+## 加群論・線形代数との統一
+
+<Statement kind="remark" title="同じ定理の3つの顔">
+基本定理は、実は<Term>PID 上有限生成加群の構造定理</Term>（[加群論](/module-theory)）の特別な場合。アーベル群は
+$\mathbb Z$ 加群にほかならず、有限アーベル群＝$\mathbb Z$ 上のねじれ加群。「単因子」「初等因子」という用語は加群論と共通。
+
+同じ構造定理を体 $K$ 上の多項式環 $K[x]$ に適用すると——線形変換のついたベクトル空間（$K[x]$ 加群）の分類、
+すなわち[ジョルダン標準形](/linear-algebra/9)・有理標準形になる。**有限アーベル群の分類とジョルダン標準形は、
+$\mathbb Z$ と $K[x]$ という2つの PID における同じ構造定理の二つの顔**。バラバラに学んだ分類が一本の糸で繋がる。
+</Statement>
+
+この統一は抽象代数の醍醐味です。「なぜアーベル群とジョルダン標準形が似ているのか」——それは同じ定理だから。
+一段抽象化する（加群として見る）と、別々の現象が一つの原理に収まります。
+
+## つまずきポイント
+
+<Statement kind="remark" title="よくある誤解">
+- **初等因子形と不変因子形は同じ群の別表示。** $\mathbb Z_4\oplus\mathbb Z_3$（不変因子 $d_1=12$）$=\mathbb Z_{12}$。$\mathbb Z_4\oplus\mathbb Z_2$ は不変因子 $2\mid4$ でまとめる（$\mathbb Z_2\times\mathbb Z_4$）。互いに変換できる。
+- **$\mathbb Z_m\times\mathbb Z_n\cong\mathbb Z_{mn}\iff\gcd(m,n)=1$**（中国剰余定理）。互いに素でないと巡回にならない（$\mathbb Z_2\times\mathbb Z_2\ne\mathbb Z_4$）。
+- **基本定理は有限（またはねじれ有限生成）アーベル群の話。** 一般の無限アーベル群（$\mathbb Q$ など）はこの形に分解できない。
+</Statement>
+
+## この章のまとめ
+
+- 有限アーベル群は**準素分解**で $p$ 群の直和に、さらに**巡回群の直積**に一意分解される（基本定理）。**初等因子形**（素数べき巡回群）と**不変因子形**（$d_1\mid\cdots\mid d_k$）の2標準形。
+- 位数 $n$ のアーベル群の個数は、各素因数べきの**分割数の積**。分類が自然数の分割に翻訳される。
+- これは **PID 上の加群の構造定理**の特殊例で、$\mathbb Z$ 上ならアーベル群分類、$K[x]$ 上なら**ジョルダン標準形**——同じ定理の二つの顔。
+
+次章は、群を「単純な部品」に分解する視点——**可解群・べき零群と組成列（ジョルダン–ヘルダー）**へ進みます。

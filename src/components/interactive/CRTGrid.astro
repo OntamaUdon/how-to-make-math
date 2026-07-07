@@ -1,0 +1,81 @@
+---
+/* CRTGrid.astro — 中国剰余定理の体験装置。
+   各 x ∈ Z/mn を、位置 (x mod m, x mod n) に置いた m×n の格子を描く。
+   ・gcd(m,n)=1 のとき、どのマスもちょうど1回埋まる＝全単射 Z/mn ≅ Z/m × Z/n。
+   ・互いに素でないと、空きマス（到達不能）と衝突マス（複数）が生じ CRT は崩れる。
+   「余りの組が値を一意に決める」を目で確かめる。状態はメモリ内のみ（storage 不使用）。 */
+---
+
+<figure class="crt" role="group" aria-label="中国剰余定理の格子">
+  <div class="crt-controls">
+    <label class="crt-label">m = <output id="crt-m-v">3</output>
+      <input id="crt-m" type="range" min="2" max="8" step="1" value="3" /></label>
+    <label class="crt-label">n = <output id="crt-n-v">4</output>
+      <input id="crt-n" type="range" min="2" max="8" step="1" value="4" /></label>
+  </div>
+  <div id="crt-grid" class="crt-gridwrap"></div>
+  <figcaption id="crt-cap" class="crt-cap"></figcaption>
+</figure>
+
+<script>
+  const mIn = document.getElementById("crt-m") as HTMLInputElement | null;
+  const nIn = document.getElementById("crt-n") as HTMLInputElement | null;
+  const mOut = document.getElementById("crt-m-v");
+  const nOut = document.getElementById("crt-n-v");
+  const gridEl = document.getElementById("crt-grid");
+  const capEl = document.getElementById("crt-cap");
+
+  if (mIn && nIn && mOut && nOut && gridEl && capEl) {
+    const gcd = (a: number, b: number): number => (b === 0 ? a : gcd(b, a % b));
+
+    const render = () => {
+      const m = +mIn.value, n = +nIn.value;
+      mOut.textContent = String(m); nOut.textContent = String(n);
+      // cell[i][j] = x で x mod m = i, x mod n = j を満たすものの一覧
+      const cell: number[][][] = Array.from({ length: m }, () => Array.from({ length: n }, () => [] as number[]));
+      for (let x = 0; x < m * n; x++) cell[x % m][x % n].push(x);
+
+      let html = `<table class="crt-tbl"><thead><tr><th class="crt-corner">x mod</th>`;
+      for (let j = 0; j < n; j++) html += `<th>≡${j} (n)</th>`;
+      html += "</tr></thead><tbody>";
+      for (let i = 0; i < m; i++) {
+        html += `<tr><th>≡${i} (m)</th>`;
+        for (let j = 0; j < n; j++) {
+          const xs = cell[i][j];
+          const cls = xs.length === 1 ? "crt-one" : xs.length === 0 ? "crt-empty" : "crt-multi";
+          html += `<td class="${cls}">${xs.length ? xs.join(",") : "—"}</td>`;
+        }
+        html += "</tr>";
+      }
+      html += "</tbody></table>";
+      gridEl.innerHTML = html;
+
+      const d = gcd(m, n);
+      capEl.innerHTML = d === 1
+        ? `gcd(${m},${n}) = 1（互いに素）。どのマス（余りの組）も<b>ちょうど1回</b>埋まる＝全単射。` +
+          ` <b>Z/${m * n} ≅ Z/${m} × Z/${n}</b>：値 x は「${m} で割った余り」と「${n} で割った余り」の組で一意に決まる（中国剰余定理）。`
+        : `gcd(${m},${n}) = ${d} ≠ 1。<b>空きマス</b>（到達不能な余りの組、—）と<b>衝突マス</b>（複数の x）が生じ、全単射でない。` +
+          ` Z/${m * n} は Z/${m} × Z/${n} と同型でない——CRT は互いに素なときだけ成り立つ。`;
+    };
+
+    mIn.addEventListener("input", render); nIn.addEventListener("input", render);
+    render();
+  }
+</script>
+
+<style>
+  .crt { margin: 26px 0; padding: 16px 18px 14px; border: 1px solid var(--line); border-radius: 10px; background: var(--card); }
+  .crt-controls { display: flex; flex-wrap: wrap; gap: 8px 22px; margin-bottom: 12px; }
+  .crt-label { font-size: 13px; font-weight: 600; color: var(--ink); font-family: var(--sans); display: flex; flex-direction: column; gap: 4px; }
+  .crt-label input { width: 150px; accent-color: var(--shu); }
+  .crt-gridwrap { overflow-x: auto; }
+  .crt-tbl { border-collapse: collapse; margin: 0 auto; font-family: var(--mono); font-size: 12px; }
+  .crt-tbl th, .crt-tbl td { border: 1px solid var(--line); min-width: 34px; height: 26px; text-align: center; padding: 2px 6px; color: var(--ink); }
+  .crt-tbl thead th, .crt-tbl tbody th { background: var(--paper-sunk); color: var(--ink-faint); font-weight: 600; }
+  .crt-corner { font-size: 10px; }
+  .crt-one { background: var(--ai-wash); color: var(--ai); font-weight: 700; }
+  .crt-empty { background: var(--paper-sunk); color: var(--ink-faint); }
+  .crt-multi { background: color-mix(in srgb, var(--shu) 28%, var(--card)); color: var(--shu); font-weight: 700; }
+  .crt-cap { margin-top: 12px; font-size: 13px; line-height: 1.8; color: var(--ink-faint); font-family: var(--sans); }
+  .crt-cap b { color: var(--ink); font-weight: 700; }
+</style>

@@ -1,0 +1,119 @@
+---
+layout: ../../layouts/BaseLayout.astro
+title: 第7章 整域の階層 — ED ⊃ PID ⊃ UFD
+description: 一意分解を保証する整域の階層。ユークリッド整域・単項イデアル整域・一意分解整域の定義、包含関係、そして反例。
+---
+
+import Term from "../../components/assets/Term.astro";
+import Statement from "../../components/assets/Statement.astro";
+
+# 第7章 整域の階層 — ED ⊃ PID ⊃ UFD
+
+## 「素因数分解できる」を保証する条件を階層化する
+
+前章で、一般の整域では素因数分解の一意性が崩れることを見ました。では、どんな整域なら一意分解が保証されるのか？
+$\mathbb Z$ が一意分解できる理由をたどると、その根っこに「**割り算（余りつき）ができる**」という性質があります。
+ユークリッドの互除法——$\mathbb Z$ で gcd を計算し、素因数分解の一意性を証明するあの手続き——が、割り算に支えられていました。
+
+この観察を一般化して、整域を3つの階層に整理します。強い順に：**ユークリッド整域（ED）**（余りつき割り算ができる）
+$\supset$ **単項イデアル整域（PID）**（すべてのイデアルが単項）$\supset$ **一意分解整域（UFD）**（素因数分解が一意）。
+各段が次を含み、逆は成り立たない。この階層が「どの整域で整数論的な議論が使えるか」の地図になります。
+[体論](/field-and-galois)で多項式環を扱う土台でもあります。
+
+> 割り算ができる（ED）⇒ イデアルが単項（PID）⇒ 一意分解できる（UFD）。強い順の3階層、逆は成り立たない。
+
+## ユークリッド整域
+
+<Statement kind="definition" title="ユークリッド整域">
+整域 $R$ が<Term>ユークリッド整域</Term>（ED）とは、写像 $N:R\setminus\{0\}\to\mathbb Z_{\ge0}$（<Term>ユークリッド関数</Term>）で、
+任意の $a,b\ (b\ne0)$ に対し
+$$a=qb+r,\qquad r=0\ \text{または}\ N(r)<N(b)$$
+となる $q,r$ が存在するもの。「$b$ より小さい余り $r$ で割れる」——余りつき割り算ができる整域。
+</Statement>
+
+<Statement kind="example" title="ユークリッド整域の例">
+- $\mathbb Z$：$N(a)=|a|$。おなじみの余りつき割り算。
+- 体上の一変数多項式環 $K[x]$：$N(f)=\deg f$。多項式の割り算（次数が下がる）。
+- ガウス整数 $\mathbb Z[i]$：$N(a+bi)=a^2+b^2$（ノルム）。
+- $\mathbb Z[\omega]$（$\omega=e^{2\pi i/3}$、アイゼンシュタイン整数）。
+</Statement>
+
+ユークリッド関数があると、**互除法**が回ります：$\gcd$ を余りの列 $N(r_0)>N(r_1)>\cdots$ で計算でき、
+これは有限で止まる（非負整数の減少列）。そしてベズーの等式 $\gcd(a,b)=ax+by$ が構成できます。この互除法が、
+次の PID 性の証明のエンジンになります。
+
+## 単項イデアル整域
+
+<Statement kind="definition" title="単項イデアル整域">
+整域 $R$ が<Term>単項イデアル整域</Term>（PID）とは、すべてのイデアルが単項（$(a)$ の形）であること。
+</Statement>
+
+<Statement kind="theorem" title="ED ⇒ PID">
+ユークリッド整域は PID。
+</Statement>
+
+<Statement kind="proof">
+$I\ne\{0\}$ をイデアルとし、$I$ の非零元のうち $N$ が最小のものを $d$ とする。任意の $a\in I$ を $a=qd+r$
+（$r=0$ または $N(r)<N(d)$）と割ると、$r=a-qd\in I$。$r\ne0$ なら $N(r)<N(d)$ が $d$ の最小性に反するので $r=0$、
+つまり $a=qd\in(d)$。ゆえ $I=(d)$。$I=\{0\}=(0)$ も単項。∎
+</Statement>
+
+証明の心は「$N$ 最小の元 $d$ で割ると余りが $0$」——余りつき割り算が、イデアルを単項にする。$\mathbb Z,K[x],\mathbb Z[i]$ は
+すべて PID です。PID では、イデアルの言葉が整除の言葉と完全に一致します（$(a)+(b)=(\gcd(a,b))$ 等）。
+
+## 一意分解整域
+
+<Statement kind="definition" title="一意分解整域">
+整域 $R$ が<Term>一意分解整域</Term>（UFD）とは、$0$ でも単元でもない各元が既約元の積に書け、その分解が
+**同伴と順序を除いて一意**であること。
+</Statement>
+
+<Statement kind="theorem" title="PID ⇒ UFD">
+単項イデアル整域は UFD。
+</Statement>
+
+これは非自明で、[次章](/ring-theory/8)で完全に証明します（存在は「イデアルの昇鎖が止まる（ネーター性）」、
+一意性は「PID では既約 ⇒ 素」から）。結果として、包含の連鎖
+
+$$\text{体}\subset\text{ED}\subset\text{PID}\subset\text{UFD}\subset\text{整域}$$
+
+が得られます（体は自明に ED：$N\equiv0$ で余り常に $0$）。各段で整数論的な道具（gcd、一意分解）がどこまで使えるかが決まります。
+
+## 逆は成り立たない——反例
+
+階層が**真の**包含であること（各逆が偽）を、具体例で確認します。ここが分野の面白さです。
+
+<Statement kind="example" title="PID だが ED でない：Z[(1+√−19)/2]">
+$R=\mathbb Z\!\left[\frac{1+\sqrt{-19}}{2}\right]$ は PID だが、どんなユークリッド関数もとれない（ED でない）。
+「割り算はできないが、イデアルは全部単項」という微妙な例。証明は「普遍側因子（universal side divisor）」が存在しないことを示す。
+</Statement>
+
+<Statement kind="example" title="UFD だが PID でない：Z[x] と K[x,y]">
+$\mathbb Z[x]$ は UFD（次章のガウスの補題より、UFD 上の多項式環は UFD）だが PID でない：イデアル $(2,x)$ は単項でない
+（$(2,x)=(d)$ なら $d\mid2,\ d\mid x$ より $d$ 単元だが $1\notin(2,x)$——$2f+xg$ の定数項は偶数、矛盾）。
+同様に $K[x,y]$ の $(x,y)$ は単項でない。**変数が2つ以上／係数が体でないと PID から外れる**。
+</Statement>
+
+<Statement kind="example" title="UFD でない：Z[√−5]">
+[前章](/ring-theory/6)の通り $\mathbb Z[\sqrt{-5}]$ は整域だが UFD でない（$6$ の分解が非一意）。「既約だが素でない元」があるため。
+</Statement>
+
+これらの反例が、階層が「本物」であることを示します。$\mathbb Z[x]$（UFD だが非 PID）と $\mathbb Z[\sqrt{-5}]$（非 UFD）が特に重要で、
+前者は多項式論（[次章以降](/ring-theory/9)）、後者は数論の出発点です。
+
+## つまずきポイント
+
+<Statement kind="remark" title="よくある誤解">
+- **階層は ED ⊂ PID ⊂ UFD（強い順）。** 「割り算できる」が最強、「一意分解できる」が最弱。逆は成り立たない（真の包含）。
+- **$\mathbb Z[x]$ は UFD だが PID でない。** 「係数が体 $K$ の $K[x]$」は PID だが、「係数が環 $\mathbb Z$」や「2変数 $K[x,y]$」だと PID から落ちる。$(2,x),(x,y)$ が非単項。
+- **PID ⇒ UFD は非自明な定理。** イデアルが単項なだけで一意分解が出るのは、ネーター性＋既約=素の合わせ技（次章）。
+- **UFD ⇒ 既約=素だが、逆に既約=素だけでは UFD にならない**（分解の存在も要る）。
+</Statement>
+
+## この章のまとめ
+
+- **ユークリッド整域（ED）**：余りつき割り算（ユークリッド関数）ができる。$\mathbb Z,K[x],\mathbb Z[i]$。互除法で gcd・ベズーが使える。
+- **ED ⇒ PID**（$N$ 最小の元でイデアルが生成される）。**単項イデアル整域（PID）**ではイデアルが全部単項。
+- **PID ⇒ UFD**（次章で証明）。階層 体 ⊂ ED ⊂ PID ⊂ UFD ⊂ 整域は真の包含：$\mathbb Z[x]$（UFD 非 PID）、$\mathbb Z[\sqrt{-5}]$（非 UFD）が反例。
+
+次章は、この階層の要——**ED ⇒ PID ⇒ UFD** の未証明部分、とくに一意分解の存在と一意性を完全に証明します。

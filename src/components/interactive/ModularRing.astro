@@ -1,0 +1,92 @@
+---
+/* ModularRing.astro — 剰余環 Z/n の体験装置。
+   n を選ぶと Z/n の乗法表を描き、単元（可逆元）・零因子・0 を色分けする。
+   ・積が 0 になる非ゼロ元のペア（零因子）を赤で強調。
+   ・n が素数なら体（全非ゼロ元が単元）、合成数なら零因子があり整域でない、を判定。
+   「掛け算の逆元があるか」「0 でないのに積が 0 になるか」を目で確かめる。
+   状態はメモリ内のみ（storage 不使用）。 */
+---
+
+<figure class="mr" role="group" aria-label="剰余環 Z/n の乗法表">
+  <div class="mr-controls">
+    <label class="mr-label" for="mr-n">n = <output id="mr-n-v">6</output></label>
+    <input id="mr-n" type="range" min="2" max="16" step="1" value="6" />
+    <span class="mr-legend">
+      <span class="mr-key mr-unit-k">単元</span>
+      <span class="mr-key mr-zd-k">零因子</span>
+      <span class="mr-key mr-zero-k">0</span>
+    </span>
+  </div>
+  <div id="mr-table" class="mr-table"></div>
+  <figcaption id="mr-cap" class="mr-cap"></figcaption>
+</figure>
+
+<script>
+  const range = document.getElementById("mr-n") as HTMLInputElement | null;
+  const nOut = document.getElementById("mr-n-v");
+  const tableEl = document.getElementById("mr-table");
+  const capEl = document.getElementById("mr-cap");
+
+  if (range && nOut && tableEl && capEl) {
+    const gcd = (a: number, b: number): number => (b === 0 ? a : gcd(b, a % b));
+    const isPrime = (n: number) => { if (n < 2) return false; for (let i = 2; i * i <= n; i++) if (n % i === 0) return false; return true; };
+    const inverse = (a: number, n: number): number | null => { for (let b = 1; b < n; b++) if ((a * b) % n === 1) return b; return null; };
+
+    const render = (n: number) => {
+      nOut.textContent = String(n);
+      const units: number[] = [], zdiv: number[] = [];
+      for (let a = 1; a < n; a++) (gcd(a, n) === 1 ? units : zdiv).push(a);
+      const kind = (a: number) => (a === 0 ? "zero" : gcd(a, n) === 1 ? "unit" : "zd");
+
+      let html = '<table class="mr-grid"><thead><tr><th class="mr-corner">×</th>';
+      for (let j = 0; j < n; j++) html += `<th class="mr-h-${kind(j)}">${j}</th>`;
+      html += "</tr></thead><tbody>";
+      for (let a = 0; a < n; a++) {
+        html += `<tr><th class="mr-h-${kind(a)}">${a}</th>`;
+        for (let b = 0; b < n; b++) {
+          const p = (a * b) % n;
+          // 非ゼロ同士なのに積が 0 ＝ 零因子の証拠
+          const witness = p === 0 && a !== 0 && b !== 0;
+          const cls = witness ? "mr-witness" : p === 1 ? "mr-one" : "";
+          html += `<td class="${cls}">${p}</td>`;
+        }
+        html += "</tr>";
+      }
+      html += "</tbody></table>";
+      tableEl.innerHTML = html;
+
+      const unitStr = units.map((a) => `${a}⁻¹=${inverse(a, n)}`).join(", ");
+      capEl.innerHTML = isPrime(n)
+        ? `n = ${n} は素数。<b>Z/${n} は体</b>：0 以外のすべての元が単元（可逆）。零因子は無く整域。` +
+          ` 単元は ${units.length}=φ(${n}) 個 {${units.join(",")}}。逆元：${unitStr}。`
+        : `n = ${n} は合成数。<b>Z/${n} は整域でない</b>：0 でないのに積が 0 になる<b>零因子</b> {${zdiv.join(",")}}（赤マス）がある。` +
+          ` 単元（可逆な元）は ${units.length}=φ(${n}) 個 {${units.join(",")}} だけ。逆元：${unitStr}。`;
+    };
+
+    range.addEventListener("input", () => render(parseInt(range.value, 10)));
+    render(parseInt(range.value, 10));
+  }
+</script>
+
+<style>
+  .mr { margin: 26px 0; padding: 16px 18px 14px; border: 1px solid var(--line); border-radius: 10px; background: var(--card); }
+  .mr-controls { display: flex; align-items: center; flex-wrap: wrap; gap: 8px 16px; margin-bottom: 12px; }
+  .mr-label { font-size: 14px; font-weight: 600; color: var(--ink); font-family: var(--sans); }
+  .mr-controls input[type=range] { flex: 1; min-width: 140px; accent-color: var(--shu); }
+  .mr-legend { display: flex; gap: 8px; font-size: 11px; font-family: var(--sans); }
+  .mr-key { padding: 2px 8px; border-radius: 4px; }
+  .mr-unit-k { background: var(--ai-wash); color: var(--ai); }
+  .mr-zd-k { background: color-mix(in srgb, var(--shu) 22%, var(--card)); color: var(--shu); }
+  .mr-zero-k { background: var(--paper-sunk); color: var(--ink-faint); }
+  .mr-table { overflow-x: auto; }
+  .mr-grid { border-collapse: collapse; margin: 0 auto; font-family: var(--mono); font-size: 13px; }
+  .mr-grid th, .mr-grid td { border: 1px solid var(--line); min-width: 26px; height: 24px; text-align: center; padding: 0 5px; color: var(--ink); }
+  .mr-corner { background: var(--paper-sunk); color: var(--ink-faint); }
+  .mr-h-unit { background: var(--ai-wash); color: var(--ai); font-weight: 700; }
+  .mr-h-zd { background: color-mix(in srgb, var(--shu) 22%, var(--card)); color: var(--shu); font-weight: 700; }
+  .mr-h-zero { background: var(--paper-sunk); color: var(--ink-faint); }
+  .mr-witness { background: color-mix(in srgb, var(--shu) 30%, var(--card)); color: var(--shu); font-weight: 700; }
+  .mr-one { outline: 2px solid var(--ai); outline-offset: -2px; }
+  .mr-cap { margin-top: 12px; font-size: 13px; line-height: 1.8; color: var(--ink-faint); font-family: var(--sans); }
+  .mr-cap b { color: var(--ink); font-weight: 700; }
+</style>

@@ -1,0 +1,122 @@
+---
+layout: ../../layouts/BaseLayout.astro
+title: 第12章 群の構成 — 直積・半直積・表示
+description: 群を組み立てる。直積とその判定、半直積、二面体群・四元数群、自由群、生成元と関係式による表示。
+---
+
+import Term from "../../components/assets/Term.astro";
+import Statement from "../../components/assets/Statement.astro";
+
+# 第12章 群の構成 — 直積・半直積・表示
+
+## 群を「分解する」から「組み立てる」へ
+
+ここまで、与えられた群を部分群・剰余群・組成因子へと**分解**して調べてきました。最終章では逆に、
+小さい群から大きい群を**組み立てる**方法を扱います。シロー理論（[第8章](/group-theory/8)）で「正規シロー部分群が
+見つかれば群が分解できる」と言いましたが、その分解を精密にするのが直積と半直積です。
+
+そして群を指定する究極の方法——**生成元と関係式**による表示を導入します。「$r$ と $s$ で生成され、$r^n=e,\ s^2=e,\ srs=r^{-1}$
+を満たす群」と書けば、それだけで二面体群 $D_n$ が一意に定まる。この表示は、群を最も簡潔に記述する言語であり、
+[位相幾何学](/algebraic-topology)の基本群（空間の穴を群で表す）へと直結します。分解の理論を組み立ての理論で
+締めくくり、群論の全体像を完成させます。
+
+> 直積・半直積で群を組み立て、**生成元と関係式**で群を簡潔に表示する。分解と組み立てで群論が閉じる。
+
+## 直積
+
+<Statement kind="definition" title="外部直積と内部直積">
+群 $H,K$ の<Term>外部直積</Term> $H\times K$ は成分ごとの演算をもつ群。
+逆に、群 $G$ が部分群 $H,K$ をもち、（1）$H,K\trianglelefteq G$、（2）$H\cap K=\{e\}$、（3）$HK=G$ を満たすとき、
+$G$ は $H,K$ の<Term>内部直積</Term>で $G\cong H\times K$（$H,K$ の元は可換に振る舞う）。
+</Statement>
+
+<Statement kind="proposition" title="直積の判定">
+上の（1)(2)(3) が成り立つとき、写像 $H\times K\to G,\ (h,k)\mapsto hk$ は同型。
+</Statement>
+
+<Statement kind="proof">
+$H\cap K=\{e\}$ と両者の正規性から、$h\in H,k\in K$ に対し $[h,k]=hkh^{-1}k^{-1}\in H\cap K=\{e\}$、つまり $hk=kh$（可換）。
+これで $(h_1k_1)(h_2k_2)=(h_1h_2)(k_1k_2)$ ゆえ準同型。全射は（3）、単射は（2）から。∎
+</Statement>
+
+証明の要点は「両方正規＋交わりが自明 ⇒ 元が可換」。位数 $15$ の群が $\mathbb Z_3\times\mathbb Z_5$ になった（[第8章](/group-theory/8)）のは
+これでした。ただし、片方しか正規でない場合は可換にならず、より一般の構成が要ります。
+
+## 半直積
+
+正規部分群 $N$ と、それに「作用する」部分群 $H$ から群を組み立てるのが半直積です。非可換群を作る主要な道具です。
+
+<Statement kind="definition" title="半直積">
+群 $G$ が部分群 $N,H$ をもち、（1）$N\trianglelefteq G$、（2）$N\cap H=\{e\}$、（3）$NH=G$ のとき、$G$ は
+<Term>内部半直積</Term> $N\rtimes H$。外部的には、準同型 $\varphi:H\to\operatorname{Aut}(N)$（$H$ が $N$ に作用）を与え、
+集合 $N\times H$ に積
+$$(n_1,h_1)(n_2,h_2)=(n_1\cdot\varphi(h_1)(n_2),\ h_1h_2)$$
+を入れたものを<Term>外部半直積</Term> $N\rtimes_\varphi H$ という。$\varphi$ が自明なら直積 $N\times H$ に戻る。
+</Statement>
+
+直積との違いは、$H$ が $N$ に**ねじれて作用する**（$\varphi$）点。この作用が非可換性を生みます。
+
+<Statement kind="example" title="二面体群は半直積">
+$D_n\cong\mathbb Z_n\rtimes\mathbb Z_2$。$N=\langle r\rangle\cong\mathbb Z_n$（回転、正規）、$H=\langle s\rangle\cong\mathbb Z_2$（鏡映）、
+作用は $\varphi(s)(r)=r^{-1}$（鏡映で回転が逆向きになる、$srs^{-1}=r^{-1}$）。この非自明な作用が $D_n$ の非可換性の正体。
+$n=3$ なら $D_3\cong\mathbb Z_3\rtimes\mathbb Z_2\cong S_3$。
+</Statement>
+
+<Statement kind="example" title="四元数群は半直積でない">
+$Q_8=\{\pm1,\pm i,\pm j,\pm k\}$ は非可換で位数 $8$ だが、**半直積に分解できない**。すべての部分群が正規（ハミルトン群）で、
+位数 $2$ の部分群 $\{\pm1\}$ が唯一の位数 $2$ 部分群のため、$N\cap H=\{e\}$ となる補群 $H$ がとれない。
+$Q_8$ と $D_4$ は「同じ位数 $8$・非可換」でも本質的に異なる群——半直積で作れるか否かが一つの区別。
+</Statement>
+
+$Q_8$ の例は、「群の組み立て方は直積・半直積だけではない」ことを教えます（より一般には群の拡大論・
+[ホモロジー代数](/commutative-homological)の $H^2$ が拡大を分類します）。
+
+## 自由群と生成元・関係式
+
+群を記述する最も柔軟な方法が、生成元と、それらが満たすべき関係式による表示です。まず「関係式が何もない」自由な群から。
+
+<Statement kind="definition" title="自由群">
+集合 $S$ 上の<Term>自由群</Term> $F(S)$ は、$S$ の元とその逆元からなる「既約な語」（$ss^{-1}$ 等を消した文字列）全体で、
+連結を演算とする群。$S$ の元の間に**いかなる関係も課さない**最も自由な群で、次の普遍性をもつ：任意の群 $G$ と
+写像 $S\to G$ は、一意に準同型 $F(S)\to G$ に延びる。
+</Statement>
+
+<Statement kind="definition" title="生成元と関係式による表示">
+$G=\langle S\mid R\rangle$ とは、自由群 $F(S)$ を、関係語 $R$ が生成する正規部分群で割った剰余群
+$F(S)/\langle\langle R\rangle\rangle$。「$S$ で生成され、$R$ の関係だけを満たす群」を意味する。
+</Statement>
+
+<Statement kind="example" title="表示の例">
+- $\mathbb Z_n=\langle r\mid r^n\rangle$（$r^n=e$ だけを課す巡回群）。
+- $D_n=\langle r,s\mid r^n,\ s^2,\ srsr\rangle$（$r^n=s^2=e,\ srs=r^{-1}$）。
+- $\mathbb Z\times\mathbb Z=\langle a,b\mid aba^{-1}b^{-1}\rangle$（$ab=ba$ を課す＝可換な自由群）。
+- 自由群 $F(a,b)=\langle a,b\mid\ \rangle$（関係なし、非可換で無限）。
+</Statement>
+
+たった数個の記号で群が完全に指定できます。ただし表示には落とし穴もあり、「2つの表示が同じ群か」
+「表示された群の位数は何か」を判定する一般アルゴリズムは**存在しません**（語の問題の決定不能性、
+[計算可能性理論](/logic-foundations/12)と接続）。表示は強力だが、そこから群の性質を読むのは一般に難しいのです。
+
+<Statement kind="remark" title="位相幾何学への扉">
+生成元と関係式は[位相幾何学](/algebraic-topology)の**基本群**で本質的な役割を果たす。空間のループ（穴の周りの回り方）を
+生成元、関係を「縮められるループ」とみなすと、空間の「穴の構造」が群の表示として現れる。円周の基本群は
+$\langle a\mid\ \rangle\cong\mathbb Z$、トーラスは $\langle a,b\mid aba^{-1}b^{-1}\rangle\cong\mathbb Z\times\mathbb Z$。群論と幾何がここで出会う。
+</Statement>
+
+## つまずきポイント
+
+<Statement kind="remark" title="よくある誤解">
+- **直積は両方正規、半直積は片方だけ正規。** 直積 $\Rightarrow$ 半直積（自明な作用）。$H$ も正規なら直積、$H$ が正規でなく作用がねじれると非可換半直積。
+- **半直積で全ての群が作れるわけではない。** $Q_8$ のように直積・半直積のどちらでも作れない群がある（群の拡大はより広い）。
+- **表示から群の性質を読むのは難しい。** 語の問題（2つの語が同じ元か）は一般に決定不能。表示は簡潔だが万能の判定手段ではない。
+</Statement>
+
+## この章のまとめ
+
+- **直積** $H\times K$ は両者正規・交わり自明・積が全体（元が可換）。**半直積** $N\rtimes_\varphi H$ は $N$ 正規で $H$ が $N$ にねじれて作用（非可換群の主要な作り方）。$D_n=\mathbb Z_n\rtimes\mathbb Z_2$。
+- $Q_8$ は半直積に分解できない——群の組み立ては直積・半直積だけでは尽きない（拡大論へ）。
+- **自由群**は関係なしの最も自由な群。**生成元と関係式** $\langle S\mid R\rangle$ が群を簡潔に表示し、**基本群**を通じて[位相幾何学](/algebraic-topology)と繋がる。語の問題は決定不能。
+
+これで群論は一区切りです。対称性の抽象化から始め、ラグランジュ・同型定理・群作用・シロー理論・単純性・
+分類・組み立てまで——「対称性の科学」の全体を辿りました。ここで培った剰余・作用・分解の視点は、
+[環論](/ring-theory)・[体論・ガロア理論](/field-and-galois)・[表現論](/representation-theory)へとそのまま受け継がれていきます。おつかれさまでした。

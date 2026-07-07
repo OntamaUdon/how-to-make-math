@@ -1,0 +1,113 @@
+---
+layout: ../../layouts/BaseLayout.astro
+title: 第9章 多項式環とガウスの補題
+description: 係数環から多項式環へ。多項式の割り算、内容と原始多項式、ガウスの補題、そして「UFD上の多項式環はUFD」。
+---
+
+import Term from "../../components/assets/Term.astro";
+import Statement from "../../components/assets/Statement.astro";
+
+# 第9章 多項式環とガウスの補題
+
+## 係数環の良さは、多項式環に受け継がれるか
+
+$K[x]$（体上の一変数多項式）はユークリッド整域で、一意分解できました（[第7章](/ring-theory/7)）。では係数が体でない
+$\mathbb Z[x]$ はどうか。これは PID ではありません（[第7章](/ring-theory/7)：$(2,x)$ が非単項）。それでも $\mathbb Z[x]$ で
+素因数分解が一意にできる——つまり **UFD** である——ことを保証するのが、この章のガウスの補題です。
+
+鍵は「係数の共通因子（内容）」を分離する操作です。$\mathbb Z[x]$ の多項式を「係数の gcd」と「係数が互いに素な部分（原始多項式）」に
+分け、原始多項式の積がまた原始的だ（ガウスの補題）と示せば、$\mathbb Z[x]$ の一意分解が $\mathbb Z$ と $\mathbb Q[x]$ の一意分解に
+帰着します。結論「**UFD ⇒ UFD[x] も UFD**」から、$\mathbb Z[x]$ も $K[x_1,\dots,x_n]$（多変数）も UFD だと分かる——
+[代数幾何](/algebraic-geometry)や次章の既約性判定の土台になる、実り多い定理です。
+
+> ガウスの補題：原始多項式の積は原始的。帰結として**UFD 上の多項式環は UFD**。$\mathbb Z[x]$、$K[x_1,\dots,x_n]$ は UFD。
+
+## 多項式環の基本
+
+<Statement kind="definition" title="多項式環と次数">
+可換環 $R$ 上の<Term>多項式環</Term> $R[x]=\{a_nx^n+\cdots+a_1x+a_0:a_i\in R\}$。最高次の係数が非零のときその次数を $\deg f$、
+最高次係数を<Term>先頭係数</Term>という。$R$ が整域なら $R[x]$ も整域で $\deg(fg)=\deg f+\deg g$、単元は $R^\times$（定数の単元）のみ。
+</Statement>
+
+<Statement kind="proposition" title="割り算（先頭係数が単元のとき）">
+$R$ 可換環、$g\in R[x]$ の先頭係数が単元なら、任意の $f$ に対し $f=qg+r$（$\deg r<\deg g$）となる $q,r$ が一意に存在。
+特に $g$ がモニック（先頭係数 $1$）なら常に割れる。
+</Statement>
+
+体 $K$ 上なら全非零定数が単元なので、$K[x]$ は常に割り算でき ED でした。係数が $\mathbb Z$ だと先頭係数が単元でないと割れず、
+そのぶん理論が繊細になります。そこを乗り越える道具が「内容」です。
+
+## 内容と原始多項式
+
+<Statement kind="definition" title="内容・原始多項式">
+UFD $R$ の多項式 $f=a_nx^n+\cdots+a_0\in R[x]$ に対し、係数の最大公約数 $c(f)=\gcd(a_0,\dots,a_n)$ を<Term>内容</Term>という
+（同伴を除いて定まる）。$c(f)$ が単元（係数が互いに素）のとき $f$ を<Term>原始多項式</Term>という。
+</Statement>
+
+任意の $f\in R[x]$ は $f=c(f)\cdot f_0$（$f_0$ 原始的）と分離できます。「係数の共通因子をくくり出す」操作です。
+この分離のもとで、内容が積とどう振る舞うかが核心になります。
+
+## ガウスの補題
+
+<Statement kind="theorem" title="ガウスの補題">
+UFD $R$ において、原始多項式の積は原始多項式。したがって $c(fg)=c(f)c(g)$（内容は乗法的）。
+</Statement>
+
+<Statement kind="proof">
+$f,g$ 原始的とし、$fg$ が原始的でないと仮定する。すると $fg$ の全係数を割る素元 $p$ がある。剰余環 $R/(p)$ は整域
+（$p$ 素元ゆえ $(p)$ 素イデアル）なので、$(R/(p))[x]$ も整域。$\bar f,\bar g$ を $R/(p)$ 係数への還元とすると
+$\bar f\bar g=\overline{fg}=0$。整域なので $\bar f=0$ または $\bar g=0$、つまり $p$ が $f$ の全係数か $g$ の全係数を割る——
+$f,g$ が原始的であることに反する。ゆえ $fg$ は原始的。$c(fg)=c(f)c(g)$ は $f=c(f)f_0,g=c(g)g_0$ と分離して従う。∎
+</Statement>
+
+証明の急所は「**$p$ で還元すると整域 $(R/(p))[x]$ に落ち、$\bar f\bar g=0\Rightarrow\bar f=0$ or $\bar g=0$**」。
+素イデアルで割ると整域になる（[第4章](/ring-theory/4)）ことが、ここで効いています。この乗法性が、多項式環の一意分解を運びます。
+
+## UFD 上の多項式環は UFD
+
+<Statement kind="theorem" title="ガウスの定理">
+$R$ が UFD なら $R[x]$ も UFD。したがって $R$ が UFD なら $R[x_1,\dots,x_n]$ も UFD。
+</Statement>
+
+<Statement kind="proof">
+（要点。）$R$ の商体を $F$ とする。$F[x]$ は体上の多項式環ゆえ UFD（ED）。$R[x]$ の既約元は、$R$ の素元（定数）か、
+原始的で $F[x]$ で既約な多項式に限る（ガウスの補題より、$R[x]$ での既約性と $F[x]$ での既約性が原始多項式について一致する）。
+$f\in R[x]$ を $f=c(f)f_0$ と分け、$c(f)$ を $R$ で既約分解（$R$ が UFD）、$f_0$ を $F[x]$ で既約分解して分母を払い原始化する。
+内容の乗法性（ガウスの補題）が、この分解の一意性を保証する。∎
+</Statement>
+
+<Statement kind="corollary" title="重要な UFD">
+$\mathbb Z[x]$、$\mathbb Z[x_1,\dots,x_n]$、$K[x_1,\dots,x_n]$（体上の多変数多項式環）はすべて UFD。
+（ただし2変数以上・係数 $\mathbb Z$ では PID ではない。）
+</Statement>
+
+多変数多項式環が UFD であることは、[代数幾何](/algebraic-geometry)で「多項式（超曲面）の既約分解」を扱う基礎です。
+$K[x,y,z]$ で「既約多項式＝既約な超曲面」という辞書が、この定理で保証されます。
+
+## ガウスの補題の系：既約性の橋
+
+<Statement kind="corollary" title="R[x] と F[x] の既約性">
+$R$ を UFD、$F$ をその商体とする。原始多項式 $f\in R[x]$（$\deg f\ge1$）について、
+$$f\ \text{が}\ R[x]\ \text{で既約}\ \iff f\ \text{が}\ F[x]\ \text{で既約}.$$
+</Statement>
+
+これは実用上とても重要です。「$\mathbb Z[x]$ での既約性」と「$\mathbb Q[x]$ での既約性」が（原始多項式について）一致する——
+だから次章の既約性判定（$\mathbb Z$ 係数で調べれば $\mathbb Q$ 上でも既約）が正当化されます。有理数係数の多項式の既約性を、
+整数係数に還元して調べられるのです。
+
+## つまずきポイント
+
+<Statement kind="remark" title="よくある誤解">
+- **$R[x]$ が UFD でも PID とは限らない。** $\mathbb Z[x]$ は UFD だが非 PID。「UFD ⇒ UFD[x]」は保つが「PID ⇒ PID[x]」は偽（$K[x]$ は PID だが $K[x,y]$ は非 PID）。
+- **内容は同伴を除いて定まる。** $\gcd$ が同伴を除いて一意なので、$c(f)$ も。原始性は「係数が互いに素」。
+- **ガウスの補題の核心は素イデアルで還元して整域を使う点。** $R/(p)$ が整域だから $\bar f\bar g=0$ で片方が $0$。
+- **既約性の橋は原始多項式について。** $2x\in\mathbb Z[x]$ は $\mathbb Q[x]$ で既約（$x$ と同伴）だが $\mathbb Z[x]$ では $2\cdot x$ と分解（原始的でない）。
+</Statement>
+
+## この章のまとめ
+
+- 多項式の**内容** $c(f)$（係数の gcd）で $f=c(f)f_0$（原始的）と分離。**ガウスの補題**：原始多項式の積は原始的（$c(fg)=c(f)c(g)$）、証明は素イデアルで還元して整域を使う。
+- **UFD ⇒ UFD[x] も UFD**（ガウスの定理）。ゆえ $\mathbb Z[x]$、$K[x_1,\dots,x_n]$ は UFD（多変数でも一意分解、代数幾何の土台）。
+- 系：原始多項式は **$R[x]$ で既約 $\iff F[x]$ で既約**。有理係数の既約性を整数係数に還元して調べられる（次章の判定法の正当化）。
+
+次章は、この橋を使って**多項式の既約性を実際に判定する**——有理根定理・mod p 還元・アイゼンシュタインの判定法を扱います。

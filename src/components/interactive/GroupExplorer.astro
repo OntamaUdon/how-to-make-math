@@ -1,0 +1,206 @@
+---
+/* GroupExplorer.astro — 有限群の体験装置。
+   群（巡回群 Zₙ・二面体群 Dₙ・四元数群 Q₈）を選ぶとケイリー表（積の表）を描く。
+   さらに元 g を選ぶと巡回部分群 ⟨g⟩ を生成し、G を左剰余類に分割して色分けする。
+   ・各剰余類が同じ大きさで G を覆う＝ラグランジュの定理を目で見る。
+   ・左剰余類と右剰余類の一致／不一致＝正規部分群かどうかが分かる。
+   状態はメモリ内のみ（storage 不使用）。 */
+---
+
+<figure class="ge" role="group" aria-label="有限群のケイリー表と剰余類">
+  <div class="ge-controls">
+    <label class="ge-label">群
+      <select id="ge-group" class="ge-sel">
+        <option value="Z4">巡回群 Z₄（位数4・可換）</option>
+        <option value="Z6">巡回群 Z₆（位数6・可換）</option>
+        <option value="D3">二面体群 D₃ ≅ S₃（位数6・非可換）</option>
+        <option value="D4">二面体群 D₄（位数8・非可換）</option>
+        <option value="Q8">四元数群 Q₈（位数8・非可換）</option>
+      </select>
+    </label>
+    <label class="ge-label">部分群 ⟨g⟩
+      <select id="ge-sub" class="ge-sel"></select>
+    </label>
+    <label class="ge-label ge-side">剰余類
+      <select id="ge-side-sel" class="ge-sel">
+        <option value="L">左 gH</option>
+        <option value="R">右 Hg</option>
+      </select>
+    </label>
+  </div>
+  <div id="ge-table" class="ge-table"></div>
+  <div id="ge-cosets" class="ge-cosets"></div>
+  <figcaption id="ge-cap" class="ge-cap"></figcaption>
+</figure>
+
+<script>
+  const sup = (k: number) => String(k).replace(/\d/g, (d) => "⁰¹²³⁴⁵⁶⁷⁸⁹"[+d]);
+
+  type Group = { name: string; els: string[]; mul: (i: number, j: number) => number; id: number };
+
+  const makeZ = (n: number): Group => ({
+    name: `Z${sup(n)}`, els: Array.from({ length: n }, (_, i) => String(i)),
+    mul: (i, j) => (i + j) % n, id: 0,
+  });
+
+  const makeD = (n: number): Group => {
+    // 元 index: 0..n-1 = 回転 rᵏ, n..2n-1 = 鏡映 s·rᵏ。encode (f,k)->idx, idx->(f,k)
+    const els: string[] = [];
+    for (let k = 0; k < n; k++) els.push(k === 0 ? "e" : "r" + (k === 1 ? "" : sup(k)));
+    for (let k = 0; k < n; k++) els.push("s" + (k === 0 ? "" : "r" + (k === 1 ? "" : sup(k))));
+    const mul = (a: number, b: number) => {
+      const f1 = a >= n ? 1 : 0, k1 = a % n, f2 = b >= n ? 1 : 0, k2 = b % n;
+      const f = (f1 + f2) % 2;
+      const k = (((f2 ? -k1 : k1) + k2) % n + n) % n;
+      return f * n + k;
+    };
+    return { name: `D${sup(n)}`, els, mul, id: 0 };
+  };
+
+  const makeQ8 = (): Group => {
+    // (sign, unit) unit 0:1 1:i 2:j 3:k。index: [1,-1,i,-i,j,-j,k,-k]
+    const els = ["1", "−1", "i", "−i", "j", "−j", "k", "−k"];
+    const enc = (s: number, u: number) => (u === 0 ? (s > 0 ? 0 : 1) : (u - 1) * 2 + 2 + (s > 0 ? 0 : 1));
+    const dec = (idx: number): [number, number] =>
+      idx < 2 ? [idx === 0 ? 1 : -1, 0] : [(idx - 2) % 2 === 0 ? 1 : -1, ((idx - 2) >> 1) + 1];
+    // 四元数の積: i·i=-1, i·j=k, j·i=-k 等
+    const tbl = [ // [unit a][unit b] = [sign, unit]; 1=idx? use units 0..3
+      [[1, 0], [1, 1], [1, 2], [1, 3]],
+      [[1, 1], [-1, 0], [1, 3], [-1, 2]],
+      [[1, 2], [-1, 3], [-1, 0], [1, 1]],
+      [[1, 3], [1, 2], [-1, 1], [-1, 0]],
+    ];
+    const mul = (a: number, b: number) => {
+      const [sa, ua] = dec(a), [sb, ub] = dec(b);
+      const [sr, ur] = tbl[ua][ub];
+      return enc(sa * sb * sr, ur);
+    };
+    return { name: "Q₈", els, mul, id: 0 };
+  };
+
+  const groups: Record<string, () => Group> = {
+    Z4: () => makeZ(4), Z6: () => makeZ(6), D3: () => makeD(3), D4: () => makeD(4), Q8: makeQ8,
+  };
+
+  const groupSel = document.getElementById("ge-group") as HTMLSelectElement | null;
+  const subSel = document.getElementById("ge-sub") as HTMLSelectElement | null;
+  const sideSel = document.getElementById("ge-side-sel") as HTMLSelectElement | null;
+  const tableEl = document.getElementById("ge-table");
+  const cosetEl = document.getElementById("ge-cosets");
+  const capEl = document.getElementById("ge-cap");
+
+  if (groupSel && subSel && sideSel && tableEl && cosetEl && capEl) {
+    let G: Group;
+
+    const cyclic = (g: number): number[] => {
+      const H = [G.id]; let x = g;
+      while (x !== G.id) { H.push(x); x = G.mul(x, g); }
+      return H.sort((a, b) => a - b);
+    };
+    const key = (arr: number[]) => arr.join(",");
+
+    const distinctSubgroups = (): number[][] => {
+      const seen = new Map<string, number[]>();
+      for (let g = 0; g < G.els.length; g++) { const H = cyclic(g); seen.set(key(H), H); }
+      return [...seen.values()].sort((a, b) => a.length - b.length);
+    };
+
+    const cosets = (H: number[], side: "L" | "R"): number[][] => {
+      const assigned = new Set<number>(); const out: number[][] = [];
+      for (let a = 0; a < G.els.length; a++) {
+        if (assigned.has(a)) continue;
+        const c = H.map((h) => (side === "L" ? G.mul(a, h) : G.mul(h, a)));
+        const uniq = [...new Set(c)].sort((x, y) => x - y);
+        uniq.forEach((e) => assigned.add(e));
+        out.push(uniq);
+      }
+      return out;
+    };
+
+    const hue = (idx: number, total: number) => `hsl(${Math.round((360 * idx) / total)}, 62%, 82%)`;
+
+    const rebuildSubOptions = () => {
+      const subs = distinctSubgroups();
+      subSel.innerHTML = "";
+      subs.forEach((H) => {
+        const label = H.length === 1 ? "{e}（自明）" : H.length === G.els.length ? "G 全体" : `⟨…⟩ = {${H.map((i) => G.els[i]).join(",")}}`;
+        const opt = document.createElement("option");
+        opt.value = key(H); opt.textContent = `位数 ${H.length}: ${label}`;
+        subSel.appendChild(opt);
+      });
+      // 既定は最初の非自明部分群
+      const nontrivial = subs.find((H) => H.length > 1 && H.length < G.els.length);
+      if (nontrivial) subSel.value = key(nontrivial);
+    };
+
+    const render = () => {
+      const n = G.els.length;
+      const H = subSel.value.split(",").map(Number);
+      const side = sideSel.value as "L" | "R";
+      const cs = cosets(H, side);
+      // 各元がどの剰余類か
+      const cosetOf = new Array(n).fill(0);
+      cs.forEach((c, ci) => c.forEach((e) => (cosetOf[e] = ci)));
+
+      // ケイリー表
+      let html = '<table class="ge-cayley"><thead><tr><th class="ge-corner">·</th>';
+      G.els.forEach((e, j) => (html += `<th style="background:${hue(cosetOf[j], cs.length)}">${e}</th>`));
+      html += "</tr></thead><tbody>";
+      G.els.forEach((e, i) => {
+        html += `<tr><th style="background:${hue(cosetOf[i], cs.length)}">${e}</th>`;
+        for (let j = 0; j < n; j++) {
+          const p = G.mul(i, j);
+          html += `<td style="background:${hue(cosetOf[p], cs.length)}">${G.els[p]}</td>`;
+        }
+        html += "</tr>";
+      });
+      html += "</tbody></table>";
+      tableEl.innerHTML = html;
+
+      // 剰余類チップ
+      let ch = "";
+      cs.forEach((c, ci) => {
+        ch += `<div class="ge-coset-row"><span class="ge-swatch" style="background:${hue(ci, cs.length)}"></span>`;
+        ch += c.map((e) => `<span class="ge-chip">${G.els[e]}</span>`).join("");
+        ch += "</div>";
+      });
+      cosetEl.innerHTML = ch;
+
+      // 正規性判定（左右の剰余類分割が集合として一致するか）
+      const partKeys = (arr: number[][]) => arr.map((c) => key(c)).sort();
+      const L = partKeys(cosets(H, "L")), R = partKeys(cosets(H, "R"));
+      const normal = L.length === R.length && L.every((x, i) => x === R[i]);
+
+      capEl.innerHTML =
+        `|G| = ${n}, |H| = ${H.length}, 剰余類の個数 [G:H] = ${cs.length}。` +
+        ` <b>${n} = ${H.length} × ${cs.length}</b> ——${side === "L" ? "左" : "右"}剰余類が G を等しい大きさに分割（ラグランジュの定理）。` +
+        (H.length === 1 || H.length === n ? "" : normal
+          ? " この H は<b>正規部分群</b>（左剰余類＝右剰余類。剰余群 G/H が作れる）。"
+          : " この H は<b>正規でない</b>（左剰余類と右剰余類が食い違う）。剰余類を「左」「右」で切り替えて確かめてみてください。");
+    };
+
+    const rebuildAll = () => { G = groups[groupSel.value](); rebuildSubOptions(); render(); };
+    groupSel.addEventListener("change", rebuildAll);
+    subSel.addEventListener("change", render);
+    sideSel.addEventListener("change", render);
+    rebuildAll();
+  }
+</script>
+
+<style>
+  .ge { margin: 26px 0; padding: 16px 18px 14px; border: 1px solid var(--line); border-radius: 10px; background: var(--card); }
+  .ge-controls { display: flex; flex-wrap: wrap; gap: 10px 18px; margin-bottom: 14px; }
+  .ge-label { display: flex; flex-direction: column; gap: 4px; font-size: 12px; font-weight: 600; color: var(--ink-faint); font-family: var(--sans); }
+  .ge-sel { font-family: var(--sans); font-size: 13px; padding: 5px 8px; border: 1px solid var(--line); border-radius: 7px; background: var(--paper-sunk); color: var(--ink); }
+  .ge-table { overflow-x: auto; }
+  .ge-cayley { border-collapse: collapse; margin: 0 auto; font-family: var(--mono); font-size: 13px; }
+  .ge-cayley th, .ge-cayley td { border: 1px solid var(--card); min-width: 30px; height: 26px; text-align: center; padding: 0 6px; color: #1a1a1a; }
+  .ge-cayley thead th, .ge-cayley tbody th { font-weight: 700; }
+  .ge-corner { background: var(--paper-sunk) !important; color: var(--ink-faint) !important; }
+  .ge-cosets { display: flex; flex-direction: column; gap: 6px; margin: 14px 0 4px; }
+  .ge-coset-row { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+  .ge-swatch { width: 14px; height: 14px; border-radius: 4px; border: 1px solid var(--line); flex: none; }
+  .ge-chip { font-family: var(--mono); font-size: 12px; padding: 2px 8px; border: 1px solid var(--line); border-radius: 999px; color: var(--ink); }
+  .ge-cap { margin-top: 10px; font-size: 13px; line-height: 1.8; color: var(--ink-faint); font-family: var(--sans); }
+  .ge-cap b { color: var(--ink); font-weight: 700; }
+</style>

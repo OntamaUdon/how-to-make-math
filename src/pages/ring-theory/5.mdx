@@ -1,0 +1,103 @@
+---
+layout: ../../layouts/BaseLayout.astro
+title: 第5章 中国剰余定理
+description: 互いに素なイデアルによる直積分解。互いに素なイデアル、中国剰余定理と証明、Z/n の分解、そして応用。
+---
+
+import Term from "../../components/assets/Term.astro";
+import Statement from "../../components/assets/Statement.astro";
+import CRTGrid from "../../components/interactive/CRTGrid.astro";
+
+# 第5章 中国剰余定理
+
+## 「余りの組」が、値を一意に決める
+
+古代中国の算術書に、こんな問題があります。「$3$ で割ると $2$ 余り、$5$ で割ると $3$ 余り、$7$ で割ると $2$ 余る数は？」。
+答えは $23$（そして $23+105$、$23+210$、…）。$3,5,7$ が互いに素なら、**$105=3\cdot5\cdot7$ を法とした余りは、
+$3,5,7$ それぞれの余りの組で一意に決まる**——これが中国剰余定理です。
+
+この素朴な整数の定理は、環論の言葉に翻訳すると、**互いに素なイデアルによる環の直積分解**という一般的で強力な形になります。
+$\mathbb Z/mn\cong\mathbb Z/m\times\mathbb Z/n$（$m,n$ 互いに素）。この分解は、環を「素数ごとの部品」に分けて調べる基本手法であり、
+[有限アーベル群の分類](/group-theory/10)や暗号（RSA の高速化）、多項式補間まで、応用は多岐にわたります。
+
+> 互いに素なイデアル $I,J$（$I+J=R$）で $R/(I\cap J)\cong R/I\times R/J$。$\mathbb Z/mn\cong\mathbb Z/m\times\mathbb Z/n$（$\gcd(m,n)=1$）。
+
+## 互いに素なイデアル
+
+「互いに素」を、イデアルの言葉で定めます。整数の $\gcd(m,n)=1\iff(m)+(n)=\mathbb Z$（第2章：和が gcd）が指針です。
+
+<Statement kind="definition" title="互いに素（comaximal）">
+イデアル $I,J$ が<Term>互いに素</Term>（comaximal）とは $I+J=R$。同値：ある $a\in I,b\in J$ で $a+b=1$。
+</Statement>
+
+$\mathbb Z$ では $(m)+(n)=(\gcd(m,n))$ なので、$(m),(n)$ が互いに素 $\iff\gcd(m,n)=1$——普通の「互いに素」と一致します。
+互いに素なイデアルには、積と共通部分が一致するという良い性質があります。
+
+<Statement kind="lemma" title="互いに素なら積＝共通部分">
+$I+J=R$ なら $I\cap J=IJ$。
+</Statement>
+
+<Statement kind="proof">
+$IJ\subseteq I\cap J$ は常に成り立つ（[第2章](/ring-theory/2)）。逆：$a+b=1\ (a\in I,b\in J)$ をとる。$x\in I\cap J$ に対し
+$x=x\cdot1=x(a+b)=xa+xb$。$xa\in JI\ (x\in J,a\in I)$、$xb\in IJ\ (x\in I,b\in J)$、よって $x\in IJ$。ゆえ $I\cap J\subseteq IJ$。∎
+</Statement>
+
+$\mathbb Z$ で言えば「$\gcd(m,n)=1$ なら $\mathrm{lcm}(m,n)=mn$」。互いに素なとき最小公倍数が積に一致する、あの事実です。
+
+## 中国剰余定理
+
+<Statement kind="theorem" title="中国剰余定理">
+$I_1,\dots,I_k$ を**対どうし互いに素**なイデアル（$i\ne j$ で $I_i+I_j=R$）とすると、自然な写像
+$$R/(I_1\cap\cdots\cap I_k)\ \xrightarrow{\ \cong\ }\ R/I_1\times\cdots\times R/I_k,\qquad a\bmod\bigcap I_i\mapsto (a\bmod I_1,\dots,a\bmod I_k)$$
+は環同型。さらに $I_1\cap\cdots\cap I_k=I_1I_2\cdots I_k$。
+</Statement>
+
+<Statement kind="proof">
+（$k=2$ で本質。）写像 $\varphi:R\to R/I\times R/J,\ a\mapsto(a+I,a+J)$ は環準同型で、核は $I\cap J$。第一同型定理より
+$R/(I\cap J)\cong\operatorname{im}\varphi$。**全射**を示せば同型。$a+b=1\ (a\in I,b\in J)$ をとる。任意の $(x+I,y+J)$ に対し、
+$$z=xb+ya$$
+とおくと、$z=xb+ya\equiv x\cdot1+0=x\pmod I$（$b=1-a\equiv1\pmod I$、$ya\in I$）、同様に $z\equiv y\pmod J$。
+ゆえ $\varphi(z)=(x+I,y+J)$、全射。$I\cap J=IJ$ は上の補題。一般の $k$ は帰納法（$I_1$ と $I_2\cdots I_k$ が互いに素になる）。∎
+</Statement>
+
+証明の核心は**全射性**で、その証拠が $z=xb+ya$ という**具体的な構成**です。$a+b=1$（互いに素）から、
+「$I$ では $x$、$J$ では $y$ に見える元 $z$」を明示的に作れる——これが冒頭の連立合同式を解く公式そのものです。
+
+<Statement kind="corollary" title="Z/n の素数べき分解">
+$n=p_1^{e_1}\cdots p_r^{e_r}$（素因数分解）なら
+$$\mathbb Z/n\mathbb Z\cong\mathbb Z/p_1^{e_1}\mathbb Z\times\cdots\times\mathbb Z/p_r^{e_r}\mathbb Z.$$
+単元群も $(\mathbb Z/n)^\times\cong\prod(\mathbb Z/p_i^{e_i})^\times$ で、$\varphi(n)=\prod\varphi(p_i^{e_i})$（オイラー関数の乗法性）。
+</Statement>
+
+下で体感してください。$m,n$ を選ぶと、各 $x\in\mathbb Z/mn$ を「$m$ での余り」「$n$ での余り」の位置に置いた格子が描かれます。
+**$\gcd(m,n)=1$ のときだけ、すべてのマスがちょうど1回埋まる**（全単射＝同型）。互いに素でないと空きマス（到達不能な余りの組）と
+衝突が生じ、CRT は崩れます。
+
+<CRTGrid />
+
+## 応用
+
+<Statement kind="example" title="中国剰余定理の応用">
+- **連立合同式**：$x\equiv2\ (3),\ x\equiv3\ (5),\ x\equiv2\ (7)$ は $\bmod\,105$ で一意解 $x=23$。証明の構成 $z=\sum x_i\cdot(\text{他の積}\times\text{逆元})$ が解法。
+- **多項式補間**：$K[x]$ で $I_i=(x-a_i)$（$a_i$ 相異なる）は互いに素。CRT より「各点 $a_i$ での値を指定した多項式が一意（$\bmod\prod(x-a_i)$）」＝**ラグランジュ補間**。
+- **暗号（RSA）**：$\bmod\,pq$ の計算を $\bmod\,p$ と $\bmod\,q$ に分けて高速化（CRT による並列化）。
+- **べき等元**：$R\cong R_1\times R_2$ の分解は、$e^2=e$ となるべき等元 $e=(1,0)$ の存在と対応する。
+</Statement>
+
+整数論・補間・暗号という異なる領域の技法が、すべて「互いに素なイデアルによる直積分解」という一つの定理の顔だと分かります。
+
+## つまずきポイント
+
+<Statement kind="remark" title="よくある誤解">
+- **互いに素が必須。** $\gcd(m,n)>1$ だと $\mathbb Z/mn\not\cong\mathbb Z/m\times\mathbb Z/n$（$\mathbb Z/4\ne\mathbb Z/2\times\mathbb Z/2$：前者は位数4の元をもつ）。イデアルで $I+J=R$。
+- **CRT は「共通部分で割る」。** $R/(I\cap J)$ であって $R/(IJ)$ ではない（互いに素なら一致するが）。一般には $I\cap J$。
+- **同型は環として。** 加法だけでなく乗法も保つ。単元群の分解 $(\mathbb Z/n)^\times\cong\prod(\mathbb Z/p_i^{e_i})^\times$ もここから。
+</Statement>
+
+## この章のまとめ
+
+- **互いに素なイデアル** $I+J=R$（$\iff a+b=1$）では $I\cap J=IJ$。**中国剰余定理**：対どうし互いに素なら $R/\bigcap I_i\cong\prod R/I_i$。
+- 証明の核心は全射性で、$z=xb+ya$ という具体的構成（＝連立合同式の解法）。系として $\mathbb Z/n\cong\prod\mathbb Z/p_i^{e_i}$、$\varphi$ の乗法性。
+- 応用は連立合同式・**ラグランジュ補間**・RSA の高速化・べき等元による直積分解。互いに素なときだけ成立（$\gcd>1$ で崩れる）。
+
+環とイデアルの基礎が完成しました。次章から**整域論**——整除性の理論に入り、既約元・素元・単元を扱います。

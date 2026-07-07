@@ -1,0 +1,133 @@
+---
+layout: ../../layouts/BaseLayout.astro
+title: 第8章 シロー理論
+description: 有限群論の頂点。シローの第一・第二・第三定理の完全な証明、p群の性質、そして個数条件による群の決定。
+---
+
+import Term from "../../components/assets/Term.astro";
+import Statement from "../../components/assets/Statement.astro";
+
+# 第8章 シロー理論
+
+## ラグランジュの「逆」を、素数べきについて回復する
+
+第3章のラグランジュの定理は「部分群の位数は $|G|$ を割る」でした。逆——「$|G|$ を割るどの $d$ にも位数 $d$ の
+部分群がある」——は一般に偽（$A_4$ に位数 $6$ の部分群なし）。でも**素数べき**については、逆が完全に成り立ちます。
+これがシローの定理です。
+
+$|G|=p^n m$（$p\nmid m$）と素因数分解したとき、$G$ には位数 $p^n$ の部分群（**シロー $p$ 部分群**）が必ず存在し、
+それらは互いに共役で、個数まで $\bmod\,p$ で決まる。この3つの定理は、有限群の構造を素数ごとに分解して調べる
+ための最強の道具です。前章の群作用の技術がここで結実し、「与えられた位数の群をすべて決定する」という
+分類問題が実際に解けるようになります。
+
+> $|G|=p^n m$（$p\nmid m$）のとき、位数 $p^n$ のシロー $p$ 部分群が存在し、すべて共役、個数 $n_p\equiv1\pmod p$ かつ $n_p\mid m$。
+
+## 第一定理：存在
+
+<Statement kind="definition" title="シロー p 部分群">
+$|G|=p^n m$（$p$ 素数、$p\nmid m$）とする。位数 $p^n$（＝ $|G|$ を割る $p$ の最大べき）の部分群を
+<Term>シロー $p$ 部分群</Term>という。
+</Statement>
+
+<Statement kind="theorem" title="シローの第一定理">
+$|G|=p^n m$（$p\nmid m$）なら、$G$ はシロー $p$ 部分群（位数 $p^n$）をもつ。
+</Statement>
+
+<Statement kind="proof">
+（ヴィーラントの証明。）$X$ を「$G$ の位数 $p^n$ の部分**集合**（部分群とは限らない）」全体とし、$G$ を左移動
+$g\cdot S=gS$ で $X$ に作用させる。$|X|=\binom{p^n m}{p^n}$。**この二項係数は $p$ で割り切れない**：
+$\binom{p^n m}{p^n}=\prod_{j=0}^{p^n-1}\frac{p^n m-j}{p^n-j}$ で、$p^n m-j$ と $p^n-j$ に含まれる $p$ の指数は
+（$0\le j<p^n$ ゆえ）各 $j$ で等しく、約分で $p$ が消える（クンマーの定理）。よって $p\nmid|X|$。
+
+軌道は $X$ を分割し $|X|=\sum|\mathrm{Orb}(S)|$。$p\nmid|X|$ ゆえ、ある軌道 $\mathrm{Orb}(S_0)$ の大きさは $p$ で割れない。
+$P=\mathrm{Stab}(S_0)$ とおくと軌道–安定化群定理より $|\mathrm{Orb}(S_0)|=[G:P]=\dfrac{p^n m}{|P|}$ が $p$ で割れないので、
+$p^n\mid|P|$、すなわち $|P|\ge p^n$。一方、$P$ は $S_0$ を保つので、$s\in S_0$ を固定すると $Ps\subseteq S_0$、
+$|P|=|Ps|\le|S_0|=p^n$。ゆえに $|P|=p^n$——$P$ がシロー $p$ 部分群。∎
+</Statement>
+
+証明の要は「$|X|$ が $p$ で割れない」こと。すると軌道分割の中に $p$ で割れない軌道が必ずあり、その安定化群が
+狙いの位数 $p^n$ をちょうど実現する。**軌道サイズの整除で存在をこじ開ける**、群作用の真骨頂です。系として、
+コーシーの定理（第6章）も再導出できます（位数 $p$ のシロー部分群が位数 $p$ の元をもつ）。
+
+## 第二定理：共役性
+
+<Statement kind="theorem" title="シローの第二定理">
+$G$ のすべてのシロー $p$ 部分群は互いに共役（$P'=gPg^{-1}$）。さらに任意の $p$ 部分群は、あるシロー $p$ 部分群に含まれる。
+</Statement>
+
+<Statement kind="proof">
+$P$ をシロー $p$ 部分群、$Q$ を任意の $p$ 部分群とする。$Q$ を、左剰余類の集合 $G/P$ に左移動で作用させる。
+$|G/P|=[G:P]=m$ で $p\nmid m$。軌道の大きさは $[Q:\mathrm{Stab}]$ で $|Q|=p^k$ の約数＝ $p$ べき。$p\nmid|G/P|=\sum(\text{軌道サイズ})$
+なので、大きさ $1$ の軌道（不動点）が存在する。それを $gP$ とすると、$QgP=gP$、つまり $g^{-1}Qg\subseteq P$。
+$Q$ がシローなら $|Q|=|P|$ で $g^{-1}Qg=P$、すなわち $Q$ と $P$ は共役。一般の $p$ 部分群 $Q$ なら $Q\subseteq gPg^{-1}$（シロー部分群）に含まれる。∎
+</Statement>
+
+「$Q$ を $G/P$ に作用させ、$\bmod\,p$ で不動点を見つける」——第一定理と同じ精神です。共役性の帰結として
+重要なのは次です。
+
+<Statement kind="corollary" title="正規性の判定">
+シロー $p$ 部分群 $P$ が正規 $\iff$ シロー $p$ 部分群がただ一つ（$n_p=1$）。
+</Statement>
+
+<Statement kind="proof">
+共役なもの全体がシロー $p$ 部分群の全体（第二定理）。$P\trianglelefteq G\iff gPg^{-1}=P\ (\forall g)\iff$ 共役が $P$ だけ $\iff n_p=1$。∎
+</Statement>
+
+## 第三定理：個数
+
+<Statement kind="theorem" title="シローの第三定理">
+シロー $p$ 部分群の個数 $n_p$ は
+$$n_p\equiv1\pmod p\qquad\text{かつ}\qquad n_p\mid m\ (=[G:P]).$$
+</Statement>
+
+<Statement kind="proof">
+シロー $p$ 部分群全体の集合 $\mathrm{Syl}_p(G)$（$|\mathrm{Syl}_p(G)|=n_p$）に $G$ を共役で作用させる。第二定理よりこの作用は
+推移的（軌道は1つ）なので、軌道–安定化群定理より $n_p=[G:N_G(P)]$。$P\le N_G(P)$ ゆえ $[G:N_G(P)]$ は $[G:P]=m$ を割る。
+よって $n_p\mid m$。
+
+次に、**$P$ 自身**を $\mathrm{Syl}_p(G)$ に共役で作用させる。$P$ による軌道の大きさは $p$ べき。$Q\in\mathrm{Syl}_p(G)$ が
+$P$ の不動点（$xQx^{-1}=Q\ \forall x\in P$）$\iff P\subseteq N_G(Q)$。すると $P,Q$ はともに $N_G(Q)$ のシロー $p$ 部分群で、
+$N_G(Q)$ 内で共役だが $Q\trianglelefteq N_G(Q)$ なので $P=Q$。ゆえに $P$ の不動点は $P$ ただ一つ。
+$n_p=\sum(P\text{-軌道のサイズ})=1+(p\text{で割れる項の和})$、よって $n_p\equiv1\pmod p$。∎
+</Statement>
+
+$n_p\equiv1\pmod p$ かつ $n_p\mid m$——この2つの条件が $n_p$ の候補を劇的に絞ります。しばしば $n_p=1$ しか
+残らず、その場合シロー $p$ 部分群は正規（上の系）。これが「群を分解できる」ことの発見につながります。
+
+## 群の決定への応用
+
+シローの定理は、小さい位数の群を**すべて決定する**のに使えます。戦略は「$n_p$ を絞って正規シロー部分群を見つけ、
+群を半直積（第12章）に分解する」。
+
+<Statement kind="example" title="位数 15 の群は巡回群のみ">
+$|G|=15=3\cdot5$。$n_3\equiv1\pmod3$ かつ $n_3\mid5$ より $n_3\in\{1\}$（$5$ の約数で $\equiv1\pmod3$ は $1$ のみ）。
+$n_5\equiv1\pmod5$ かつ $n_5\mid3$ より $n_5=1$。よってシロー $3$ 部分群 $P$（位数 $3$）もシロー $5$ 部分群 $Q$（位数 $5$）も正規で唯一。
+$P\cap Q=\{e\}$（位数が互いに素）、$PQ$ は位数 $15=|G|$ なので $G=P\times Q\cong\mathbb Z_3\times\mathbb Z_5\cong\mathbb Z_{15}$。
+**位数 $15$ の群は巡回群 $\mathbb Z_{15}$ ただ一つ**。
+</Statement>
+
+<Statement kind="example" title="位数 pq の群（p<q, p∤q−1）">
+$|G|=pq$、$p<q$ 素数で $p\nmid q-1$ とする。$n_q\equiv1\pmod q$ かつ $n_q\mid p$ より $n_q=1$（$p<q$）。
+$n_p\equiv1\pmod p$ かつ $n_p\mid q$ より $n_p\in\{1,q\}$；$q\equiv1\pmod p$ でない（$p\nmid q-1$）ので $n_p=1$。
+両シロー部分群が正規で、$G\cong\mathbb Z_p\times\mathbb Z_q\cong\mathbb Z_{pq}$（巡回）。
+（$p\mid q-1$ のときは非可換な半直積 $\mathbb Z_q\rtimes\mathbb Z_p$ も現れる。位数 $6$ の $S_3$ がその例。）
+</Statement>
+
+「位数がこれこれの群を全部挙げよ」という一見手に負えない問題が、$n_p$ の合同条件を解くパズルに帰着する——
+シロー理論の威力です。位数 $p^2$ の群はアーベル、位数 $p^3$ の群の分類など、有限群の分類の基礎工事がここで進みます。
+
+## つまずきポイント
+
+<Statement kind="remark" title="よくある誤解">
+- **シロー部分群は「最大の $p$ 部分群」。** 位数 $p^n$（$|G|$ を割る $p$ の**最大**べき）ちょうど。位数 $p^k$（$k<n$）の部分群も存在するが、それはシローではない。
+- **$n_p=1\iff$ 正規。** 個数が1つなら共役が自分だけ＝正規。群を分解する糸口はここ。
+- **第三定理は2条件セットで使う。** $n_p\equiv1\pmod p$ **かつ** $n_p\mid m$。両方で候補を絞ると、多くの場合 $n_p=1$ に追い込める。
+</Statement>
+
+## この章のまとめ
+
+- **シロー第一定理**：$|G|=p^nm$（$p\nmid m$）ならシロー $p$ 部分群（位数 $p^n$）が存在。証明は部分集合への作用で $p\nmid|X|$ を使う。
+- **第二定理**：シロー $p$ 部分群はすべて共役、任意の $p$ 部分群はシローに含まれる。**$n_p=1\iff$ 正規**。
+- **第三定理**：$n_p\equiv1\pmod p$ かつ $n_p\mid m$。この2条件で $n_p$ を絞り、**正規シロー部分群→群の分解**で小さい位数の群を分類できる（位数 $15,pq$ など）。
+
+次章は、最も基本的で豊かな具体例——**対称群**と、$n\ge5$ での交代群の単純性を扱います。

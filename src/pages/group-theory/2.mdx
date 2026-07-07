@@ -1,0 +1,125 @@
+---
+layout: ../../layouts/BaseLayout.astro
+title: 第2章 巡回群と生成
+description: たった一つの元から作る最も単純な群。元の位数、巡回群の分類、部分群の構造、生成元の個数、そして生成系。
+---
+
+import Term from "../../components/assets/Term.astro";
+import Statement from "../../components/assets/Statement.astro";
+
+# 第2章 巡回群と生成
+
+## 一つの元だけで、群はどこまで作れるか
+
+群の中で一つの元 $a$ を選び、それを繰り返しかけていくとどうなるでしょう。
+$a,\ a^2,\ a^3,\dots$、そして逆向きに $a^{-1},a^{-2},\dots$、それに $e=a^0$。これらだけで
+すでに一つの群（部分群）ができます。**たった一つの元から生成される群**——これが巡回群、
+最も単純で、最も基本的な群です。
+
+時計を思い浮かべてください。$12$ 時から $1$ 時間ずつ進めると一周して戻る。この「一周する加法」が
+巡回群 $\mathbb Z_n$ です。単純ですが侮れません。すべてのアーベル群は巡回群の組み合わせで作れ（第10章）、
+巡回群の生成元の個数は数論のオイラー関数そのもの。群論と初等整数論が最初に出会う場所です。
+
+> 巡回群 ＝ 一つの元 $a$ の累乗だけからなる群 $\langle a\rangle$。時計算術 $\mathbb Z_n$ と無限巡回群 $\mathbb Z$ の2種類しかない。
+
+## 生成される部分群と元の位数
+
+<Statement kind="definition" title="生成される巡回部分群">
+$a\in G$ に対し $\langle a\rangle=\{a^n:n\in\mathbb Z\}$ は $G$ の部分群で、$a$ を含む最小の部分群
+（<Term>a が生成する巡回部分群</Term>）。$G=\langle a\rangle$ となる $a$ があるとき $G$ を<Term>巡回群</Term>という。
+</Statement>
+
+前章の「元の位数」が、この部分群の大きさに一致します。
+
+<Statement kind="proposition" title="位数と巡回部分群">
+$\mathrm{ord}(a)=n<\infty$ なら $\langle a\rangle=\{e,a,a^2,\dots,a^{n-1}\}$ で $|\langle a\rangle|=n$。
+このとき $a^m=e\iff n\mid m$。$\mathrm{ord}(a)=\infty$ なら $a^i\ (i\in\mathbb Z)$ はすべて相異なり $\langle a\rangle\cong\mathbb Z$。
+</Statement>
+
+<Statement kind="proof">
+$n=\mathrm{ord}(a)$ とする。$a^i=a^j\ (0\le i<j<n)$ なら $a^{j-i}=e$ で $0<j-i<n$、位数の最小性に反する。よって
+$e,\dots,a^{n-1}$ は相異なる $n$ 個。任意の $a^m$ は $m=qn+r\ (0\le r<n)$ と割り算して $a^m=(a^n)^q a^r=a^r$ なので
+$\langle a\rangle$ はこの $n$ 個で尽きる。$a^m=e\iff a^r=e\iff r=0\iff n\mid m$。∎
+</Statement>
+
+**元の位数＝その元が生成する部分群の大きさ**。この一致が、次章のラグランジュの定理で「元の位数が群の位数を割る」
+という美しい結論を生みます。証明の道具は割り算（$m=qn+r$）——巡回群の理論は整数の割り算の理論とほぼ同じです。
+
+## 巡回群の分類
+
+<Statement kind="theorem" title="巡回群の分類">
+巡回群は同型を除いて、無限なら $\mathbb Z$（整数の加法群）、位数 $n$ なら $\mathbb Z_n$（$\bmod\,n$ の加法群）のみ。
+</Statement>
+
+<Statement kind="proof">
+$G=\langle a\rangle$ とし、写像 $\varphi:\mathbb Z\to G,\ \varphi(k)=a^k$ を考える。$\varphi(k+l)=a^{k+l}=a^ka^l=\varphi(k)\varphi(l)$ ゆえ
+準同型（次章）で全射。$\mathrm{ord}(a)=\infty$ なら単射でもあり $G\cong\mathbb Z$。$\mathrm{ord}(a)=n$ なら $\varphi(k)=e\iff n\mid k$ なので、
+$\varphi$ は $\mathbb Z_n\to G$ の同型を誘導し $G\cong\mathbb Z_n$。∎
+</Statement>
+
+「一つの元で生成される」という条件だけで、群は本質的に2種類（$\mathbb Z$ か $\mathbb Z_n$）に決まってしまう。
+抽象的な群が、なじみ深い整数の世界に完全に翻訳されるのです。
+
+## 巡回群の部分群
+
+巡回群の部分群は、驚くほど整然としています。整数 $\mathbb Z$ の部分群がすべて $n\mathbb Z$（$n$ の倍数）だったことの反映です。
+
+<Statement kind="theorem" title="巡回群の部分群">
+巡回群の部分群はすべて巡回群。とくに $\mathbb Z_n=\langle a\rangle$ の部分群は、$n$ の各約数 $d$ に対し
+位数 $d$ のものが**ちょうど一つ** $\langle a^{n/d}\rangle$ ずつ、それで全部。
+</Statement>
+
+<Statement kind="proof">
+部分群 $H\le\langle a\rangle$ が $\{e\}$ でないとする。$H$ に含まれる $a^k$ のうち $k>0$ が最小のものを $a^m$ とする。
+任意の $a^k\in H$ は $k=qm+r\ (0\le r<m)$ と割ると $a^r=a^k(a^m)^{-q}\in H$、最小性より $r=0$、つまり $m\mid k$。
+ゆえに $H=\langle a^m\rangle$（巡回）。位数の対応（$n$ の約数 $d$ ↔ 部分群 $\langle a^{n/d}\rangle$、位数 $d$）も同様に出る。∎
+</Statement>
+
+「約数の個数だけ部分群があり、各サイズにきっかり一つ」——$\mathbb Z_{12}$ なら位数 $1,2,3,4,6,12$ の部分群が
+一つずつ。部分群の格子が約数の格子とそっくりになります。
+
+## 生成元の個数
+
+$\mathbb Z_n$ を生成する元（$\langle a^k\rangle=\mathbb Z_n$ となる $a^k$）はいくつあるでしょう。ここで数論が顔を出します。
+
+<Statement kind="proposition" title="生成元と互いに素">
+$\mathbb Z_n=\langle a\rangle$ において、$a^k$ が $\mathbb Z_n$ を生成する $\iff \gcd(k,n)=1$。
+ゆえに生成元の個数は<Term>オイラーのトーシェント関数</Term> $\varphi(n)$（$n$ 以下で $n$ と互いに素な数の個数）。
+</Statement>
+
+<Statement kind="proof">
+$a^k$ の位数は $n/\gcd(k,n)$（$(a^k)^m=e\iff n\mid km\iff \frac{n}{\gcd(k,n)}\mid m$）。これが $n$ に等しい $\iff\gcd(k,n)=1$。
+このとき $\langle a^k\rangle$ は位数 $n$ で全体。∎
+</Statement>
+
+$\mathbb Z_{12}$ の生成元は $\gcd(k,12)=1$ となる $k=1,5,7,11$ の $4=\varphi(12)$ 個。群論の問い（生成元の数）が、
+そのまま整数論の関数 $\varphi(n)$ になりました。この橋は[代数的整数論](/algebraic-number-theory)や[環論](/ring-theory)へ続きます。
+
+## 生成系
+
+一つの元で足りなければ、複数の元で群を「張り」ます。[線形代数の生成系](/linear-algebra/1)の群版です。
+
+<Statement kind="definition" title="生成系">
+$S\subseteq G$ に対し、$S$ を含む最小の部分群を $\langle S\rangle$ と書き、$S$ を<Term>生成系</Term>、
+$G=\langle S\rangle$ のとき「$S$ が $G$ を生成する」という。$\langle S\rangle$ は $S$ の元と逆元の有限積すべてからなる。
+</Statement>
+
+例：$S_n$ は互換（2つを入れ替える置換）で生成される（第9章）。$D_n$ は回転 $r$ と鏡映 $s$ の2元で生成される。
+有限生成でない群（$\mathbb Q$ の加法群など）もあります。生成元だけでなく「生成元が満たす関係」まで指定して群を定めるのが、
+第12章の**生成元と関係式**による表示です。
+
+## つまずきポイント
+
+<Statement kind="remark" title="よくある誤解">
+- **元の位数と群の位数は別（だが関係する）。** 元の位数＝その元が生成する巡回部分群の大きさ。次章でこれが群の位数を割ると分かる。
+- **巡回群は必ず可換だが、逆は偽。** $\mathbb Z_2\times\mathbb Z_2$（クラインの四元群）は可換だが巡回でない（位数4の元が無い）。
+- **$a^m=e$ は「$m$ が位数」ではなく「位数が $m$ を割る」。** $\mathrm{ord}(a)\mid m$。位数は最小の正の指数。
+</Statement>
+
+## この章のまとめ
+
+- **巡回群** $\langle a\rangle$ は一元生成。元の位数＝生成する巡回部分群の大きさで、$a^m=e\iff\mathrm{ord}(a)\mid m$。分類は $\mathbb Z$ か $\mathbb Z_n$ のみ。
+- 巡回群の**部分群はすべて巡回**で、$\mathbb Z_n$ では各約数 $d$ に位数 $d$ の部分群がちょうど一つ。生成元の個数は $\varphi(n)$（数論との接点）。
+- 複数元で張るのが**生成系**。生成元＋関係式で群を表示する道（第12章）へ繋がる。
+
+次章は、部分群が群を等しい大きさに分割することを示し、群論最初の大定理——**ラグランジュの定理**を証明します。

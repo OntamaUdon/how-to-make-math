@@ -1,0 +1,122 @@
+---
+layout: ../../layouts/BaseLayout.astro
+title: 第4章 素イデアルと極大イデアル
+description: 割ると整域・体になる特別なイデアル。素イデアルと整域の対応、極大イデアルと体の対応、極大イデアルの存在、そして素スペクトル。
+---
+
+import Term from "../../components/assets/Term.astro";
+import Statement from "../../components/assets/Statement.astro";
+import ModularRing from "../../components/interactive/ModularRing.astro";
+
+# 第4章 素イデアルと極大イデアル
+
+## 「素数」を、イデアルの言葉に翻訳する
+
+整数の世界で最も基本的な概念は素数でした。素数 $p$ の特徴は「$p\mid ab$ なら $p\mid a$ または $p\mid b$」。
+この性質を、イデアルの言葉（$ab\in(p)$ なら $a\in(p)$ または $b\in(p)$）に翻訳したものが**素イデアル**です。
+一般の環では「素元」より「素イデアル」のほうが扱いやすく、素数の役割を担います。
+
+さらに、イデアルの包含関係で「これ以上大きくできない」極限が**極大イデアル**。この2種類のイデアルは、
+剰余環を通じて第1章の整域・体と完璧に対応します——**素イデアルで割ると整域、極大イデアルで割ると体**。
+第1章で「$\mathbb Z_n$ が体 $\iff n$ 素数」と見た現象の、一般的な正体がこれです。素イデアル全体は
+[代数幾何](/algebraic-geometry)で「図形の点」に対応し、環と幾何を結ぶ橋になります。この章は環論の心臓部です。
+
+> **素イデアルで割ると整域、極大イデアルで割ると体**（極大 ⇒ 素）。素数の役割をイデアルが担う。
+
+## 素イデアル
+
+<Statement kind="definition" title="素イデアル">
+可換環 $R$ の真のイデアル $P\ne R$ が<Term>素イデアル</Term>とは、
+$$ab\in P\ \Rightarrow\ a\in P\ \text{または}\ b\in P.$$
+</Statement>
+
+<Statement kind="theorem" title="素イデアル ↔ 整域">
+真のイデアル $P\trianglelefteq R$ について、$P$ が素イデアル $\iff R/P$ が整域。
+</Statement>
+
+<Statement kind="proof">
+$R/P$ で $(a+P)(b+P)=0\iff ab\in P$。$R/P$ が整域 $\iff$「$ab\in P\Rightarrow a\in P$ or $b\in P$」（零因子が無い）
+$\iff P$ が素イデアル。$P\ne R$ が $1\ne0$ を保証。∎
+</Statement>
+
+$\mathbb Z$ では、素イデアルは $(p)$（$p$ 素数）と $(0)$（$\mathbb Z/(0)=\mathbb Z$ が整域）です。「素数のイデアル」と「零イデアル」が
+素イデアル——素数概念のイデアル版になっています。
+
+## 極大イデアル
+
+<Statement kind="definition" title="極大イデアル">
+真のイデアル $M\ne R$ が<Term>極大イデアル</Term>とは、$M\subsetneq I\subseteq R$ なるイデアル $I$ が $I=R$ しかないこと
+（$M$ と $R$ の間にイデアルが無い）。
+</Statement>
+
+<Statement kind="theorem" title="極大イデアル ↔ 体">
+真のイデアル $M\trianglelefteq R$ について、$M$ が極大イデアル $\iff R/M$ が体。
+</Statement>
+
+<Statement kind="proof">
+[前章の対応定理](/ring-theory/3)より、$R/M$ のイデアルは $M$ を含む $R$ のイデアル $I$（$M\subseteq I\subseteq R$）と一対一。
+$M$ 極大 $\iff$ その間のイデアルが $M,R$ の2つだけ $\iff R/M$ のイデアルが $\{0\},R/M$ の2つだけ
+$\iff R/M$ が体（[第2章](/ring-theory/2)：体はイデアルが自明なもののみ、逆も真）。∎
+</Statement>
+
+証明の鍵は対応定理です。「$M$ と $R$ の間にイデアルが無い」が「$R/M$ にイデアルが無い＝体」に翻訳される。
+整域より体のほうが強い（体 ⊂ 整域）ことから、次が従います。
+
+<Statement kind="corollary" title="極大 ⇒ 素">
+極大イデアルは素イデアル（$R/M$ が体 ⇒ 整域 ⇒ $M$ 素）。逆は一般には成り立たない。
+</Statement>
+
+逆が成り立たない例：$\mathbb Z$ で $(0)$ は素（$\mathbb Z$ は整域）だが極大でない（$(0)\subsetneq(2)\subsetneq\mathbb Z$）。
+$\mathbb Z$ では $(p)$ が極大（$\mathbb Z/(p)=\mathbb F_p$ が体）で $(0)$ が素だが非極大——素と極大の差がここに出ます。
+下で $\mathbb Z_n$ を見ると、$n$ が素数のとき（$(n)$ が極大）だけ体になり、合成数のときは零因子（整域ですらない）が出ます。
+
+<ModularRing />
+
+## 極大イデアルの存在
+
+「極大イデアルは本当にあるのか？」——選択公理（[ツォルンの補題](/set-topology/2)）が保証します。
+
+<Statement kind="theorem" title="クルルの定理（極大イデアルの存在）">
+$1\ne0$ の任意の可換環 $R$ には、極大イデアルが存在する。より一般に、任意の真のイデアルは、ある極大イデアルに含まれる。
+</Statement>
+
+<Statement kind="proof">
+真のイデアル $I$ を含む真のイデアル全体 $\Sigma$ を包含で順序づける（$\Sigma\ne\emptyset$：$I\in\Sigma$）。
+鎖 $\{I_\alpha\}$ の和 $\bigcup I_\alpha$ はイデアルで、$1\notin\bigcup I_\alpha$（各 $I_\alpha$ が真ゆえ $1$ を含まない）なので真のイデアル、
+すなわち $\Sigma$ の上界。ツォルンの補題より $\Sigma$ に極大元 $M$ がある。$M$ は真のイデアルで、それより真に大きい真のイデアルが無いので極大イデアル。∎
+</Statement>
+
+証明は[群論の基底の存在](/group-theory/2)や[線形代数](/linear-algebra/2)と同じ「ツォルンで極大元」の型です。
+和 $\bigcup I_\alpha$ が $1$ を含まない（真のまま）ことが上界の存在を保証する要点。存在は言えても、
+具体的にどれが極大かは選択公理ゆえ構成的には見えないこともあります。
+
+## 素スペクトル
+
+素イデアルの全体は、環に「幾何」を与えます。
+
+<Statement kind="definition" title="素スペクトル">
+$R$ の素イデアル全体の集合を<Term>素スペクトル</Term> $\operatorname{Spec}(R)$ という。これに<Term>ザリスキ位相</Term>
+（イデアル $I$ の零点 $V(I)=\{P\in\operatorname{Spec}(R):I\subseteq P\}$ を閉集合とする）を入れると位相空間になる。
+</Statement>
+
+$\operatorname{Spec}(\mathbb Z)$ は「各素数 $p$ に対応する点 $(p)$ と、生成点 $(0)$」からなります。素イデアルを「点」とみなすこの視点が、
+グロタンディークの**スキーム**（[代数幾何](/algebraic-geometry)）の出発点です。**環は幾何的対象（その素スペクトル）でもある**——
+「$R/M$ が体＝点での関数の値」「$V(I)$＝方程式 $I$ の零点集合」という辞書で、代数と幾何が完全に対応します。
+[代数幾何](/algebraic-geometry)・[可換環論](/commutative-homological)への扉がここで開きます。
+
+## つまずきポイント
+
+<Statement kind="remark" title="よくある誤解">
+- **素イデアルで割ると整域、極大イデアルで割ると体。** 覚え方：素＝整域、極大＝体。極大 ⇒ 素（体 ⇒ 整域）だが逆は偽。
+- **$(0)$ が素 $\iff R$ 整域。** 零イデアルも素イデアルになりうる（整域のとき）。素イデアルは $(0)$ を含みうる。
+- **極大イデアルの存在は選択公理に依存。** ツォルンの補題を使う。具体的に構成できるとは限らない。
+- **$\operatorname{Spec}$ の「点」は素イデアル（極大だけでない）。** 極大イデアルが「閉じた点」、$(0)$ のような非極大素イデアルは「一般点」。
+</Statement>
+
+## この章のまとめ
+
+- **素イデアル**（$ab\in P\Rightarrow a\in P$ or $b\in P$）は $R/P$ が整域と同値、**極大イデアル**（間にイデアルなし）は $R/M$ が体と同値（対応定理から）。**極大 ⇒ 素**（逆は偽）。
+- $\mathbb Z$ では $(p)$ が極大、$(0)$ が素で非極大。**クルルの定理**：任意の真のイデアルは極大イデアルに含まれる（ツォルンの補題）。
+- 素イデアル全体 **$\operatorname{Spec}(R)$**（ザリスキ位相）が環に幾何を与え、[代数幾何](/algebraic-geometry)・スキームの出発点になる。
+
+次章は、互いに素なイデアルで環を分解する——**中国剰余定理**を扱います。

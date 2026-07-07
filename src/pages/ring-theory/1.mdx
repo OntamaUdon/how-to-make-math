@@ -1,0 +1,138 @@
+---
+layout: ../../layouts/BaseLayout.astro
+title: 第1章 環とは何か
+description: 足し算と掛け算をもつ世界の抽象化。環の公理、単元と零因子、整域と体、標数。剰余環 Z/n の乗法表で単元・零因子を体感する。
+---
+
+import Term from "../../components/assets/Term.astro";
+import Statement from "../../components/assets/Statement.astro";
+import ModularRing from "../../components/interactive/ModularRing.astro";
+
+# 第1章 環とは何か
+
+## 「足し算と掛け算がある世界」を抜き出す
+
+[群論](/group-theory)では、演算が一つ（掛け算だけ、または足し算だけ）の世界を調べました。でも私たちが
+本当に慣れ親しんだ数の世界——整数 $\mathbb Z$——には、**足し算と掛け算の両方**があり、しかも分配法則
+$a(b+c)=ab+ac$ で結びついています。多項式もそう。行列もそう。$\bmod\,n$ の計算もそう。
+
+この「足し算と掛け算をもち、分配法則で繋がった世界」を抽象化したものが**環**です。整数で慣れた
+「割り切れる」「素数」「余り」といった概念を、もっと広い舞台で通用する形に鍛え直す——それが環論の仕事です。
+そして環論は、[体論・ガロア理論](/field-and-galois)、[代数的整数論](/algebraic-number-theory)、
+[代数幾何学](/algebraic-geometry)という数学の主要分野すべての共通言語になります。
+
+> 環 ＝ 足し算（アーベル群）と掛け算（結合的）が分配法則で結ばれた世界。整数・多項式・行列・$\bmod\,n$ を統一する。
+
+## 環の定義
+
+<Statement kind="definition" title="環">
+集合 $R$ と2つの演算 $+,\ \cdot$ の組が<Term>環</Term>とは：
+1. $(R,+)$ はアーベル群（単位元 $0$、$a$ の逆元 $-a$）。
+2. $(R,\cdot)$ は結合的で、乗法単位元 $1$ をもつ（$1\cdot a=a\cdot1=a$）。
+3. <Term>分配法則</Term>：$a(b+c)=ab+ac$、$(a+b)c=ac+bc$。
+
+乗法が可換（$ab=ba$）のとき<Term>可換環</Term>という。以後、断らなければ**可換環**を扱う（行列環など非可換環は必要に応じて明記）。
+</Statement>
+
+足し算については「群」の全性質（可換）、掛け算については「結合則＋単位元」だけを要求し（逆元は要求しない！）、
+両者を分配法則が繋ぐ。掛け算の逆元を要求しないのが群との決定的な違いで、そこから「割り切れる／割り切れない」という
+豊かな整除の理論が生まれます。基本的な帰結を確認します。
+
+<Statement kind="proposition" title="基本性質">
+任意の環で $0\cdot a=a\cdot0=0$、$(-a)b=-(ab)$、$(-a)(-b)=ab$。
+</Statement>
+
+<Statement kind="proof">
+$0\cdot a=(0+0)a=0\cdot a+0\cdot a$、両辺から $0\cdot a$ を引いて $0\cdot a=0$。
+$ab+(-a)b=(a+(-a))b=0\cdot b=0$ より $(-a)b=-(ab)$。$(-a)(-b)=-(a(-b))=-(-(ab))=ab$。∎
+</Statement>
+
+「$0$ を掛けると $0$」という当たり前の事実すら、分配法則から証明されます。
+
+<Statement kind="example" title="環の例">
+- $\mathbb Z,\mathbb Q,\mathbb R,\mathbb C$：おなじみの数の環（可換）。$\mathbb Q,\mathbb R,\mathbb C$ は体（後述）。
+- $\mathbb Z/n\mathbb Z=\mathbb Z_n$：$\bmod\,n$ の剰余環（可換）。
+- 多項式環 $R[x]$：係数が環 $R$ の多項式（可換なら可換）。
+- 行列環 $M_n(R)$：$n\times n$ 行列（$n\ge2$ で**非可換**）。
+- ガウス整数 $\mathbb Z[i]=\{a+bi:a,b\in\mathbb Z\}$（[代数的整数論](/algebraic-number-theory)への入口）。
+</Statement>
+
+## 部分環
+
+<Statement kind="definition" title="部分環">
+$R$ の部分集合 $S$ が<Term>部分環</Term>とは、$S$ が $R$ の演算で環をなし、$1_R\in S$ であること
+（$S$ が加法で閉じ・逆元をもち、乗法で閉じ、$1$ を含む）。
+</Statement>
+
+例：$\mathbb Z\subseteq\mathbb Q\subseteq\mathbb R\subseteq\mathbb C$、$\mathbb Z[i]\subseteq\mathbb C$。部分環は「小さい環」ですが、次章のイデアルとは別物です
+（イデアルは $1$ を含まないことが多く、掛け算で環全体を吸い込む）。混同注意です。
+
+## 単元・零因子——環を特徴づける2つの現象
+
+環の個性は、掛け算をめぐる2つの現象——「逆数をもつ元」と「掛けて $0$ になる非零元」——に現れます。
+
+<Statement kind="definition" title="単元・零因子・整域・体">
+$u\in R$ が<Term>単元</Term>（可逆元）とは、$uv=vu=1$ となる $v$（＝ $u^{-1}$）があること。単元全体 $R^\times$ は乗法群。
+$a\ne0$ が<Term>零因子</Term>とは、$ab=0$ となる $b\ne0$ があること。
+零因子をもたない（$ab=0\Rightarrow a=0$ or $b=0$）可換環で $1\ne0$ のものを<Term>整域</Term>、
+$0$ 以外のすべての元が単元である可換環を<Term>体</Term>という。体 ⊂ 整域。
+</Statement>
+
+$\mathbb Z$ は整域（掛けて $0$ なら片方が $0$）ですが体ではありません（単元は $\pm1$ だけ）。$\mathbb Q$ は体。
+$\mathbb Z_6$ では $2\cdot3=0$ なのに $2,3\ne0$——$2,3$ は零因子で、$\mathbb Z_6$ は整域ではありません。
+**整域では消去律 $ab=ac,a\ne0\Rightarrow b=c$ が成り立つ**（零因子が無いから）——整数の割り算の感覚が使える環です。
+
+下で $\mathbb Z_n$ の乗法表を見てください。$n$ を変えると、単元（青）と零因子（赤）の分布が変わります。
+**$n$ が素数のときだけ零因子が消え、$\mathbb Z_n$ は体になる**——この事実が、次章以降の素イデアル・極大イデアルの原型です。
+
+<ModularRing />
+
+<Statement kind="proposition" title="Z/n が体になる条件">
+$\mathbb Z_n$ が体 $\iff \mathbb Z_n$ が整域 $\iff n$ が素数。一般に $a\in\mathbb Z_n$ が単元 $\iff\gcd(a,n)=1$。
+</Statement>
+
+<Statement kind="proof">
+$\gcd(a,n)=1$ なら、ベズーの等式 $ax+ny=1$ より $ax\equiv1\pmod n$、$a$ は単元。$\gcd(a,n)=d>1$ なら
+$a\cdot(n/d)\equiv0$ で $n/d\not\equiv0$ ゆえ $a$ は零因子（可逆でない）。$n$ 素数なら $1,\dots,n-1$ すべて $n$ と互いに素で単元＝体。
+$n$ 合成なら $1<a<n$ で $a\mid n$ となる $a$ が零因子ゆえ整域でない。∎
+</Statement>
+
+有限整域は必ず体になる（有限性が単元性を強制する）という事実の、最も基本的な例です。
+
+## 標数
+
+環に「$1$ を何回足すと $0$ になるか」という不変量があります。
+
+<Statement kind="definition" title="標数">
+$\underbrace{1+1+\cdots+1}_{n}=0$ となる最小の正整数 $n$ を環 $R$ の<Term>標数</Term> $\operatorname{char}(R)$ という
+（存在しなければ $0$）。$\mathbb Z,\mathbb Q,\mathbb R$ は標数 $0$、$\mathbb Z_n$ は標数 $n$、素数 $p$ を法とする体 $\mathbb F_p=\mathbb Z_p$ は標数 $p$。
+</Statement>
+
+<Statement kind="proposition" title="整域の標数は 0 か素数">
+整域（特に体）の標数は $0$ か素数。
+</Statement>
+
+<Statement kind="proof">
+標数 $n=kl$（$1<k,l<n$）と合成数なら、$(k\cdot1)(l\cdot1)=n\cdot1=0$ で $k\cdot1,l\cdot1\ne0$（$n$ の最小性）となり零因子。
+整域に反する。ゆえに標数は $0$ か素数。∎
+</Statement>
+
+標数 $p$ の世界（有限体、[ガロア理論](/field-and-galois)）では「$px=0$」が効いて、$(a+b)^p=a^p+b^p$（フロベニウス！）という
+不思議な等式が成り立ちます。標数は体論・数論で決定的な役割を果たす基本量です。
+
+## つまずきポイント
+
+<Statement kind="remark" title="よくある誤解">
+- **環は掛け算の逆元を要求しない。** そこが群との違い。逆元をもつ元が単元で、全非零元が単元なら体。「割れるか」が環論の主題。
+- **整域と体は違う。** $\mathbb Z$ は整域だが体でない。体 ⊂ 整域。有限整域は体になる（特別）。
+- **部分環とイデアル（次章）は別物。** 部分環は $1$ を含む小さい環、イデアルは掛け算で環を吸い込む部分集合（$1$ を含めば環全体）。
+- **零因子は非零元。** $0$ 自身は零因子に数えない。$ab=0$ でも $a,b$ が両方非零のときだけ零因子。
+</Statement>
+
+## この章のまとめ
+
+- 環は**足し算（アーベル群）＋掛け算（結合・単位元）＋分配法則**。整数・多項式・行列・$\mathbb Z_n$ を統一。掛け算の逆元は要求しない。
+- 環の個性は**単元**（可逆元 $R^\times$）と**零因子**（掛けて $0$ の非零元）に現れる。零因子の無い可換環が**整域**、全非零元が単元なら**体**。$\mathbb Z_n$ が体 $\iff n$ 素数。
+- **標数**（$1$ を何回足すと $0$）は整域では $0$ か素数。標数 $p$ の世界がフロベニウス・有限体を生む。
+
+次章は、環を「割る」ための部分集合——**イデアルと剰余環**を導入します。

@@ -1,0 +1,120 @@
+---
+layout: ../../layouts/BaseLayout.astro
+title: 第11章 対称式・終結式
+description: 多項式の係数と根を結ぶ。基本対称式と対称式の基本定理、ニュートンの公式、終結式と判別式、そして共通根の判定。
+---
+
+import Term from "../../components/assets/Term.astro";
+import Statement from "../../components/assets/Statement.astro";
+
+# 第11章 対称式・終結式
+
+## 根を知らずに、根の対称的な情報を計算する
+
+$x^2-5x+6=0$ の根は $2,3$。その**和** $2+3=5$ と**積** $2\cdot3=6$ は、根を求めなくても係数から読めます
+（解と係数の関係）。実は、根を求めるのは難しく（[5次以上は解の公式がない](/group-theory/9)）ても、
+**根を入れ替えても変わらない量（対称式）は、いつも係数から計算できる**——これが対称式の基本定理です。
+
+この事実は深い意味をもちます。「根の対称性」を調べる[ガロア理論](/field-and-galois)の出発点であり、
+2つの多項式が共通根をもつかを根を求めずに判定する**終結式**、そして重根の有無を判定する**判別式**を生みます。
+判別式 $b^2-4ac$（2次方程式）を一般化するこの理論は、方程式論・数論・[代数幾何](/algebraic-geometry)で
+基本的な計算道具になります。この章は「根と係数の橋」を架けます。
+
+> 根を入れ替えても変わる量（対称式）は、必ず係数（基本対称式）で書ける。終結式・判別式は共通根・重根を係数から判定する。
+
+## 基本対称式と解と係数の関係
+
+<Statement kind="definition" title="基本対称式">
+変数 $x_1,\dots,x_n$ の<Term>基本対称式</Term>を
+$$e_1=\sum x_i,\quad e_2=\sum_{i<j}x_ix_j,\quad\dots,\quad e_n=x_1x_2\cdots x_n$$
+で定める（$k$ 個の積の総和）。これらは根と係数を結ぶ：$\prod_{i=1}^n(x-x_i)=x^n-e_1x^{n-1}+e_2x^{n-2}-\cdots+(-1)^ne_n$。
+</Statement>
+
+つまり、モニック多項式の係数は、根の基本対称式（符号つき）そのもの。$x^2-5x+6=(x-2)(x-3)$ なら $e_1=5,\ e_2=6$。
+**係数を知る＝根の基本対称式を知る**。逆に、根の対称的な量はすべて基本対称式で書ける、というのが次の定理です。
+
+## 対称式の基本定理
+
+<Statement kind="definition" title="対称式">
+多項式 $f(x_1,\dots,x_n)$ が<Term>対称式</Term>とは、変数のどんな置換 $\sigma$ でも不変（$f(x_{\sigma(1)},\dots,x_{\sigma(n)})=f$）。
+</Statement>
+
+<Statement kind="theorem" title="対称式の基本定理">
+任意の対称多項式は、基本対称式 $e_1,\dots,e_n$ の多項式として**一意に**表される。すなわち対称式環は $R[e_1,\dots,e_n]$
+（$e_i$ は代数的独立）。
+</Statement>
+
+<Statement kind="proof">
+（存在、辞書式順序による帰納法。）対称式 $f$ の項を辞書式順序で並べ、最高次の項 $c\,x_1^{a_1}\cdots x_n^{a_n}$ をとる。
+対称性より $a_1\ge a_2\ge\cdots\ge a_n$。この項は $c\,e_1^{a_1-a_2}e_2^{a_2-a_3}\cdots e_n^{a_n}$ の最高次項と一致する。
+$f$ からこれを引くと、辞書式順序で真に小さい対称式になる。順序に無限降下が無いので、有限回で $0$ になり、
+$f$ が $e_i$ の多項式で書けた。一意性は $e_i$ の代数的独立性から。∎
+</Statement>
+
+証明は「最高次項を基本対称式の積で消し、次数を下げる」帰納法。**根の対称的な量は係数から計算できる**という
+実用的帰結が得られます。とくに「べき和」がよく使われます。
+
+<Statement kind="theorem" title="ニュートンの公式">
+べき和 $p_k=\sum_i x_i^k$ と基本対称式 $e_k$ は、漸化式
+$$p_k-e_1p_{k-1}+e_2p_{k-2}-\cdots+(-1)^{k-1}e_{k-1}p_1+(-1)^k k\,e_k=0$$
+で結ばれる。これで $p_k$ を $e_1,\dots,e_k$ から（根を求めずに）計算できる。
+</Statement>
+
+例：$p_1=e_1$、$p_2=e_1^2-2e_2$、$p_3=e_1^3-3e_1e_2+3e_3$。「根の $2$ 乗和」が係数から出る——これは
+[線形代数のトレース](/linear-algebra/7)（固有値のべき和）とも響き合います。
+
+## 終結式
+
+2つの多項式が**共通根をもつか**を、根を求めずに係数から判定します。
+
+<Statement kind="definition" title="終結式">
+$f=a_m\prod(x-\alpha_i)$、$g=b_n\prod(x-\beta_j)$（分解体で）の<Term>終結式</Term>を
+$$\operatorname{Res}(f,g)=a_m^n b_n^m\prod_{i,j}(\alpha_i-\beta_j)=a_m^n\prod_i g(\alpha_i)=(-1)^{mn}b_n^m\prod_j f(\beta_j)$$
+で定める。これは $f,g$ の係数の多項式（<Term>シルヴェスター行列</Term>の行列式）として表せ、係数環の中で計算できる。
+</Statement>
+
+<Statement kind="theorem" title="共通根の判定">
+$f,g\in K[x]$（非零）について、$\operatorname{Res}(f,g)=0 \iff f,g$ が（$K$ の代数閉包で）共通根をもつ $\iff f,g$ が非定数の共通因子をもつ。
+</Statement>
+
+<Statement kind="proof">
+$\operatorname{Res}(f,g)=a_m^n\prod_i g(\alpha_i)$ が $0\iff$ ある $\alpha_i$ で $g(\alpha_i)=0\iff\alpha_i$ が $f,g$ の共通根。∎
+</Statement>
+
+終結式の値は根の差の積 $\prod(\alpha_i-\beta_j)$ ですが、**係数だけから（シルヴェスター行列の行列式で）計算できる**のが妙味です。
+根を求めずに「共通根の有無」が分かる。連立方程式から変数を消去する（終結式による**消去法**、[代数幾何](/algebraic-geometry)）
+基本手段でもあります。
+
+## 判別式
+
+$f$ 自身の重根（$f$ と $f'$ の共通根）の有無を判定するのが判別式です。
+
+<Statement kind="definition" title="判別式">
+モニック $f=\prod(x-\alpha_i)$ の<Term>判別式</Term>を $\operatorname{disc}(f)=\prod_{i<j}(\alpha_i-\alpha_j)^2$ で定める。
+これは対称式なので係数で書け、$\operatorname{disc}(f)=(-1)^{n(n-1)/2}\operatorname{Res}(f,f')$（定数倍）。
+</Statement>
+
+<Statement kind="proposition" title="重根の判定">
+$\operatorname{disc}(f)=0\iff f$ が重根をもつ $\iff f,f'$ が共通根をもつ。
+</Statement>
+
+$2$ 次 $ax^2+bx+c$ の判別式は $b^2-4ac$——おなじみの式が、この一般理論の $n=2$ の場合です。$3$ 次
+$x^3+px+q$ なら $\operatorname{disc}=-4p^3-27q^2$。判別式は「重根＝分解体での崩れ」を検出し、[ガロア理論](/field-and-galois)で
+ガロア群が交代群に含まれるか（判別式が平方か）を判定する、数論の基本量になります。
+
+## つまずきポイント
+
+<Statement kind="remark" title="よくある誤解">
+- **対称式は基本対称式で書ける（＝係数で計算できる）。** 根が求まらなくても、対称的な量は係数から出る。これがガロア理論の出発点。
+- **終結式・判別式は係数から計算できる。** 定義は根の差の積だが、シルヴェスター行列の行列式で係数だけから求まる。根を求める必要がない。
+- **判別式 $=0\iff$ 重根。** $b^2-4ac$ の一般化。$\operatorname{disc}=\pm\operatorname{Res}(f,f')$。
+- **べき和はニュートンの公式で。** $p_k$ を $e_i$（係数）から漸化式で計算。線形代数のトレースと同種。
+</Statement>
+
+## この章のまとめ
+
+- **基本対称式** $e_k$ が根と係数を結ぶ（解と係数の関係）。**対称式の基本定理**：対称式はすべて $e_i$ の多項式で一意に書ける（根の対称的な量は係数から計算可能）。**ニュートンの公式**でべき和を計算。
+- **終結式** $\operatorname{Res}(f,g)$ は $0\iff$ 共通根あり。根の差の積だが係数（シルヴェスター行列式）から計算でき、消去法に使う。
+- **判別式** $\operatorname{disc}(f)=\prod(\alpha_i-\alpha_j)^2=\pm\operatorname{Res}(f,f')$ は $0\iff$ 重根あり。$b^2-4ac$ の一般化で、ガロア理論の基本量。
+
+最終章は、環の有限性を保証する条件——**ネーター環とヒルベルトの基底定理**へ進みます。

@@ -1,0 +1,113 @@
+---
+layout: ../../layouts/BaseLayout.astro
+title: 第10章 既約性の判定
+description: 多項式が既約かを見抜く。有理根定理、mod p 還元、そしてアイゼンシュタインの判定法とその証明。
+---
+
+import Term from "../../components/assets/Term.astro";
+import Statement from "../../components/assets/Statement.astro";
+
+# 第10章 既約性の判定
+
+## 「これ以上分解できるか」を実際に判定する
+
+多項式が既約かどうかは、[体論・ガロア理論](/field-and-galois)で決定的に重要です。$\mathbb Q$ 上で既約な多項式 $f$ で
+剰余環 $\mathbb Q[x]/(f)$ を作ると体の拡大が得られ（[第2章](/ring-theory/2)の $\mathbb R[x]/(x^2+1)\cong\mathbb C$ の一般化）、
+その次数が拡大の次数になる。だから「$f$ は既約か」を判定できることが、体の拡大を作る出発点になります。
+
+前章のガウスの補題のおかげで、$\mathbb Q$ 上の既約性は $\mathbb Z$ 上の既約性に還元できました。そこで整数係数多項式を対象に、
+3つの実用的な判定法を整えます——**有理根定理**（$1$ 次因子の有無）、**mod p 還元**（有限体に落として調べる）、
+そして最強の**アイゼンシュタインの判定法**。とくにアイゼンシュタインは、円分多項式（[ガロア理論](/field-and-galois)）の
+既約性を示すのに不可欠で、証明も味わい深いので丁寧に扱います。
+
+> 有理根定理（1次因子）・mod p 還元（有限体で調べる）・アイゼンシュタイン（素数条件）で多項式の既約性を判定する。
+
+## 有理根定理
+
+まず、$1$ 次因子（＝有理根）の有無を調べる基本的な道具です。
+
+<Statement kind="theorem" title="有理根定理">
+整数係数多項式 $f(x)=a_nx^n+\cdots+a_0$（$a_n,a_0\ne0$）が有理根 $\frac{p}{q}$（既約分数）をもつなら、$p\mid a_0$ かつ $q\mid a_n$。
+</Statement>
+
+<Statement kind="proof">
+$f(p/q)=0$ の両辺に $q^n$ を掛けると $a_np^n+a_{n-1}p^{n-1}q+\cdots+a_0q^n=0$。
+$a_0q^n=-p(a_np^{n-1}+\cdots+a_1q^{n-1})$ より $p\mid a_0q^n$、$\gcd(p,q)=1$ ゆえ $p\mid a_0$。
+同様に $a_np^n=-q(\cdots)$ より $q\mid a_n$。∎
+</Statement>
+
+有限個の候補 $\frac{p}{q}$（$p\mid a_0,\ q\mid a_n$）を代入して調べれば、有理根の有無が分かります。有理根が無ければ
+$1$ 次因子は無い——**$2$ 次・$3$ 次多項式なら、有理根が無いことが既約性と同値**（次数の都合で $1$ 次因子がなければ分解不能）。
+ただし $4$ 次以上では「$1$ 次因子は無いが $2$ 次×$2$ 次に分解」がありうるので、有理根だけでは足りません。
+
+## mod p 還元
+
+素数 $p$ で係数を還元し、有限体 $\mathbb F_p$ 上で調べる方法です。無限体より有限体のほうが調べやすい。
+
+<Statement kind="theorem" title="mod p 還元による判定">
+$f\in\mathbb Z[x]$ がモニックとする。ある素数 $p$（$p\nmid a_n$）で、還元 $\bar f\in\mathbb F_p[x]$ が $\mathbb F_p$ 上**既約**なら、
+$f$ は $\mathbb Q$ 上既約。
+</Statement>
+
+<Statement kind="proof">
+対偶。$f=gh$（$\mathbb Z[x]$ で非自明分解、ガウスより $\mathbb Q$ 上の分解は $\mathbb Z$ 上にとれる）なら、還元して $\bar f=\bar g\bar h$。
+$p\nmid a_n$ より $\deg\bar g=\deg g,\ \deg\bar h=\deg h$（次数が落ちない）で、これは $\bar f$ の非自明分解。ゆえ $\bar f$ は可約。∎
+</Statement>
+
+$\mathbb F_p[x]$ では既約多項式が有限個ずつ列挙できるので、$\bar f$ の既約性は機械的に判定できます。例：$x^4+x+1$ は
+$\mathbb F_2$ 上で既約（$\mathbb F_2$ の $1$ 次・$2$ 次既約多項式で割り切れない）ゆえ $\mathbb Q$ 上既約。注意：**逆は成り立たない**——
+$\mathbb Q$ 上既約でも、どの $p$ でも $\bar f$ が可約なことがある（$x^4+1$ は $\mathbb Q$ 上既約だが全ての素数 $p$ で $\bmod\,p$ 可約）。
+「ある $p$ で既約なら $\mathbb Q$ 上既約」の一方向のみ使えます。
+
+## アイゼンシュタインの判定法
+
+最も強力で使いやすい判定法です。1つの素数についての係数条件だけで既約性が言えます。
+
+<Statement kind="theorem" title="アイゼンシュタインの判定法">
+$f(x)=a_nx^n+\cdots+a_0\in\mathbb Z[x]$ について、ある素数 $p$ が
+$$p\nmid a_n,\qquad p\mid a_i\ (0\le i\le n-1),\qquad p^2\nmid a_0$$
+を満たすなら、$f$ は $\mathbb Q$ 上既約（$f$ が原始的なら $\mathbb Z[x]$ でも既約）。
+</Statement>
+
+<Statement kind="proof">
+$f$ が原始的として（内容をくくり出せばよい）、$\mathbb Q$ 上可約と仮定＝$\mathbb Z[x]$ で $f=gh$（$\deg g,\deg h\ge1$、ガウスの補題）。
+$g=\sum b_ix^i,\ h=\sum c_jx^j$ とする。$a_0=b_0c_0$ で $p\mid a_0$ だが $p^2\nmid a_0$ なので、$p$ は $b_0,c_0$ の**ちょうど一方**を割る
+（両方割ると $p^2\mid a_0$）。$p\mid b_0,\ p\nmid c_0$ としてよい。
+
+先頭係数 $a_n=b_{\deg g}c_{\deg h}$ で $p\nmid a_n$ ゆえ $p\nmid b_{\deg g}$。よって $g$ の係数 $b_0,b_1,\dots$ の中に、$p$ で割れないものがある。
+$p\nmid b_k$ となる**最小の** $k$ をとる（$1\le k\le\deg g<n$）。係数 $a_k=b_kc_0+b_{k-1}c_1+\cdots+b_0c_k$ を見ると、
+$b_0,\dots,b_{k-1}$ はすべて $p$ で割れる（$k$ の最小性）ので $b_{k-1}c_1+\cdots+b_0c_k\equiv0\pmod p$、
+残る $b_kc_0$ は $p\nmid b_k,\ p\nmid c_0$ ゆえ $p\nmid b_kc_0$。したがって $p\nmid a_k$。だが $k<n$ なので仮定 $p\mid a_k$ に反する。矛盾。∎
+</Statement>
+
+証明は「先頭係数と定数項の $p$ の様子から、途中の係数 $a_k$（$k<n$）が $p$ で割れないことを引き出し、仮定と矛盾させる」
+という鮮やかなもの。$p$ が $a_0$ を1回だけ割る（$p^2\nmid a_0$）ことが「$b_0,c_0$ の片方だけ割る」を保証し、
+議論を回します。
+
+<Statement kind="example" title="アイゼンシュタインの応用">
+- $x^n-2$ は $p=2$ でアイゼンシュタイン（$2\nmid1,\ 2\mid2,\ 4\nmid2$）ゆえ $\mathbb Q$ 上既約。$\sqrt[n]2$ の最小多項式。
+- **円分多項式** $\Phi_p(x)=\frac{x^p-1}{x-1}=x^{p-1}+\cdots+x+1$（$p$ 素数）：そのままでは判定できないが、$x\mapsto x+1$ と
+  変数変換すると $\Phi_p(x+1)=\frac{(x+1)^p-1}{x}=x^{p-1}+\binom p1x^{p-2}+\cdots+\binom p{p-1}$ となり、二項係数 $\binom pk$
+  （$1\le k\le p-1$）が $p$ で割れ、定数項 $\binom p{p-1}=p$ が $p^2$ で割れないので**アイゼンシュタイン**。ゆえ $\Phi_p$ は既約。
+  これは[ガロア理論](/field-and-galois)の円分体の理論で本質的。
+</Statement>
+
+円分多項式の既約性は、そのままでは見えないのに、$x\mapsto x+1$ の一手でアイゼンシュタインに乗る——判定法を
+「使える形」に変形する発想が光る例です。既約性判定は、体の拡大の存在（[ガロア理論](/field-and-galois)）に直結します。
+
+## つまずきポイント
+
+<Statement kind="remark" title="よくある誤解">
+- **有理根が無い＝既約、は2・3次のみ。** 4次以上は「2次×2次」の分解がありうる。有理根定理は1次因子の判定だけ。
+- **mod p 還元は一方向。** 「ある $p$ で $\bar f$ 既約 ⇒ $f$ 既約」。逆は偽（$x^4+1$）。可約性の判定にも使える（ある $p$ で可約でも $f$ が可約とは限らないが…$\bar f$ の分解が持ち上がるとは限らない）。
+- **アイゼンシュタインは十分条件。** 条件を満たせば既約だが、満たさなくても既約なことは多い。変数変換 $x\mapsto x+a$ で条件を作れることがある（円分多項式）。
+- **$\mathbb Q$ 上の既約性は $\mathbb Z$ 上に還元（ガウス）。** これらの判定法が正当化されるのは前章のガウスの補題のおかげ。
+</Statement>
+
+## この章のまとめ
+
+- **有理根定理**（$\frac pq$ 根なら $p\mid a_0,\ q\mid a_n$）で1次因子を判定。2・3次なら有理根の不在＝既約。
+- **mod p 還元**：ある素数で $\bar f\in\mathbb F_p[x]$ が既約なら $f$ は $\mathbb Q$ 上既約（一方向）。有限体で機械的に調べられる。
+- **アイゼンシュタインの判定法**（$p\nmid a_n,\ p\mid a_i\,(i<n),\ p^2\nmid a_0$ ⇒ 既約）が最強。証明は係数 $a_k\,(k<n)$ の非可除性を導く。円分多項式の既約性（$x\mapsto x+1$）に応用。
+
+多項式の分解と既約性を扱いました。次章は、多項式の係数と根を結ぶ理論——**対称式と終結式**へ進みます。

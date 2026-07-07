@@ -1,0 +1,118 @@
+---
+layout: ../../layouts/BaseLayout.astro
+title: 第4章 正規部分群と剰余群
+description: 剰余類を群にする条件。正規部分群、剰余群、準同型と核・像、そして「核は正規」「正規は核」の対応。
+---
+
+import Term from "../../components/assets/Term.astro";
+import Statement from "../../components/assets/Statement.astro";
+
+# 第4章 正規部分群と剰余群
+
+## 剰余類の集合を、それ自身群にしたい
+
+前章で、部分群 $H$ が群 $G$ を剰余類 $aH$ に分割することを見ました。ここで自然な欲が生まれます——
+**剰余類そのものを“元”とみなして、新しい群を作れないか？** 整数を $\bmod\,n$ で丸めて $\mathbb Z_n$ を作ったように、
+$G$ を $H$ で「丸めた」群 $G/H$ が作れれば、大きな群を小さくして調べられます。
+
+積を素直に $(aH)(bH)=(ab)H$ と決めたい。ところがこれは**うまく定義できないことがある**。同じ剰余類でも
+代表元の取り方を変えると答えが変わってしまうのです。これが破綻せず well-defined になる条件——それが
+部分群 $H$ の**正規性**。正規部分群は「割り算ができる部分群」であり、群を分解して構造を理解する
+（第11章の組成列、[ガロア理論](/field-and-galois)）ための最重要概念です。
+
+> 剰余類の積 $(aH)(bH)=abH$ が定義できる $\iff H$ が**正規部分群**。そのとき剰余群 $G/H$ が作れる。
+
+## 正規部分群
+
+<Statement kind="definition" title="正規部分群">
+$H\le G$ が<Term>正規部分群</Term>（$H\trianglelefteq G$）とは、すべての $g\in G$ で $gH=Hg$（左剰余類＝右剰余類）。
+同値な言い換え：すべての $g$ で $gHg^{-1}=H$、あるいは $gHg^{-1}\subseteq H$。
+</Statement>
+
+$gHg^{-1}$ は「$H$ を $g$ で**共役**した集合」。正規性は「どの元で共役しても $H$ が自分自身に戻る」＝
+$H$ が共役で不変、という意味です。前章の交流ツールで、$D_3$ の回転部分群 $\langle r\rangle$ は正規（左右の剰余類が一致）、
+鏡映 $\langle s\rangle$ は正規でない（食い違う）ことを確かめられました。
+
+<Statement kind="proposition" title="正規性の十分条件">
+（a）アーベル群のすべての部分群は正規。（b）指数 $2$ の部分群は正規（$[G:H]=2$）。
+（c）準同型（後述）の核は正規。
+</Statement>
+
+<Statement kind="proof">
+（a）$gh=hg$ ゆえ $gH=Hg$。（b）$[G:H]=2$ なら左剰余類は $H$ と $G\setminus H$ の2つ、右剰余類も $H$ と $G\setminus H$ の2つ。
+$g\in H$ なら $gH=H=Hg$、$g\notin H$ なら $gH=G\setminus H=Hg$。よって正規。∎
+</Statement>
+
+「指数2なら自動的に正規」は頻出の道具です（第9章で交代群に使います）。
+
+## 剰余群
+
+<Statement kind="theorem" title="剰余群">
+$H\trianglelefteq G$ のとき、剰余類の集合 $G/H=\{aH:a\in G\}$ は積 $(aH)(bH)=(ab)H$ で群になる
+（<Term>剰余群</Term>・商群）。単位元は $H=eH$、$aH$ の逆元は $a^{-1}H$。$|G/H|=[G:H]$。
+</Statement>
+
+<Statement kind="proof">
+まず積が**well-defined**（代表元によらない）を示す。$aH=a'H,\ bH=b'H$ とすると $a'=ah_1,\ b'=bh_2\ (h_i\in H)$。
+$a'b'=ah_1bh_2$。正規性より $h_1b=bh_3\ (h_3\in H,\ \text{∵}\ Hb=bH)$ だから $a'b'=abh_3h_2\in(ab)H$、
+よって $(a'b')H=(ab)H$。積が定義できた。結合法則は $G$ から継承、単位元 $H$、逆元 $a^{-1}H$ も直ちに確認できる。∎
+</Statement>
+
+証明で**正規性がまさに well-defined 性のために使われている**のが要点です（$h_1b=bh_3$ の一歩）。正規でないと
+代表元を変えたとき積の剰余類がずれ、群になりません。例：$\mathbb Z/n\mathbb Z=\mathbb Z_n$ は $\mathbb Z$ を正規部分群 $n\mathbb Z$ で割った剰余群。
+
+## 準同型・核・像
+
+群どうしの「構造を保つ写像」を導入します。[線形写像](/linear-algebra/3)の群版です。
+
+<Statement kind="definition" title="準同型・核・像">
+写像 $\varphi:G\to G'$ が<Term>準同型</Term>とは $\varphi(ab)=\varphi(a)\varphi(b)$（積を積へ移す）。
+全単射な準同型を<Term>同型</Term>という。<Term>核</Term> $\ker\varphi=\{g\in G:\varphi(g)=e'\}$、
+<Term>像</Term> $\operatorname{im}\varphi=\{\varphi(g):g\in G\}$。
+</Statement>
+
+準同型は自動的に単位元を単位元へ、逆元を逆元へ移します（$\varphi(e)=\varphi(ee)=\varphi(e)^2$ より $\varphi(e)=e'$、
+$\varphi(a^{-1})=\varphi(a)^{-1}$）。核と像は、[線形代数の核・像](/linear-algebra/3)と同じく写像の性格を映します。
+
+<Statement kind="proposition" title="核は正規部分群・単射判定">
+$\varphi:G\to G'$ を準同型とすると、$\operatorname{im}\varphi\le G'$、$\ker\varphi\trianglelefteq G$。
+そして $\varphi$ が単射 $\iff\ker\varphi=\{e\}$。
+</Statement>
+
+<Statement kind="proof">
+$\operatorname{im}\varphi$ が部分群：$\varphi(a)\varphi(b)^{-1}=\varphi(ab^{-1})\in\operatorname{im}\varphi$。
+$\ker\varphi$ が部分群：$a,b\in\ker\varphi$ なら $\varphi(ab^{-1})=\varphi(a)\varphi(b)^{-1}=e'e'=e'$。
+$\ker\varphi$ が正規：$k\in\ker\varphi,\ g\in G$ で $\varphi(gkg^{-1})=\varphi(g)e'\varphi(g)^{-1}=e'$、よって $gkg^{-1}\in\ker\varphi$。
+単射判定：単射なら $\varphi(g)=e'=\varphi(e)\Rightarrow g=e$。逆に $\ker\varphi=\{e\}$ で $\varphi(a)=\varphi(b)$ なら
+$\varphi(ab^{-1})=e'$ ゆえ $ab^{-1}\in\ker\varphi=\{e\}$、$a=b$。∎
+</Statement>
+
+**「核は必ず正規部分群」**——これは決定的です。逆も成り立ちます。
+
+<Statement kind="theorem" title="正規部分群は核である（自然な全射）">
+$H\trianglelefteq G$ に対し、<Term>自然な全射</Term> $\pi:G\to G/H,\ \pi(g)=gH$ は準同型で $\ker\pi=H$。
+</Statement>
+
+<Statement kind="proof">
+$\pi(ab)=(ab)H=(aH)(bH)=\pi(a)\pi(b)$ で準同型、剰余類は全部像に現れるので全射。
+$\ker\pi=\{g:gH=H\}=\{g:g\in H\}=H$。∎
+</Statement>
+
+これで**「正規部分群」と「準同型の核」は完全に同じ概念**だと分かりました：核はつねに正規で、
+どの正規部分群も自然な全射の核。この対応が、次章の同型定理の土台になります。
+
+## つまずきポイント
+
+<Statement kind="remark" title="よくある誤解">
+- **正規性は「元が可換」ではなく「集合として不変」。** $gHg^{-1}=H$ は「$gh=hg$（元ごと）」より弱く、$ghg^{-1}\in H$（別の $H$ の元でよい）を要求するだけ。
+- **剰余群 $G/H$ は $H$ が正規のときだけ。** 正規でないと積が well-defined にならない。剰余類の集合 $G/H$ は常にあるが、群になるとは限らない。
+- **準同型は単位元・逆元を保つ（要求せずとも従う）。** 積さえ保てば $\varphi(e)=e'$ 等は自動。
+</Statement>
+
+## この章のまとめ
+
+- **正規部分群** $H\trianglelefteq G$（$gHg^{-1}=H$、左右剰余類が一致）は「割れる部分群」。アーベル群の部分群・指数2の部分群・準同型の核は正規。
+- 正規のとき**剰余群** $G/H$ が積 $(aH)(bH)=abH$ で作れる（well-defined 性に正規性が本質）。$\mathbb Z_n=\mathbb Z/n\mathbb Z$ が原型。
+- **準同型**は積を保つ写像。**核は必ず正規部分群**で、逆にどの正規部分群も自然な全射 $\pi:G\to G/H$ の核。正規部分群と核は同じもの。
+
+次章は、この核・像・剰余群を結びつける群論の背骨——**同型定理**（第一〜第三）を証明します。
