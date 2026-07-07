@@ -1,0 +1,131 @@
+---
+layout: ../../layouts/BaseLayout.astro
+title: 第6章 一階の証明体系と健全性
+description: 述語論理の公理と推論規則。量化子の公理・一般化・等号公理、自然演繹の∀∃規則と固有変数条件、そして健全性の証明。
+---
+
+import Term from "../../components/assets/Term.astro";
+import Statement from "../../components/assets/Statement.astro";
+import Tree from "../../components/proof/Tree.astro";
+import Inf from "../../components/proof/Inf.astro";
+import Ax from "../../components/proof/Ax.astro";
+
+# 第6章 一階の証明体系と健全性
+
+## 量化子を、規則で動かす
+
+第2章で命題論理の証明体系を作りました。一階述語論理でも同じ精神——公理と推論規則で $\vdash$ を定める——
+ですが、量化子 $\forall,\exists$ を扱う新しい規則が要ります。難しさは前章で見た**代入**にあります。
+「$\forall x\,\varphi$ が成り立つなら $\varphi[x:=t]$ も成り立つ」を規則にするには、capture を避ける条件が不可欠。
+
+この章では一階の証明体系を立て、命題論理と同じく**健全性**（$\vdash\Rightarrow\models$）を証明します。
+健全性の証明で、前章の代入補題・一致補題がまさに使われ、「構文の規則が意味論を裏切らない」ことが確認されます。
+完全性（逆向き）は次章のゲーデルに委ね、ここは足場固めです。
+
+> 量化子の推論は代入を伴い、capture 回避の条件が命。健全性の証明で前章の補題が効く。
+
+## ヒルベルト系（一階）
+
+命題論理の公理 (A1)–(A3) に、量化子と等号の公理を追加します。推論規則は MP と**一般化**の2つ。
+
+<Statement kind="definition" title="一階ヒルベルト系">
+公理図式：(A1)–(A3)（命題論理、$\varphi,\psi,\chi$ は一階の論理式）に加えて
+$$\text{(A4)}\ \forall x\,\varphi\to\varphi[x:=t]\quad(t\ \text{は}\ x\ \text{に代入可能}),$$
+$$\text{(A5)}\ \forall x\,(\varphi\to\psi)\to(\varphi\to\forall x\,\psi)\quad(x\notin\mathrm{FV}(\varphi)),$$
+等号公理：$x=x$、および $x=y\to(\varphi\to\varphi')$（$\varphi'$ は $\varphi$ の一部の $x$ を $y$ に置換）。
+推論規則：<Term>MP</Term>、および<Term>一般化</Term>（$\varphi$ から $\forall x\,\varphi$ を導いてよい）。
+</Statement>
+
+(A4) が「全称の除去（具体化）」、(A5) が「全称の導入」を、代入可能性・自由変数の条件つきで担います。
+条件を外すと不健全になる：(A4) で $t$ が代入可能でないと前章の capture 事故が起き、(A5) で $x\in\mathrm{FV}(\varphi)$ だと
+「$\varphi$ が特定の $x$ について成り立つ」から「すべての $x$ で」へ不当にすり替わります。
+
+<Statement kind="remark" title="一般化と演繹定理の注意">
+一般化があるため、演繹定理は**そのままでは成り立たない**（$\varphi\vdash\forall x\,\varphi$ だが $\vdash\varphi\to\forall x\,\varphi$ は
+一般には偽）。正しくは「仮定 $\varphi$ に自由な $x$ を含まない限りで一般化してよい」という制限つきで演繹定理が成り立つ。
+この微妙さを自動的に処理してくれるのが、次の自然演繹の固有変数条件。
+</Statement>
+
+## 自然演繹の量化子規則
+
+自然演繹では、量化子にも導入・除去規則を対で与えます。核心は $\forall$I と $\exists$E に付く**固有変数条件**です。
+
+<Statement kind="definition" title="量化子の自然演繹規則">
+$\forall$E（除去）：$\forall x\,\varphi$ から $\varphi[x:=t]$（$t$ 代入可能）。
+$\forall$I（導入）：$\varphi[x:=a]$ から $\forall x\,\varphi$。ただし<Term>固有変数条件</Term>——$a$ は結論や
+**解消されていない仮定に自由に現れない**新しい変数。
+$\exists$I：$\varphi[x:=t]$ から $\exists x\,\varphi$。
+$\exists$E：$\exists x\,\varphi$ と「$\varphi[x:=a]$ を仮定して導いた $\psi$」から $\psi$。ただし $a$ は
+$\varphi,\psi$ や他の未解消仮定に自由に現れない新しい変数（固有変数条件）。
+</Statement>
+
+固有変数条件の意味は「**任意に選んだ代表 $a$**」。$\forall$I は「$a$ について何の前提も置かずに $\varphi(a)$ を示せたなら、
+$a$ は本当に任意だったのだから $\forall x\,\varphi$」。$a$ が仮定に現れていたら「任意」ではなくなるので禁止。
+$\exists$E は「$\exists x\,\varphi$ の証人を $a$ と名づけ、その $a$ について（$a$ の素性を使わずに）$\psi$ を導けば $\psi$」。
+例として $\forall x(P(x)\to Q(x))\to(\forall x\,P(x)\to\forall x\,Q(x))$ を導きます。
+
+<Tree>
+  <Inf rule="→I, 2" c="\forall x(P(x)\to Q(x))\to(\forall x\,P(x)\to\forall x\,Q(x))">
+    <Inf rule="→I, 1" c="\forall x\,P(x)\to\forall x\,Q(x)">
+      <Inf rule="∀I" c="\forall x\,Q(x)">
+        <Inf rule="→E" c="Q(a)">
+          <Inf rule="∀E" c="P(a)\to Q(a)"><Ax f="[\forall x(P(x)\to Q(x))]_2" /></Inf>
+          <Inf rule="∀E" c="P(a)"><Ax f="[\forall x\,P(x)]_1" /></Inf>
+        </Inf>
+      </Inf>
+    </Inf>
+  </Inf>
+</Tree>
+
+$\forall$E で代表 $a$ について $P(a)\to Q(a)$ と $P(a)$ を取り出し、MP で $Q(a)$。ここで $a$ は未解消仮定
+$\forall x(P(x)\to Q(x)),\ \forall x\,P(x)$ に自由に現れない（どちらも $x$ を束縛）ので、固有変数条件を満たし
+$\forall$I で $\forall x\,Q(x)$。最後に $\to$I を2回。**「任意の代表で示す→一般化」**という数学の日常的な論法が、
+そのまま規則になっているのが分かります。
+
+## 健全性定理
+
+<Statement kind="theorem" title="健全性定理（一階）">
+$\Gamma\vdash\varphi \Rightarrow \Gamma\models\varphi$。
+</Statement>
+
+<Statement kind="proof">
+ヒルベルト系で示す。$\Gamma\vdash\varphi$ の証明の各項が、$\Gamma$ の任意のモデル $\mathcal M$ と任意の付値 $s$ で
+「$\mathcal M\models\Gamma[s]$ ならば当該項が $[s]$ で真」を満たすことを、証明の長さの帰納法で示す
+（正確には、自由変数を許すため「$\Gamma$ を全付値で真にする $\mathcal M$ では、証明の各項も全付値で真」を示す）。
+
+**公理が妥当であること**を各図式について確認する。命題論理由来 (A1)–(A3) はトートロジーゆえ妥当。
+- **(A4)** $\forall x\,\varphi\to\varphi[x:=t]$：$\mathcal M\models\forall x\,\varphi[s]$ なら、定義よりすべての $a$ で
+  $\mathcal M\models\varphi[s[x:=a]]$。特に $a=t^{\mathcal M,s}$ ととり、**代入補題**（前章）で
+  $\mathcal M\models\varphi[x:=t][s]$。ここで $t$ の代入可能性が代入補題の適用に必須。
+- **(A5)** $\forall x(\varphi\to\psi)\to(\varphi\to\forall x\,\psi)$（$x\notin\mathrm{FV}(\varphi)$）：前件と $\varphi$ を仮定。
+  任意の $a$ について $\mathcal M\models(\varphi\to\psi)[s[x:=a]]$。$x\notin\mathrm{FV}(\varphi)$ ゆえ**一致補題**で
+  $\mathcal M\models\varphi[s[x:=a]]\iff\mathcal M\models\varphi[s]$（真）。よって $\mathcal M\models\psi[s[x:=a]]$ が
+  すべての $a$ で成り立ち、$\mathcal M\models\forall x\,\psi[s]$。
+- **等号公理**は $=^{\mathcal M}$ が真の同一性であることから従う。
+
+**推論規則が妥当性を保つこと**：MP は $\to$ の真理値規則から（命題論理と同じ）。**一般化**は、
+$\mathcal M\models\varphi[s']$ が**すべての付値 $s'$** で成り立つなら、特にすべての $a$ で $s'=s[x:=a]$ ととれ、
+$\mathcal M\models\forall x\,\varphi[s]$。よって全付値で真が保たれる。
+
+以上より証明の各項は妥当性を保ち、$\Gamma\models\varphi$。∎
+</Statement>
+
+健全性の証明で、前章の**代入補題が (A4) を、一致補題が (A5) と一般化を**支えているのが要点です。
+量化子の公理・規則に付いた条件（代入可能性・$x\notin\mathrm{FV}(\varphi)$・固有変数条件）は、まさにこれらの補題が
+適用できるための条件で、**構文の細かい制約が意味論の健全性に直結**していることが見えます。飾りではなかったのです。
+
+## つまずきポイント
+
+<Statement kind="remark" title="よくある誤解">
+- **一般化は仮定つきでは自由に使えない。** $\varphi\vdash\forall x\,\varphi$ は「$\varphi$ が仮定なしに（または $x$ を自由に含まない仮定から）導けた」ときのみ妥当。固有変数条件がこの制約を明示化する。
+- **(A4) の代入可能性を落とすと不健全。** capture が起きると (A4) は妥当でなくなる。前章の代入可能性はここで効く。
+- **健全性は易しい、完全性は難しい。** 一階でも健全性は素直な帰納法。逆向き（妥当なら導ける）が次章ゲーデルの大仕事。
+</Statement>
+
+## この章のまとめ
+
+- 一階ヒルベルト系は命題公理＋**(A4) 全称除去・(A5) 全称導入・等号公理**、規則は **MP と一般化**。量化子の公理には代入可能性・自由変数の条件が必須。
+- 自然演繹の $\forall$I・$\exists$E には**固有変数条件**（任意の代表を表す新変数）が付く。「任意の代表で示して一般化」という数学の論法の形式化。
+- **健全性**（$\vdash\Rightarrow\models$）は証明の長さの帰納法で示せ、(A4) には**代入補題**、(A5)・一般化には**一致補題**が効く。構文の制約が意味論の健全性を保証する。
+
+次章は、この分野の頂点——**ゲーデルの完全性定理**（$\models\Rightarrow\vdash$）を、ヘンキンの構成で完全に証明します。

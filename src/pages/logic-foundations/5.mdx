@@ -1,0 +1,123 @@
+---
+layout: ../../layouts/BaseLayout.astro
+title: 第5章 意味論 — タルスキの真理定義
+description: 構造・付値・充足で「真である」を厳密に定義する。項の解釈、タルスキの再帰的定義、一致補題、そして論理的帰結。
+---
+
+import Term from "../../components/assets/Term.astro";
+import Statement from "../../components/assets/Statement.astro";
+
+# 第5章 意味論 — タルスキの真理定義
+
+## 「$\forall x\,\varphi$ は真」とは、正確にどういうことか
+
+前章で作った論理式は、まだ記号の並びにすぎません。$\forall x\,(x<y)$ という式に真も偽もない——
+「$<$ が何を意味するのか」「$x,y$ がどんな対象を走るのか」が決まっていないからです。
+
+真偽を与えるには2つが要ります。第一に、記号を解釈する**世界**（対象の集合と、述語・関数の意味）＝**構造**。
+第二に、自由変数がどの対象を指すかの割り当て＝**付値**。この2つが揃って初めて「真である」が定義できます。
+その定義を、量化子まで含めて再帰的に、循環なく与えたのがタルスキの仕事です。「雪が白いが真 $\iff$ 雪が白い」
+という一見当たり前の**真理の定義**を、数学的に厳密化した記念碑的な成果で、この章はその全体を組み立てます。
+
+> 真偽は「構造（記号の解釈）＋付値（自由変数の割り当て）」に相対的。タルスキはそれを再帰で厳密に定義した。
+
+## 構造
+
+<Statement kind="definition" title="構造（モデル）">
+言語 $\mathcal L$ の<Term>構造</Term> $\mathcal M$ とは、空でない集合 $M$（<Term>領域</Term>・台）と、
+非論理記号への解釈の組：各定数記号 $c$ に $c^{\mathcal M}\in M$、各アリティ $n$ の関数記号 $f$ に
+$f^{\mathcal M}:M^n\to M$、各アリティ $n$ の述語記号 $R$ に $R^{\mathcal M}\subseteq M^n$ を割り当てたもの。
+</Statement>
+
+例：言語 $\{+,\cdot,0,1,<\}$ の構造として、実数体 $(\mathbb R,+,\cdot,0,1,<)$ も、有理数体 $(\mathbb Q,\dots)$ も、
+有限体もとれる。**同じ論理式が、どの構造で解釈するかによって真にも偽にもなる**——ここが命題論理と決定的に違う点です。
+
+## 項の解釈と付値
+
+自由変数の指す先を決めるのが付値、そこから項全体の値が定まります。
+
+<Statement kind="definition" title="付値と項の解釈">
+写像 $s:\{\text{変数}\}\to M$ を<Term>付値</Term>（変数割り当て）という。項 $t$ の値 $t^{\mathcal M,s}\in M$ を帰納的に定める：
+$$x^{\mathcal M,s}=s(x),\quad c^{\mathcal M,s}=c^{\mathcal M},\quad f(t_1,\dots,t_n)^{\mathcal M,s}=f^{\mathcal M}\big(t_1^{\mathcal M,s},\dots,t_n^{\mathcal M,s}\big).$$
+$s[x:=a]$ を「$x$ の値だけ $a$ に変え、他は $s$ のまま」の付値とする。
+</Statement>
+
+項は「対象を名指す式」なので、構造と付値が決まれば領域 $M$ の中の一点に評価されます。ここまでは真偽の話ではありません。
+真偽が現れるのは、原子論理式（等式・述語）からです。
+
+## 充足関係：タルスキの再帰的定義
+
+いよいよ「$\mathcal M$ が付値 $s$ のもとで $\varphi$ を満たす（$\mathcal M\models\varphi[s]$）」を、論理式の構造に沿って定義します。
+
+<Statement kind="definition" title="充足（タルスキの定義）">
+$$\mathcal M\models (t_1=t_2)[s] \iff t_1^{\mathcal M,s}=t_2^{\mathcal M,s},$$
+$$\mathcal M\models R(t_1,\dots,t_n)[s] \iff (t_1^{\mathcal M,s},\dots,t_n^{\mathcal M,s})\in R^{\mathcal M},$$
+$$\mathcal M\models \lnot\varphi[s]\iff \mathcal M\not\models\varphi[s],\qquad \mathcal M\models(\varphi\to\psi)[s]\iff (\mathcal M\not\models\varphi[s]\ \text{or}\ \mathcal M\models\psi[s]),$$
+$$\boxed{\ \mathcal M\models \forall x\,\varphi[s] \iff \text{すべての}\ a\in M\ \text{について}\ \mathcal M\models\varphi[s[x:=a]].\ }$$
+</Statement>
+
+心臓は最後の量化子の行です。「$\forall x\,\varphi$ が真 $\iff$ **領域のどの対象 $a$ を $x$ に入れても** $\varphi$ が真」。
+定義の右辺では、$\varphi$ という**より短い**論理式の充足だけを参照しています。だから循環せず、
+構造的帰納法できちんと定義される——これがタルスキの巧妙さです。$\exists x\,\varphi$ は $\lnot\forall x\,\lnot\varphi$ の略記なので
+「ある $a$ で $\varphi$ が真」に自動的になります。
+
+<Statement kind="lemma" title="一致補題">
+$\varphi$ の自由変数上で $s$ と $s'$ が一致すれば、$\mathcal M\models\varphi[s]\iff\mathcal M\models\varphi[s']$。
+特に**文の真偽は付値によらない**。
+</Statement>
+
+<Statement kind="proof">
+項については「項の値は、その項に現れる変数の $s$ の値だけで決まる」ことを項の構造に関する帰納法で示す。
+論理式については構造的帰納法。原子式は項の場合に帰着。$\lnot,\to$ は帰納法の仮定から明らか。
+$\forall x\,\varphi$：自由変数は $\mathrm{FV}(\varphi)\setminus\{x\}$。任意の $a\in M$ について $s[x:=a]$ と $s'[x:=a]$ は
+$\mathrm{FV}(\varphi)$ 上で一致するので（$x$ は両方 $a$、他は仮定より一致）、帰納法の仮定で
+$\mathcal M\models\varphi[s[x:=a]]\iff\mathcal M\models\varphi[s'[x:=a]]$。両辺すべての $a$ で取れば結論。∎
+</Statement>
+
+この補題のおかげで、文 $\sigma$ については付値を書かずに $\mathcal M\models\sigma$（$\mathcal M$ は $\sigma$ の<Term>モデル</Term>）と書けます。
+「構造 $\mathcal M$ で $\sigma$ が真」が、これで完全に厳密になりました。
+
+## 代入補題
+
+前章で気にした代入 $\varphi[x:=t]$ の意味論的な意味を確定させます。これは第6章で量化子の推論規則の健全性を示す鍵です。
+
+<Statement kind="lemma" title="代入補題">
+$t$ が $\varphi$ の $x$ に対して代入可能なら、
+$$\mathcal M\models \varphi[x:=t]\,[s] \iff \mathcal M\models\varphi\,[\,s[x:=t^{\mathcal M,s}]\,].$$
+</Statement>
+
+言葉にすると「**式に $t$ を代入して評価する**のと、**$x$ に $t$ の値を割り当てて評価する**のは同じ」。当たり前に見えますが、
+代入可能性（capture が起きないこと）を仮定して初めて成り立ちます。前章の $\exists y(x<y)$ に $y$ を捕獲されるように
+代入すると、この等式は破れる——だからこそ代入可能性が本質的でした。証明は項・論理式の構造的帰納法です。
+
+## 論理的帰結・妥当・充足可能
+
+これで一階の意味論的な正しさを定義できます。命題論理の $\models$ の一般化です。
+
+<Statement kind="definition" title="論理的帰結・妥当性・充足可能性">
+文の集合 $\Gamma$ と文 $\varphi$ について、$\Gamma\models\varphi$ とは「$\Gamma$ の全要素のモデルであるどの構造 $\mathcal M$ も
+$\varphi$ のモデルである」こと（<Term>論理的帰結</Term>）。すべての構造で真な文を<Term>妥当</Term>（$\models\varphi$）、
+少なくとも1つの構造でモデルをもつ集合を<Term>充足可能</Term>という。
+</Statement>
+
+例：$\models \forall x\,(x=x)$（どんな構造でも等号は反射的だから妥当）。一方
+$\forall x\forall y(x\cdot y=y\cdot x)$（可換律）は、可換群のモデルでは真・非可換群のモデルでは偽——妥当ではありません。
+「妥当 ＝ 論理だけで正しい（どの世界でも真）」「特定の構造で真 ＝ その数学的対象の性質」という区別が、
+モデル理論（第8章）へつながります。そして次章からの大問題はまた同じ形です——
+**この意味論的な妥当性 $\models$ を、記号操作の証明 $\vdash$ で捉えられるか（ゲーデルの完全性、第7章）**。
+
+## つまずきポイント
+
+<Statement kind="remark" title="よくある誤解">
+- **真偽は構造に相対的。** 一階の文は「真」なのではなく「構造 $\mathcal M$ で真」。命題論理と違い、絶対的な真偽表は無い。妥当性だけが構造によらない概念。
+- **$\forall$ の定義は領域を走る。** 「すべての $a\in M$」——量化は領域 $M$ の対象すべてにわたる。領域が変われば量化の範囲も変わる。
+- **代入補題は代入可能性が前提。** capture が起きると「代入して評価」と「値を割り当てて評価」がズレる。前章の一手間はここで効く。
+</Statement>
+
+## この章のまとめ
+
+- 真偽は**構造**（記号の解釈）と**付値**（自由変数の割り当て）に相対的。項は領域の一点に評価される。
+- **タルスキの充足の定義**は論理式の構造に沿った再帰で、量化子は「領域のすべての $a$ を走る」で循環なく定義される。**一致補題**で文の真偽は付値によらない。
+- **代入補題**が代入と意味論を結び（代入可能性が前提）、**論理的帰結・妥当性・充足可能性**が定義される。次の主題は妥当性 $\models$ と証明 $\vdash$ の一致。
+
+次章は、一階の**証明体系**を立て、その**健全性**（$\vdash\Rightarrow\models$）を証明します。

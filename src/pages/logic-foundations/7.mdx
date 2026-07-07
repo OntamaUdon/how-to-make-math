@@ -1,0 +1,167 @@
+---
+layout: ../../layouts/BaseLayout.astro
+title: 第7章 ゲーデルの完全性定理
+description: 妥当な式は必ず導ける。ヘンキンの構成による完全性の完全な証明——証人つき極大無矛盾集合から項モデルを作り、真理補題で締める。
+---
+
+import Term from "../../components/assets/Term.astro";
+import Statement from "../../components/assets/Statement.astro";
+
+# 第7章 ゲーデルの完全性定理
+
+## 「正しい」は、必ず「導ける」
+
+命題論理では $\vdash$ と $\models$ が一致しました（第3章）。一階述語論理でも同じことが成り立つ——
+これが**ゲーデルの完全性定理**（1929年、博士論文）です。量化子・関数・無限の領域という複雑さが
+加わってなお、「すべての構造で真な式（妥当な式）は、有限の記号操作で必ず導ける」。
+
+$$\Gamma\models\varphi \iff \Gamma\vdash\varphi.$$
+
+$\Leftarrow$（健全性）は前章で示しました。この章は $\Rightarrow$（完全性）を、ヘンキンの方法で**完全に証明**します。
+戦略は第3章と同じ骨格——「**無矛盾なら充足可能**（モデルをもつ）」を示せば完全性が出る——ですが、
+一階では致命的な難所があります。命題論理では極大無矛盾集合から付値を「読む」だけでモデルができました。
+しかし一階では、$\exists x\,\varphi$ が理論に属していても、それを**満たす具体的な対象**が言語の中に無いかもしれない。
+ヘンキンの発想は「**無ければ、証人となる新しい定数を言語に足してしまえ**」。この一手で、
+理論そのものから領域（対象の集合）を作り出します。
+
+> 完全性の本体は「無矛盾 ⇒ モデルが存在」。難所は $\exists$ の証人不足で、ヘンキンは**証人定数**を足して解決する。
+
+## 目標の言い換え
+
+<Statement kind="theorem" title="モデル存在定理（一階）">
+文の集合 $\Gamma$ が無矛盾ならば、$\Gamma$ はモデルをもつ（充足可能）。
+</Statement>
+
+これが示せれば完全性は第3章とまったく同じ論法で従います：$\Gamma\not\vdash\varphi$ なら $\Gamma\cup\{\lnot\varphi\}$ は無矛盾、
+モデル存在定理より $\Gamma$ を満たし $\varphi$ を偽にする構造があり、$\Gamma\not\models\varphi$。以下、言語 $\mathcal L$ は
+可算とする（非可算でも[ツォルンの補題](/set-topology/2)を使えば同様。この選択公理への依存も完全性の重要な側面）。
+
+## 段階1：ヘンキン証人の添加
+
+まず「$\exists x\,\varphi$ が言えるなら、それを満たす名前がある」という状態を、言語ごと作ります。
+
+<Statement kind="definition" title="ヘンキン理論・証人性">
+理論 $T$ が<Term>証人性</Term>（Henkin property）をもつとは、任意の論理式 $\varphi(x)$（自由変数 $x$ のみ）について、
+ある定数 $c$ で「$\exists x\,\varphi(x)\to\varphi(c)$」が $T$ に属すること。この $c$ を $\exists x\,\varphi$ の<Term>証人</Term>という。
+</Statement>
+
+<Statement kind="lemma" title="証人1個の添加は無矛盾性を保つ">
+$T$ を言語 $\mathcal L$ の無矛盾な理論、$\varphi(x)$ を論理式、$c$ を $\mathcal L$ に現れない**新しい定数**とする。
+このとき $T'=T\cup\{\exists x\,\varphi(x)\to\varphi(c)\}$ も無矛盾。
+</Statement>
+
+<Statement kind="proof">
+$T'$ が矛盾すると仮定する。演繹定理より $T\vdash\lnot(\exists x\,\varphi(x)\to\varphi(c))$、命題論理で整理すると
+$T\vdash\exists x\,\varphi(x)$ かつ $T\vdash\lnot\varphi(c)$。$c$ は $T$ に現れないので、$T\vdash\lnot\varphi(c)$ の証明中の
+$c$ を新変数 $y$ で一斉に置換しても正しい証明であり $T\vdash\lnot\varphi(y)$、$y$ は $T$ に自由に現れないから
+一般化して $T\vdash\forall y\,\lnot\varphi(y)$、すなわち $T\vdash\lnot\exists x\,\varphi(x)$。これは $T\vdash\exists x\,\varphi(x)$ と
+矛盾し、$T$ の無矛盾性に反する。∎
+</Statement>
+
+「新しい定数だから、それについて導けたことは実は任意の変数について導けたはず」という置換の議論が心臓です。
+これを**すべての論理式について同時に**行い、さらに新定数が生む新しい論理式にも証人を、と繰り返します。
+
+<Statement kind="lemma" title="ヘンキン拡大">
+可算無矛盾理論 $T$（言語 $\mathcal L$）に対し、可算言語 $\mathcal L^*\supseteq\mathcal L$ と無矛盾理論 $T^*\supseteq T$ で、
+$T^*$ が**証人性をもつ**ものが存在する。
+</Statement>
+
+<Statement kind="proof">
+$\mathcal L_0=\mathcal L,\ T_0=T$ から始め、各段 $n$ で $\mathcal L_n$ の全論理式 $\varphi(x)$ に対し新定数 $c_\varphi$ を導入して
+$\mathcal L_{n+1}$ とし、$T_{n+1}=T_n\cup\{\exists x\,\varphi(x)\to\varphi(c_\varphi):\varphi\in\mathcal L_n\}$ とする。上の補題
+（を有限個ずつ適用；証明はどれも有限個の証人しか使わない）により各 $T_n$ は無矛盾。$\mathcal L^*=\bigcup\mathcal L_n$、
+$T^*=\bigcup T_n$ とおくと、$T^*$ の矛盾は有限個の公理しか使わずある $T_n$ で起こるはずで不合理、ゆえに無矛盾。
+$\mathcal L^*$ の任意の論理式は既にどこかの $\mathcal L_n$ に現れるので、その証人が $T_{n+1}\subseteq T^*$ にある。∎
+</Statement>
+
+## 段階2：極大無矛盾へ拡大（リンデンバウム）
+
+第3章とまったく同じ手続きで、$T^*$ を極大無矛盾集合 $\Delta$（言語 $\mathcal L^*$）へ拡大します。
+
+<Statement kind="lemma" title="証人性は極大化で保たれる">
+$T^*\subseteq\Delta$、$\Delta$ を $\mathcal L^*$ 上の極大無矛盾集合とすると、$\Delta$ は次を満たす：
+（第3章の (a)(b)(c) に加えて）$\forall x\,\varphi\in\Delta \iff$ すべての閉項 $t$ で $\varphi[x:=t]\in\Delta$、
+かつ $\exists x\,\varphi\in\Delta \iff$ ある定数 $c$ で $\varphi[x:=c]\in\Delta$。
+</Statement>
+
+<Statement kind="proof">
+第3章の (a)–(c)（演繹閉包・否定完全性・$\to$ の規則）はそのまま成り立つ。$\exists$：$\exists x\,\varphi\in\Delta$ なら、
+証人性の公理 $\exists x\,\varphi\to\varphi(c_\varphi)\in T^*\subseteq\Delta$ と MP・演繹閉包で $\varphi(c_\varphi)\in\Delta$。逆に
+$\varphi[x:=c]\in\Delta$ なら (A4) 系（$\varphi(c)\to\exists x\,\varphi$）で $\exists x\,\varphi\in\Delta$。$\forall$ は
+$\forall x\,\varphi\equiv\lnot\exists x\,\lnot\varphi$ と否定完全性から従う。∎
+</Statement>
+
+証人性のおかげで、$\Delta$ の中の「$\exists$」は必ず具体的な**名前つき**の証人をもちます。これが次のモデル構成で決定的です。
+
+## 段階3：項モデルの構成
+
+いよいよモデルを作ります。領域を外から用意するのではなく、**言語の閉項そのものを対象とみなす**のがヘンキンの妙技です。
+
+<Statement kind="definition" title="項モデル（正準モデル）">
+$\mathcal L^*$ の閉項（変数を含まない項）全体を $\mathrm{CT}$ とする。$\mathrm{CT}$ 上の関係
+$$t\sim t' \iff (t=t')\in\Delta$$
+は同値関係（$\Delta$ が等号公理を含み演繹で閉じているので反射・対称・推移）。商 $M=\mathrm{CT}/{\sim}$ を領域とし、
+$$c^{\mathcal M}=[c],\quad f^{\mathcal M}([t_1],\dots,[t_n])=[f(t_1,\dots,t_n)],\quad ([t_1],\dots,[t_n])\in R^{\mathcal M}\iff R(t_1,\dots,t_n)\in\Delta$$
+と解釈する。等号公理が $\sim$ との両立（well-defined 性・合同性）を保証する。
+</Statement>
+
+対象とは「名前（閉項）を、$\Delta$ が等しいと言うものどうしで同一視したもの」。証人性があるおかげで
+$M$ は空でなく（少なくとも証人定数がある）、しかも「$\exists$ の対象」が必ず領域に居ます。関数・関係の解釈が
+代表元 $t_i$ の取り方によらないこと（well-defined）は、等号公理 $x=y\to(\dots)$ が $\Delta$ にあることから従います。
+
+## 段階4：真理補題
+
+<Statement kind="lemma" title="真理補題">
+$\mathcal M$ を上の項モデルとする。$\mathcal L^*$ の任意の**文** $\sigma$ について
+$$\mathcal M\models\sigma \iff \sigma\in\Delta.$$
+</Statement>
+
+<Statement kind="proof">
+まず閉項 $t$ について $t^{\mathcal M}=[t]$ が項の構造に関する帰納法で従う（解釈の定義そのもの）。次に文 $\sigma$ について
+構造的帰納法。
+
+**原子文** $R(t_1,\dots,t_n)$：$\mathcal M\models R(t_1,\dots,t_n)\iff([t_1],\dots,[t_n])\in R^{\mathcal M}\iff R(t_1,\dots,t_n)\in\Delta$
+（解釈の定義）。等式 $t_1=t_2$ も $\sim$ の定義より同様。
+
+**$\lnot,\to$**：否定完全性 (b) と $\to$ の規則 (c)（極大無矛盾集合の性質）が、$\lnot,\to$ の充足の定義とちょうど対応する
+（第3章の真理補題と同型の議論）。
+
+**$\exists x\,\varphi$**（$\forall$ はその否定）：
+$(\Rightarrow)$ $\mathcal M\models\exists x\,\varphi$ なら、ある対象 $[t]\in M$ で $\mathcal M\models\varphi[x:=t]$。$\varphi[x:=t]$ は
+$\varphi$ より簡単な文なので帰納法の仮定より $\varphi[x:=t]\in\Delta$、よって（$\varphi(t)\to\exists x\,\varphi$ が導けるので）$\exists x\,\varphi\in\Delta$。
+$(\Leftarrow)$ $\exists x\,\varphi\in\Delta$ なら、**証人性**（段階2の補題）よりある定数 $c$ で $\varphi[x:=c]\in\Delta$。帰納法の仮定で
+$\mathcal M\models\varphi[x:=c]$、すなわち対象 $[c]$ が $\varphi$ を満たすので $\mathcal M\models\exists x\,\varphi$。∎
+</Statement>
+
+証明の全行程で、$(\Leftarrow)$ の $\exists$ の場合だけが**証人性を本質的に使います**。ここがヘンキン構成の要で、
+「$\Delta$ が $\exists x\,\varphi$ を認めるなら、その証人 $c$ が領域に居て実際に $\varphi$ を満たす」——だから
+「$\Delta$ に属する ＝ モデルで真」が量化子を越えて成立するのです。
+
+## 完成
+
+<Statement kind="proof">
+真理補題より $\mathcal M\models\Delta$、特に $\mathcal M\models T\subseteq\Delta$。$\mathcal M$ は言語 $\mathcal L^*$ の構造だが、
+非論理記号を $\mathcal L$ に制限（reduct）すれば元の $\Gamma\subseteq T$ のモデルになる。よって $\Gamma$ は充足可能——
+モデル存在定理が示せた。ゆえに完全性 $\Gamma\models\varphi\Rightarrow\Gamma\vdash\varphi$ が成り立つ。∎
+</Statement>
+
+<Statement kind="theorem" title="ゲーデルの完全性定理">
+一階述語論理において $\Gamma\models\varphi \iff \Gamma\vdash\varphi$。
+（健全性は前章、完全性は本章。）
+</Statement>
+
+## つまずきポイント
+
+<Statement kind="remark" title="よくある誤解">
+- **完全性 ≠ 完全な理論。** 「完全性定理」は論理の証明体系が妥当な式を全部導けること。特定の理論 $T$ が「完全（すべての文の真偽を決める）」かは別問題で、第13章の不完全性はまさにそこを否定する。
+- **モデルは言語から作られる。** 領域は外から与えるのでなく、閉項の同値類。証人性が「$\exists$ の対象」を言語内に用意する。
+- **可算言語では帰納的、非可算では選択公理。** ヘンキン拡大とリンデンバウムは、非可算だとツォルンの補題を要する。完全性は選択公理に（弱く）依存する。
+</Statement>
+
+## この章のまとめ
+
+- 完全性の本体は**モデル存在定理**「無矛盾 ⇒ 充足可能」。命題論理と同じ骨格だが、$\exists$ の証人不足という難所がある。
+- **ヘンキンの構成**：(1) 証人定数を添加して**証人性**をもつ無矛盾拡大を作る、(2) 極大無矛盾集合へ拡大、(3) 閉項の同値類を領域とする**項モデル**を作る、(4) **真理補題**（$\exists$ の場合に証人性が効く）で締める。
+- 結論、一階述語論理で $\vdash$ と $\models$ は一致する。証明は可算なら帰納的、非可算なら選択公理に依存する。
+
+次章は、完全性の“ご褒美”——**コンパクト性定理とレーヴェンハイム–スコーレムの定理**、そして超準モデルへ進みます。

@@ -1,0 +1,160 @@
+---
+layout: ../../layouts/BaseLayout.astro
+title: 第2章 証明体系 — ヒルベルト系と自然演繹
+description: 真理値表を使わず、記号操作だけで証明を組む。ヒルベルト系の公理と MP、演繹定理の帰納法による証明、そして自然演繹。
+---
+
+import Term from "../../components/assets/Term.astro";
+import Statement from "../../components/assets/Statement.astro";
+import Tree from "../../components/proof/Tree.astro";
+import Inf from "../../components/proof/Inf.astro";
+import Ax from "../../components/proof/Ax.astro";
+
+# 第2章 証明体系 — ヒルベルト系と自然演繹
+
+## 「真偽」を見ずに、「正しさ」を組み立てる
+
+前章の $\models$ は、あらゆる付値を調べる**意味論的**な正しさでした。でも数学者が実際に証明を書くとき、
+真理値表を埋めてはいません。公理から出発し、決められた**推論規則**で一歩ずつ式を導く——
+純粋に記号の操作だけで進みます。
+
+この「記号操作としての証明」を厳密に定義するのが、この章の目標です。真偽の意味を一切参照せず、
+機械的に適用できる規則だけで「導ける（$\vdash$）」を定める。すると証明そのものが数学的対象になり、
+「証明とは有限の記号列だ」と言い切れます。この対象化こそ、後にゲーデルが証明を**数**に変換して
+不完全性定理を証明する（第13章）ための土台です。まずは公理の少ない**ヒルベルト系**から始めます。
+
+> $\vdash$ は「公理から推論規則で機械的に導ける」という**構文的**な正しさ。意味 $\models$ とは独立に定義する。
+
+## ヒルベルト系
+
+結合子を $\to$ と $\lnot$ に絞り（他は略記 $\varphi\lor\psi:\equiv\lnot\varphi\to\psi$ 等）、公理は3つの**公理図式**、
+推論規則はただ一つ **モーダス・ポネンス（MP）** だけにします。
+
+<Statement kind="definition" title="ヒルベルト系 H">
+任意の論理式 $\varphi,\psi,\chi$ に対する次の3つを<Term>公理図式</Term>とする：
+$$\text{(A1)}\ \varphi\to(\psi\to\varphi),\quad \text{(A2)}\ (\varphi\to(\psi\to\chi))\to((\varphi\to\psi)\to(\varphi\to\chi)),$$
+$$\text{(A3)}\ (\lnot\psi\to\lnot\varphi)\to(\varphi\to\psi).$$
+推論規則は<Term>モーダス・ポネンス</Term>のみ：$\varphi$ と $\varphi\to\psi$ から $\psi$ を導いてよい。
+</Statement>
+
+<Statement kind="definition" title="証明と導出可能性">
+$\Gamma$ からの<Term>証明</Term>とは、各項が「公理」「$\Gamma$ の要素」「先行する2項からの MP」のいずれかであるような
+有限列 $\varphi_1,\dots,\varphi_n$ のこと。$\varphi_n=\varphi$ のとき $\Gamma\vdash\varphi$（$\varphi$ は $\Gamma$ から<Term>導出可能</Term>）と書く。
+$\varnothing\vdash\varphi$ は $\vdash\varphi$ と略す。
+</Statement>
+
+公理がわずか3図式、規則が1つ。これで本当に論理が尽くせるのか——尽くせます（次章の完全性）。
+まずは体系の“動き”を、いちばん基本的な定理 $\vdash\varphi\to\varphi$ の証明で体感しましょう。
+一見自明なこの式すら、公理と MP だけで導くには工夫が要ります。
+
+<Statement kind="example" title="⊢ φ→φ の形式的証明">
+次の5行がヒルベルト系での完全な証明である（$\psi$ は任意、例えば $\varphi$ 自身でよい）：
+
+1. $\big(\varphi\to((\varphi\to\varphi)\to\varphi)\big)\to\big((\varphi\to(\varphi\to\varphi))\to(\varphi\to\varphi)\big)$ — (A2) で $\psi:=\varphi\to\varphi,\ \chi:=\varphi$
+2. $\varphi\to((\varphi\to\varphi)\to\varphi)$ — (A1) で $\psi:=\varphi\to\varphi$
+3. $(\varphi\to(\varphi\to\varphi))\to(\varphi\to\varphi)$ — 1,2 に MP
+4. $\varphi\to(\varphi\to\varphi)$ — (A1) で $\psi:=\varphi$
+5. $\varphi\to\varphi$ — 3,4 に MP
+</Statement>
+
+$\varphi\to\varphi$ ですらこの手間。ヒルベルト系は「公理が少なく、体系を**論じる**（メタ定理を証明する）のに向く」
+反面、「実際に証明を**書く**のは苦しい」体系です。書く苦しさを救うのが、次の演繹定理です。
+
+## 演繹定理：仮定を $\to$ に畳み込む
+
+前章で「$\Gamma,\varphi\models\psi \iff \Gamma\models\varphi\to\psi$」を見ました。これの**構文版**が成り立つことを、
+証明の構造に関する帰納法で示します。これは「メタ定理」——体系そのものについての定理——の典型例です。
+
+<Statement kind="theorem" title="演繹定理">
+$\Gamma\cup\{\varphi\}\vdash\psi \iff \Gamma\vdash\varphi\to\psi$。
+</Statement>
+
+<Statement kind="proof">
+$(\Leftarrow)$ は易しい：$\Gamma\vdash\varphi\to\psi$ の証明に $\varphi$（仮定）を足し、MP で $\psi$ を得る。
+
+$(\Rightarrow)$ が本題。$\Gamma\cup\{\varphi\}\vdash\psi$ の証明 $\theta_1,\dots,\theta_n=\psi$ の各項 $\theta_k$ について、
+$\Gamma\vdash\varphi\to\theta_k$ を **$k$ に関する帰納法**で示す。各 $\theta_k$ は次のいずれか：
+
+**(i) $\theta_k$ が公理、または $\Gamma$ の要素のとき。** $\theta_k$ と、(A1) の $\theta_k\to(\varphi\to\theta_k)$ に MP して
+$\Gamma\vdash\varphi\to\theta_k$。
+
+**(ii) $\theta_k$ が仮定 $\varphi$ 自身のとき。** 前章の $\vdash\varphi\to\varphi$ より $\Gamma\vdash\varphi\to\theta_k$。
+
+**(iii) $\theta_k$ が先行する $\theta_i,\theta_j=\theta_i\to\theta_k$ からの MP のとき。** 帰納法の仮定より
+$\Gamma\vdash\varphi\to\theta_i$ と $\Gamma\vdash\varphi\to(\theta_i\to\theta_k)$。(A2) の
+$(\varphi\to(\theta_i\to\theta_k))\to((\varphi\to\theta_i)\to(\varphi\to\theta_k))$ に2回 MP して
+$\Gamma\vdash\varphi\to\theta_k$。
+
+$k=n$ で $\Gamma\vdash\varphi\to\psi$。∎
+</Statement>
+
+証明の3つの公理が、この帰納法の各ケースに**過不足なく対応している**のが見どころです
+（(A1) がケース(i)、$\vdash\varphi\to\varphi$ がケース(ii)、(A2) がケース(iii)）。ヒルベルト系の公理は、
+まさに演繹定理を回すために選ばれているのです。以後は演繹定理を使ってよいので、
+「$\varphi$ を仮定して $\psi$ を導けば $\vdash\varphi\to\psi$」と、普通の数学の証明のように書けます。
+
+## 自然演繹：推論を「木」で書く
+
+ヒルベルト系は論じるには良いが書きにくい。逆に、人間の推論に近く**書きやすい**体系が
+ゲンツェンの<Term>自然演繹</Term>です。各結合子に「導入規則（作る）」と「除去規則（使う）」を対にして与えます。
+
+<Statement kind="definition" title="自然演繹の主な規則">
+仮定から結論へ木を組む。$[\varphi]$ は途中で<Term>discharge</Term>（解消）される仮定。主な規則：
+$\to$I（$\varphi$ を仮定して $\psi$ を導いたら $\varphi\to\psi$ を結論し仮定を解消）、$\to$E（MP）、
+$\land$I／$\land$E、$\lor$I／$\lor$E、$\bot$E（<Term>爆発律</Term>：$\bot$ から任意の $\varphi$）、
+RAA（<Term>背理法</Term>：$\lnot\varphi$ を仮定して $\bot$ を導いたら $\varphi$、古典論理の要）。
+</Statement>
+
+規則が結合子ごとに整理されているので、証明が**木**の形に自然に組めます。例として、$\land$ の交換
+$(\varphi\land\psi)\to(\psi\land\varphi)$ を導きます。仮定 $\varphi\land\psi$ を分解し、順序を入れ替えて組み直し、
+最後に $\to$I で仮定を解消する——という流れがそのまま木になります。
+
+<Tree>
+  <Inf rule="→I, 1" c="(\varphi\land\psi)\to(\psi\land\varphi)">
+    <Inf rule="∧I" c="\psi\land\varphi">
+      <Inf rule="∧E₂" c="\psi"><Ax f="[\varphi\land\psi]_1" /></Inf>
+      <Inf rule="∧E₁" c="\varphi"><Ax f="[\varphi\land\psi]_1" /></Inf>
+    </Inf>
+  </Inf>
+</Tree>
+
+葉の $[\varphi\land\psi]_1$ が仮定、最下段の $\to$I,1 でその仮定が解消されて、仮定に依存しない
+定理 $(\varphi\land\psi)\to(\psi\land\varphi)$ が得られています。もう一つ、二重否定の一方向
+$\varphi\to\lnot\lnot\varphi$ を、$\lnot\alpha$ を $\alpha\to\bot$ とみて導きます。
+
+<Tree>
+  <Inf rule="→I, 2" c="\varphi\to\lnot\lnot\varphi">
+    <Inf rule="→I, 1" c="\lnot\lnot\varphi">
+      <Inf rule="→E" c="\bot">
+        <Ax f="[\lnot\varphi]_1" />
+        <Ax f="[\varphi]_2" />
+      </Inf>
+    </Inf>
+  </Inf>
+</Tree>
+
+内側で $\lnot\varphi$（$=\varphi\to\bot$）と $\varphi$ から $\bot$ を出し、$\to$I,1 で $\lnot\varphi$ を解消して
+$\lnot\lnot\varphi$（$=\lnot\varphi\to\bot$）、さらに $\to$I,2 で $\varphi$ を解消。**仮定を立て、使い、解消する**
+という自然演繹の呼吸が見えます。ヒルベルト系と自然演繹は「導けるもの」が完全に一致します（互いに翻訳可能）。
+
+<Statement kind="remark" title="古典と直観主義の分かれ目はここ">
+RAA（背理法）と二重否定除去 $\lnot\lnot\varphi\to\varphi$、排中律 $\varphi\lor\lnot\varphi$ は互いに導出可能で、
+これらを**認めるか否か**が古典論理と直観主義論理を分ける（第10章）。上の $\varphi\to\lnot\lnot\varphi$ は
+直観主義でも成り立つが、逆向き $\lnot\lnot\varphi\to\varphi$ は古典論理でしか成り立たない。
+</Statement>
+
+## つまずきポイント
+
+<Statement kind="remark" title="よくある誤解">
+- **$\vdash$ と $\models$ は定義が全然違う。** $\vdash$ は「規則で導ける」（構文・有限の手続き）、$\models$ は「全付値で真」（意味・付値の全域）。両者が一致するというのが健全性・完全性（次章）であって、定義上は無関係。
+- **公理図式は「無限個の公理」。** (A1) は $\varphi,\psi$ にどんな論理式を代入してもよく、実体は無限個の公理の族。
+- **discharge を忘れると仮定が残る。** $\to$I で解消しない限り仮定は結論に依存し続ける。木の葉の番号と規則の番号の対応を必ず確認する。
+</Statement>
+
+## この章のまとめ
+
+- $\vdash$ は**構文的な導出可能性**：公理（図式）から推論規則で機械的に導ける、有限の記号列。証明そのものが数学的対象になる。
+- **ヒルベルト系**は公理3図式＋MP。論じるのに向くが書きにくい。**演繹定理**（証明の構造に関する帰納法で証明）が「仮定して導く」書き方を可能にする。
+- **自然演繹**は結合子ごとの導入・除去規則で証明を木として組む。ヒルベルト系と等価。古典と直観主義の差は RAA・二重否定除去・排中律にある。
+
+次章はいよいよ両世界を橋渡し——命題論理の**健全性と完全性**（$\vdash$ と $\models$ の一致）を証明します。

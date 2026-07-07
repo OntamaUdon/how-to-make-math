@@ -1,0 +1,133 @@
+---
+layout: ../../layouts/BaseLayout.astro
+title: 第1章 命題論理 — 構文と意味
+description: 「論理的に正しい」を形式化する第一歩。論理式の帰納的定義、付値による真理値、トートロジーと論理的帰結、ブール代数との対応。
+---
+
+import Term from "../../components/assets/Term.astro";
+import Statement from "../../components/assets/Statement.astro";
+import TruthTable from "../../components/interactive/TruthTable.astro";
+
+# 第1章 命題論理 — 構文と意味
+
+## 「正しい」を、内容から切り離す
+
+「雨が降れば地面が濡れる。雨が降った。ゆえに地面が濡れる。」——正しい推論です。
+では「$P$ ならば $Q$。$P$ である。ゆえに $Q$。」——中身を全部伏せ字にしても、やはり正しい。
+**正しさは、雨や地面という“中身”ではなく、「ならば」「ゆえに」という“形”だけで決まっている。**
+
+この観察が数理論理学の出発点です。推論の正しさを、意味・内容から完全に切り離し、
+**記号の並べ方（構文）と、真偽の割り当て方（意味論）だけ**で扱う。すると「正しい推論とは何か」を、
+好みや直感ではなく、計算で判定できる対象にできます。この章では最も単純な体系——命題論理——で、
+「構文」と「意味論」という2つの世界を立て、両者の橋（次章以降の健全性・完全性）へ向かう足場を作ります。
+
+> 数理論理学の核心は**構文（記号の操作）と意味論（真偽の割り当て）を分離**し、両者の一致を問うこと。
+> この章はその2つの世界を厳密に定義する。
+
+## 構文：論理式とは何か
+
+まず「正しく組み立てられた式」の集合を、あいまいさゼロで定義します。鍵は**帰納的（再帰的）定義**です。
+
+<Statement kind="definition" title="命題論理の論理式">
+<Term>命題変数</Term> $p_0,p_1,p_2,\dots$ の可算集合を固定する。<Term>論理式</Term>の集合 $\mathrm{Form}$ を次で定める：
+1. 各命題変数 $p_i$ は論理式（<Term>原子論理式</Term>）。
+2. $\varphi$ が論理式なら $(\lnot\varphi)$ も論理式。
+3. $\varphi,\psi$ が論理式なら $(\varphi\land\psi),(\varphi\lor\psi),(\varphi\to\psi),(\varphi\leftrightarrow\psi)$ も論理式。
+4. 以上の有限回の適用で得られるものだけが論理式。
+</Statement>
+
+条件4「これだけが論理式」が地味に重要です。これがあるおかげで、$\mathrm{Form}$ 上で
+**構造的帰納法**（＝論理式の作られ方に沿った帰納法）が使えます。「原子論理式で成り立ち、
+$\lnot,\land,\lor,\to,\leftrightarrow$ で保たれるなら、すべての論理式で成り立つ」——
+自然数の数学的帰納法の、論理式版です。本章以降のほとんどの証明が、この構造的帰納法で回ります。
+
+<Statement kind="remark" title="読み方の約束（括弧の省略）">
+毎回すべての括弧を書くと $((\lnot p)\to(q\land r))$ のように煩雑なので、結合の強さを
+$\lnot > \land > \lor > \to > \leftrightarrow$、$\to$ は右結合と決めて省略する。上の式は $\lnot p\to q\land r$。
+これは読みやすさのための便宜で、正式には完全に括弧づけられた式を指す。
+</Statement>
+
+## 意味論：付値が真偽を決める
+
+構文は「記号の並び」であって、まだ真も偽もありません。真偽は、各命題変数に真偽を割り当てて初めて生じます。
+
+<Statement kind="definition" title="付値と真理値">
+写像 $v:\{p_0,p_1,\dots\}\to\{\mathrm{T},\mathrm{F}\}$ を<Term>付値</Term>という。付値 $v$ は次の規則で
+すべての論理式へ一意に拡張される（構造的帰納法で well-defined）。$\bar v(\varphi)$ を $\varphi$ の<Term>真理値</Term>という：
+
+$$\bar v(\lnot\varphi)=\mathrm{T}\iff \bar v(\varphi)=\mathrm{F},\qquad \bar v(\varphi\land\psi)=\mathrm{T}\iff \bar v(\varphi)=\bar v(\psi)=\mathrm{T},$$
+$$\bar v(\varphi\lor\psi)=\mathrm{F}\iff \bar v(\varphi)=\bar v(\psi)=\mathrm{F},\qquad \bar v(\varphi\to\psi)=\mathrm{F}\iff \bar v(\varphi)=\mathrm{T},\ \bar v(\psi)=\mathrm{F}.$$
+</Statement>
+
+肝心なのは、**論理式の真理値は、そこに現れる命題変数への付値だけで完全に決まる**こと
+（証明は構造的帰納法：各結合子の規則が、部分式の真理値だけから全体の真理値を決めている）。
+だから有限個の変数しか含まない式は、$2^n$ 通りの付値をすべて調べれば真偽が尽くせます。これが真理値表です。
+
+<Statement kind="definition" title="トートロジー・充足可能・矛盾">
+論理式 $\varphi$ が<Term>トートロジー</Term>（恒真、$\models\varphi$）とは、**すべての付値**で真になること。
+ある付値で真になるとき<Term>充足可能</Term>、どの付値でも偽のとき<Term>矛盾</Term>（充足不能）という。
+</Statement>
+
+下の道具で確かめてください。式を入力すると全付値の真理値表が出て、恒真・矛盾・充足可能を判定します。
+「$(p\to q)\to((q\to r)\to(p\to r))$」（推論の連鎖）はどんな付値でも真——これが「形だけで正しい」の正体です。
+
+<TruthTable />
+
+## 論理的帰結
+
+「前提から結論が導ける」を、意味論の言葉で定義します。これが証明したい“正しさ”の意味論版です。
+
+<Statement kind="definition" title="論理的帰結（意味論的帰結）">
+論理式の集合 $\Gamma$ と論理式 $\varphi$ について、$\Gamma\models\varphi$ とは、
+**$\Gamma$ の全要素を真にするどの付値も $\varphi$ を真にする**こと。
+</Statement>
+
+冒頭の推論は $\{p\to q,\ p\}\models q$ と書けます。$p\to q$ と $p$ を同時に真にする付値では、
+$\to$ の規則から $q$ も必ず真——だから妥当。これを一般の $\Gamma,\varphi$ に拡張したのが $\models$ です。
+ここで重要な問いが生まれます。**この“意味論的な正しさ $\models$”を、記号操作だけの“証明 $\vdash$”で
+過不足なく捉えられるか？** これが次章以降の健全性・完全性で、命題論理・述語論理を貫く主題になります。
+
+<Statement kind="theorem" title="演繹定理の意味論版">
+$\Gamma\cup\{\varphi\}\models\psi \iff \Gamma\models(\varphi\to\psi)$。
+</Statement>
+
+<Statement kind="proof">
+$(\Rightarrow)$ $\Gamma$ を真にする付値 $v$ をとる。$\bar v(\varphi)=\mathrm{F}$ なら $\bar v(\varphi\to\psi)=\mathrm{T}$。
+$\bar v(\varphi)=\mathrm{T}$ なら $v$ は $\Gamma\cup\{\varphi\}$ を真にするので仮定より $\bar v(\psi)=\mathrm{T}$、
+よって $\bar v(\varphi\to\psi)=\mathrm{T}$。$(\Leftarrow)$ $\Gamma\cup\{\varphi\}$ を真にする付値は
+$\Gamma$ を真にし $\bar v(\varphi)=\mathrm{T}$ なので、仮定 $\bar v(\varphi\to\psi)=\mathrm{T}$ と合わせ $\bar v(\psi)=\mathrm{T}$。∎
+</Statement>
+
+「$\to$」が、まさに「仮定を足す」という推論操作を内部化した結合子だと分かります。この対応は、
+証明体系（次章）でも**演繹定理**として現れ、意味論と構文の平行性の最初の兆しになります。
+
+## ブール代数との対応
+
+命題論理は、代数の言葉でも語れます。トートロジーで同値な式を同一視すると、きれいな代数構造が現れます。
+
+<Statement kind="definition" title="論理的同値とリンデンバウム代数">
+$\varphi\equiv\psi$ を「$\models\varphi\leftrightarrow\psi$」（全付値で真理値が一致）と定める。これは同値関係で、
+$\land,\lor,\lnot$ と両立する。商 $\mathrm{Form}/{\equiv}$ は、$\land$ を交わり・$\lor$ を結び・$\lnot$ を補元とする
+<Term>ブール代数</Term>（<Term>リンデンバウム代数</Term>）になる。
+</Statement>
+
+分配律・ド・モルガン則・二重否定則が、そのままブール代数の公理に対応します。$\{\mathrm T,\mathrm F\}$ 自体が
+最小のブール代数（2元体的な構造）で、付値とは「論理式のブール代数から $\{\mathrm T,\mathrm F\}$ への準同型」に
+ほかなりません。**論理（真偽）と代数（演算）が同じ構造の二つの顔**——この視点は、後のモデル理論や、
+[環論](/ring-theory)・[圏論](/category-theory)との接続で効いてきます。
+
+## つまずきポイント
+
+<Statement kind="remark" title="よくある誤解">
+- **$\to$ は因果や時間ではない。** $\varphi\to\psi$ は「$\varphi$ が偽なら無条件に真」（<Term>実質含意</Term>）。「偽から何でも従う」は不自然に感じるが、真理値表で一貫させるための約束。
+- **構文と意味論は別世界。** 論理式は「記号の並び」で、それ自体に真偽は無い。真偽は付値を与えて初めて生じる。この分離が本分野の生命線。
+- **トートロジーと充足可能は違う。** 恒真（全付値で真）と、少なくとも1つの付値で真、は別。矛盾の否定が恒真、恒真の否定が矛盾。
+</Statement>
+
+## この章のまとめ
+
+- 論理式は**帰納的に定義**され、証明の主力は**構造的帰納法**。構文（記号）と意味論（真偽）は厳密に分離する。
+- 真理値は**付値だけで決まり**、恒真・充足可能・矛盾が定義できる。前提と結論の妥当性は**論理的帰結 $\Gamma\models\varphi$** で捉える。
+- 論理的同値で割ると**ブール代数**が現れ、付値は $\{\mathrm T,\mathrm F\}$ への準同型。意味論と代数は同じ構造の二面。
+
+次章は、真理値表を一切使わず、**記号操作だけで証明を組み立てる**体系（ヒルベルト系・自然演繹）を立てます。

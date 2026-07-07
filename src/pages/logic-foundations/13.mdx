@@ -1,0 +1,204 @@
+---
+layout: ../../layouts/BaseLayout.astro
+title: 第13章 ゲーデルの不完全性定理
+description: 算術の算術化、表現可能性、対角線補題の証明、第一・第二不完全性定理の完全な証明、そしてゲンツェンのε₀無矛盾性証明。
+---
+
+import Term from "../../components/assets/Term.astro";
+import Statement from "../../components/assets/Statement.astro";
+
+# 第13章 ゲーデルの不完全性定理
+
+## 数学は、自分の全てを証明できるか
+
+ヒルベルトは20世紀初頭、壮大な夢を描きました。すべての数学を有限の公理から機械的に導ける完全な体系にまとめ、
+その無矛盾性を体系内部で証明する——数学に絶対の基礎を与える計画です。1931年、25歳のゲーデルはこの夢を打ち砕きました。
+
+**十分に強く無矛盾などんな（帰納的に公理化された）体系にも、真だが証明できない命題が存在する**（第一不完全性定理）。
+そして**そのような体系は、自分自身の無矛盾性を証明できない**（第二不完全性定理）。前章の停止性問題と同じ
+「自己言及＋否定」を、算術の内部で実行するのが証明の核心です。証明を数に符号化し（算術化）、「この文は証明できない」
+という自己言及文を算術の中で組み立てる——この章はその全行程を、対角線補題を軸に丁寧に追います。
+
+> 十分強い無矛盾な体系には決定不能命題があり（第一）、自分の無矛盾性を証明できない（第二）。核は算術内部での自己言及。
+
+## 舞台設定
+
+<Statement kind="definition" title="対象となる理論">
+言語 $\{0,S,+,\cdot,<\}$ 上の算術の理論 $T$ を考える。$T$ は次を満たすとする：
+（i）<Term>帰納的公理化</Term>：公理の集合が決定可能（機械的に「公理かどうか」判定できる）。
+（ii）**無矛盾**。（iii）ロビンソン算術 $Q$（あるいはペアノ算術 $\mathrm{PA}$）を**含む**——基本的な算術ができるだけの強さ。
+</Statement>
+
+条件(i)が効きます。「証明かどうかを機械的にチェックできる」——これが次の「証明を数として扱える」を可能にします。
+なお、$T$ が算術の全真理を含む必要はありません。$Q$ 程度の弱い算術で十分——弱い体系でも不完全性を免れないのがミソです。
+
+## 算術化（ゲーデル数）
+
+証明論の対象（記号・論理式・証明）は、しょせん有限の記号列です。ならば**数で名前をつけられる**。
+
+<Statement kind="definition" title="ゲーデル数">
+各記号に番号を割り当て、記号列 $s_0s_1\cdots s_k$ を例えば $2^{s_0+1}\cdot 3^{s_1+1}\cdots p_k^{s_k+1}$（$p_i$ は素数）で符号化する。
+論理式 $\varphi$ の符号を<Term>ゲーデル数</Term> $\ulcorner\varphi\urcorner$ と書く。証明（論理式の列）も同様に数に符号化できる。
+</Statement>
+
+素因数分解の一意性のおかげで、数から元の記号列が復元できます。決定的なのは次です。
+
+<Statement kind="lemma" title="証明関係は決定可能">
+関係 $\mathrm{Proof}_T(p,n)$：「$p$ は、ゲーデル数 $n$ の論理式の $T$ における証明のゲーデル数である」は**決定可能**（原始帰納的）。
+</Statement>
+
+なぜなら、$p$ を復元して「各行が公理か・$T$ の公理か（(i) で判定可能）・前の行からの推論か」を機械的にチェックできるから。
+「証明を検算する」のは（見つけるのと違い）機械的にできる——この非対称が不完全性を生みます。
+
+## 表現可能性
+
+決定可能な関係が、$T$ の**内部の論理式で語れる**ことを保証するのが表現可能性定理です。これが算術化を「体系の中」へ持ち込みます。
+
+<Statement kind="theorem" title="表現可能性定理">
+決定可能な（帰納的な）関係 $R\subseteq\mathbb N^k$ に対し、$T$ の論理式 $\rho(x_1,\dots,x_k)$ が存在して、任意の $\bar a$ について
+$$R(\bar a)\ \text{が真}\ \Rightarrow\ T\vdash\rho(\underline{a_1},\dots,\underline{a_k}),\qquad R(\bar a)\ \text{が偽}\ \Rightarrow\ T\vdash\lnot\rho(\underline{\bar a}).$$
+（$\underline a$ は数 $a$ を表す項 $SS\cdots S0$。$Q$ でも成り立つ。）
+</Statement>
+
+つまり「本当に成り立つ算術的事実は、体系が証明できる」（$\Sigma_1$-完全性の一種）。とくに $\mathrm{Proof}_T$ は決定可能なので、
+それを表現する論理式 $\mathrm{Proof}_T(x,y)$ が $T$ の中にあります。これを使って**証明可能性述語**を作ります。
+
+<Statement kind="definition" title="証明可能性述語">
+$$\mathrm{Prov}_T(y):\equiv \exists x\,\mathrm{Proof}_T(x,y)\qquad(\text{「ゲーデル数 } y \text{ の文は } T \text{ で証明可能」を表す論理式}).$$
+</Statement>
+
+これで「$\varphi$ は証明可能」という**メタな主張が、$T$ の中の文** $\mathrm{Prov}_T(\ulcorner\varphi\urcorner)$ として表せます。
+体系が自分の証明可能性を語れるようになった——自己言及の準備が整いました。
+
+## 対角線補題（不動点補題）
+
+不完全性の心臓部。**任意の性質について、「自分がその性質をもつ」と主張する文を作れる**という驚くべき補題です。
+
+<Statement kind="theorem" title="対角線補題（不動点補題）">
+1変数の任意の論理式 $\psi(x)$ に対し、ある文 $G$ が存在して
+$$T\vdash G\leftrightarrow \psi(\ulcorner G\urcorner).$$
+（$G$ は「私は性質 $\psi$ をもつ」と言う自己言及文。）
+</Statement>
+
+<Statement kind="proof">
+論理式の**対角化**を考える。1変数論理式 $\theta(x)$ に対し、その $x$ に自分自身のゲーデル数を代入した文の
+ゲーデル数を返す操作 $\mathrm{diag}(\ulcorner\theta\urcorner)=\ulcorner\theta(\ulcorner\theta\urcorner)\urcorner$ は、記号列の機械的な操作なので**計算可能**。
+表現可能性定理より、$\mathrm{diag}$ を表現する論理式 $\mathrm{Diag}(x,y)$（「$y=\mathrm{diag}(x)$」を表す）がある。
+
+いま論理式
+$$\theta(x):\equiv \exists y\,\big(\mathrm{Diag}(x,y)\land\psi(y)\big)$$
+を作り、その**自分自身への対角化** $G:\equiv \theta(\ulcorner\theta\urcorner)$ とおく。定義より
+$\ulcorner G\urcorner=\mathrm{diag}(\ulcorner\theta\urcorner)$。$T$ の中で計算すると、$\mathrm{Diag}(\ulcorner\theta\urcorner,y)$ は
+「$y=\ulcorner G\urcorner$」と同値に導けるので、
+$$T\vdash G\leftrightarrow \exists y(\mathrm{Diag}(\ulcorner\theta\urcorner,y)\land\psi(y))\leftrightarrow \psi(\ulcorner G\urcorner).$$
+∎
+</Statement>
+
+「$\theta$ を自分自身に適用する」——前章の $D(\langle D\rangle)$、第1章のカントール対角線と、**まったく同じ自己適用**です。
+これで任意の $\psi$ について自己言及文が作れる。とりわけ $\psi$ に「証明**できない**」を入れると、決定的な文が生まれます。
+
+## 第一不完全性定理
+
+<Statement kind="definition" title="ゲーデル文">
+対角線補題を $\psi(x):\equiv\lnot\mathrm{Prov}_T(x)$ に適用して得た文 $G$。すなわち
+$$T\vdash G\leftrightarrow \lnot\mathrm{Prov}_T(\ulcorner G\urcorner).$$
+$G$ は「**私は $T$ で証明できない**」と主張する。
+</Statement>
+
+<Statement kind="theorem" title="第一不完全性定理">
+$T$ が（i)(ii)(iii) を満たすとする。（a）$T$ が無矛盾なら $T\not\vdash G$。（b）$T$ が $\omega$-無矛盾なら $T\not\vdash\lnot G$。
+よって $G$ は $T$ で**決定不能**（独立）。しかも $G$ は標準モデル $\mathbb N$ で**真**。
+</Statement>
+
+<Statement kind="proof">
+**(a)** $T\vdash G$ と仮定する。すると実際に $G$ の証明 $p$ が存在し、$\mathrm{Proof}_T(p,\ulcorner G\urcorner)$ が真。表現可能性より
+$T\vdash\mathrm{Proof}_T(\underline p,\ulcorner G\urcorner)$、ゆえに $T\vdash\mathrm{Prov}_T(\ulcorner G\urcorner)$。一方、$G$ の定義から
+$T\vdash G\to\lnot\mathrm{Prov}_T(\ulcorner G\urcorner)$、$T\vdash G$ と MP で $T\vdash\lnot\mathrm{Prov}_T(\ulcorner G\urcorner)$。
+これで $T$ は $\mathrm{Prov}_T(\ulcorner G\urcorner)$ とその否定を証明し、矛盾。無矛盾性に反するので $T\not\vdash G$。
+
+**(b)** $T\vdash\lnot G$ と仮定する。$G$ の定義より $T\vdash\mathrm{Prov}_T(\ulcorner G\urcorner)$、すなわち
+$T\vdash\exists x\,\mathrm{Proof}_T(x,\ulcorner G\urcorner)$。ところが (a) より $T\not\vdash G$、つまり $G$ の証明は実際には存在しないので、
+各具体的な $n$ について $\mathrm{Proof}_T(n,\ulcorner G\urcorner)$ は偽、表現可能性より $T\vdash\lnot\mathrm{Proof}_T(\underline n,\ulcorner G\urcorner)$ が
+**すべての $n$** で成り立つ。$T\vdash\exists x\,\mathrm{Proof}_T(x,\ulcorner G\urcorner)$ かつ全ての $\underline n$ で
+$T\vdash\lnot\mathrm{Proof}_T(\underline n,\dots)$——これは $\omega$-無矛盾性の否定にほかならない。$\omega$-無矛盾ゆえ $T\not\vdash\lnot G$。
+
+**真理**：(a) より $G$ は証明不能。$G$ は「$G$ は証明不能」と言っているので、$G$ の主張は**事実として正しい**。
+すなわち $\mathbb N\models G$。$G$ は真だが $T$ で証明できない。∎
+</Statement>
+
+<Statement kind="remark" title="ロスサーの改良と ω-無矛盾性">
+(b) だけ $\omega$-無矛盾性（「$\exists x\,\phi(x)$ を証明するなら、ある $\underline n$ で $\phi(\underline n)$ が偽とはならない」）という
+無矛盾性より強い仮定を使った。<Term>ロスサーの改良</Term>：証明可能性述語を工夫した文（「私の証明より短い反証がある」型）を使うと、
+**単なる無矛盾性だけ**で (a)(b) 両方が言え、$\omega$-無矛盾性は不要になる。以後は「無矛盾なら不完全」と述べてよい。
+</Statement>
+
+<Statement kind="corollary" title="不完全性の一般形">
+$Q$ を含む帰納的公理化された無矛盾な理論 $T$ は**不完全**（決定できない文がある）。$T$ に $G$ を公理として足しても、
+新しい理論に対する別のゲーデル文が現れ、**完全にはできない**。真な算術命題全体 $\mathrm{Th}(\mathbb N)$ は帰納的に公理化できない。
+</Statement>
+
+## 第二不完全性定理
+
+「$T$ は自分の無矛盾性を証明できない」。第一定理の証明を、$T$ の**内部で形式化**するのが鍵です。
+
+<Statement kind="definition" title="無矛盾性言明と導出可能性条件">
+$\mathrm{Con}(T):\equiv\lnot\mathrm{Prov}_T(\ulcorner 0=1\urcorner)$（「矛盾は証明できない」）。証明可能性述語は次の
+<Term>導出可能性条件</Term>（ヒルベルト–ベルナイス–レープ）を満たす：
+（D1）$T\vdash\varphi\Rightarrow T\vdash\mathrm{Prov}_T(\ulcorner\varphi\urcorner)$、
+（D2）$T\vdash\mathrm{Prov}_T(\ulcorner\varphi\to\psi\urcorner)\to(\mathrm{Prov}_T(\ulcorner\varphi\urcorner)\to\mathrm{Prov}_T(\ulcorner\psi\urcorner))$、
+（D3）$T\vdash\mathrm{Prov}_T(\ulcorner\varphi\urcorner)\to\mathrm{Prov}_T(\ulcorner\mathrm{Prov}_T(\ulcorner\varphi\urcorner)\urcorner)$。
+</Statement>
+
+<Statement kind="theorem" title="第二不完全性定理">
+$T$（$\mathrm{PA}$ 以上の強さ、帰納的公理化、無矛盾）は自身の無矛盾性を証明できない：$T\not\vdash\mathrm{Con}(T)$。
+</Statement>
+
+<Statement kind="proof">
+第一定理 (a) の証明「$T$ が無矛盾なら $G$ は証明不能」は、$G\leftrightarrow\lnot\mathrm{Prov}_T(\ulcorner G\urcorner)$ と
+導出可能性条件だけを使う議論なので、**そっくり $T$ の内部で再現できる**。その形式化が
+$$T\vdash \mathrm{Con}(T)\to\lnot\mathrm{Prov}_T(\ulcorner G\urcorner),$$
+そして $\lnot\mathrm{Prov}_T(\ulcorner G\urcorner)$ は $G$ と同値だったから
+$$T\vdash\mathrm{Con}(T)\to G.$$
+ここで仮に $T\vdash\mathrm{Con}(T)$ なら、MP で $T\vdash G$。だが第一定理 (a) より（$T$ 無矛盾）$T\not\vdash G$。矛盾。
+ゆえに $T\not\vdash\mathrm{Con}(T)$。∎
+</Statement>
+
+驚くほど短い——第一定理さえ形式化できれば、第二定理は数行です。含意は深刻です。**「$T$ が無矛盾なら、$T$ は
+$\lceil$自分は無矛盾$\rfloor$を証明できない」**。$T$ が自分の無矛盾性を証明したら、それは $T$ が**矛盾している**証拠になる。
+ヒルベルトの「体系内部で無矛盾性を証明する」夢は、原理的に不可能だったのです。関連して**タルシキの真理定義不能性**——
+「真である」を表す算術の論理式は存在しない（もしあれば対角線補題で「私は偽」という文が作れ嘘つきのパラドックスになる）——も
+同じ対角線補題から出ます。証明可能性（算術化できる）と真理（できない）の差が、不完全性の源泉です。
+
+## ゲンツェンの無矛盾性証明
+
+第二定理は「$\mathrm{PA}$ 内部では $\mathrm{PA}$ の無矛盾性を証明できない」と言うだけで、**外から**証明する道を閉ざしません。
+ゲンツェン（1936）は、$\mathrm{PA}$ の外の原理を**ただ一つ**——順序数 $\varepsilon_0$ までの超限帰納法——借りて、$\mathrm{PA}$ の無矛盾性を証明しました。
+
+<Statement kind="theorem" title="ゲンツェンの無矛盾性証明">
+$\mathrm{PA}$ の各証明に順序数 $<\varepsilon_0$ を割り当て、[カット除去](/logic-foundations/9)的な変形で証明を単純化するたびに
+その順序数が**真に減少する**ように仕組む。$\varepsilon_0$ 未満に無限降下列は無い（$\varepsilon_0$ までの超限帰納法）ので、
+矛盾の証明（空シークエントの証明）へ至る変形は停止し、$0=1$ の証明は存在しえない。ゆえに $\mathrm{PA}$ は無矛盾。
+</Statement>
+
+ここで $\varepsilon_0=\sup\{\omega,\ \omega^\omega,\ \omega^{\omega^\omega},\dots\}$、$\omega$ の“塔”の極限で、$\omega^{\varepsilon_0}=\varepsilon_0$ を満たす最小の順序数。
+$\mathrm{PA}$ は $\varepsilon_0$ **未満**の各順序数までの超限帰納法は証明できるが、$\varepsilon_0$ までのそれは証明できない
+（できれば第二定理に反する）。この $\varepsilon_0$ が $\mathrm{PA}$ の<Term>証明論的順序数</Term>——体系の“強さ”を測る目盛りです
+（第16章の逆数学と響き合う）。第9章のカット除去が、ここで算術の無矛盾性証明の技術的エンジンとして結実しています。
+
+## つまずきポイント
+
+<Statement kind="remark" title="よくある誤解">
+- **「証明できない＝偽」ではない。** ゲーデル文 $G$ は $T$ で証明できないが**真**（標準モデルで）。証明可能性と真理は別。$G$ を足しても、また別の決定不能文が現れる。
+- **不完全性は「数学が間違っている」ではない。** 「十分強い体系は、真理をすべては枚挙できない」という**限界**の主張。個々の数学は健在。
+- **第二定理は「無矛盾性を絶対に証明できない」ではない。** $T$ **内部で**は不可能というだけ。ゲンツェンのように、より強い（$\varepsilon_0$ 帰納法を持つ）原理を借りれば外から証明できる。
+- **完全性定理（第7章）と矛盾しない。** 完全性は「妥当な論理式は導ける」（論理について）、不完全性は「算術には決定できない文がある」（特定の理論について）。対象が違う。
+</Statement>
+
+## この章のまとめ
+
+- **算術化**（ゲーデル数）で証明・論理式を数に符号化。証明関係は決定可能で、**表現可能性定理**により $T$ 内部の論理式 $\mathrm{Prov}_T$ で語れる。
+- **対角線補題**（自己適用の対角線化）が「私は $\psi$ をもつ」という自己言及文を生む。$\psi=\lnot\mathrm{Prov}_T$ でゲーデル文 $G$「私は証明できない」を作る。
+- **第一不完全性定理**：無矛盾（ロスサーで十分）な帰納的公理化理論 $T\supseteq Q$ には決定不能文があり、$G$ は真だが証明不能。**第二不完全性定理**：導出可能性条件から $T\vdash\mathrm{Con}(T)\to G$、ゆえに $T\not\vdash\mathrm{Con}(T)$——自分の無矛盾性を証明できない。
+- **ゲンツェン**は $\varepsilon_0$ までの超限帰納法を借りて $\mathrm{PA}$ の無矛盾性を外から証明。$\varepsilon_0$ が $\mathrm{PA}$ の証明論的順序数で、カット除去が技術的核心。
+
+論理と計算の限界を見ました。次章から**公理的集合論**——数学全体の土台 ZFC と、順序数・基数へ進みます。

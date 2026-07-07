@@ -1,0 +1,178 @@
+---
+/* TruthTable.astro — 命題論理式の真理値表を作る体験装置。
+   入力欄に論理式を書くと、含まれる変数を検出して全 2ⁿ 行の真理値表を描き、
+   トートロジー（恒真）／矛盾（恒偽）／充足可能（それ以外）を判定する。
+   結合子は ¬ ~ ! / ∧ & / ∨ | / → -> / ↔ <-> を受け付ける。
+   「意味論では式の真偽が付値だけで決まる」を手で確かめられる。
+   小さな再帰下降パーサを内蔵。状態はメモリ内のみ（storage 不使用）。 */
+---
+
+<figure class="tt" role="group" aria-label="命題論理式の真理値表">
+  <div class="tt-controls">
+    <label class="tt-label" for="tt-in">論理式（例: (p -&gt; q) -&gt; ((q -&gt; r) -&gt; (p -&gt; r))）</label>
+    <input id="tt-in" class="tt-input" type="text" spellcheck="false"
+           value="(p -> q) -> ((q -> r) -> (p -> r))" />
+    <div class="tt-presets">
+      <button type="button" data-f="p | ~p">排中律</button>
+      <button type="button" data-f="p & ~p">矛盾</button>
+      <button type="button" data-f="((p -> q) -> p) -> p">パースの法則</button>
+      <button type="button" data-f="~(p & q) <-> (~p | ~q)">ド・モルガン</button>
+    </div>
+  </div>
+  <div id="tt-out" class="tt-out" aria-live="polite"></div>
+</figure>
+
+<script>
+  const input = document.getElementById("tt-in") as HTMLInputElement | null;
+  const out = document.getElementById("tt-out");
+  const presetBtns = document.querySelectorAll<HTMLButtonElement>(".tt-presets button");
+
+  if (input && out) {
+    // ── トークナイザ ──
+    type Tok = { t: string; v?: string };
+    const lex = (s: string): Tok[] => {
+      const toks: Tok[] = [];
+      let i = 0;
+      while (i < s.length) {
+        const c = s[i];
+        if (/\s/.test(c)) { i++; continue; }
+        if (/[a-zA-Z]/.test(c)) { toks.push({ t: "var", v: c }); i++; continue; }
+        if (c === "(") { toks.push({ t: "(" }); i++; continue; }
+        if (c === ")") { toks.push({ t: ")" }); i++; continue; }
+        if (c === "¬" || c === "~" || c === "!") { toks.push({ t: "not" }); i++; continue; }
+        if (c === "∧" || c === "&") { toks.push({ t: "and" }); i++; continue; }
+        if (c === "∨" || c === "|") { toks.push({ t: "or" }); i++; continue; }
+        if (c === "↔") { toks.push({ t: "iff" }); i++; continue; }
+        if (c === "→") { toks.push({ t: "imp" }); i++; continue; }
+        if (c === "<" && s.slice(i, i + 3) === "<->") { toks.push({ t: "iff" }); i += 3; continue; }
+        if (c === "-" && s[i + 1] === ">") { toks.push({ t: "imp" }); i += 2; continue; }
+        throw new Error(`読めない記号: “${c}”`);
+      }
+      return toks;
+    };
+
+    // ── 再帰下降パーサ（優先度: iff < imp < or < and < not < atom） ──
+    type Node = any;
+    const parse = (toks: Tok[]): Node => {
+      let p = 0;
+      const peek = () => toks[p];
+      const eat = (t: string) => { if (toks[p]?.t !== t) throw new Error("括弧か記号が不足しています"); p++; };
+      const atom = (): Node => {
+        const tk = peek();
+        if (!tk) throw new Error("式が途中で終わっています");
+        if (tk.t === "not") { p++; return { op: "not", a: atom() }; }
+        if (tk.t === "(") { p++; const e = iff(); eat(")"); return e; }
+        if (tk.t === "var") { p++; return { op: "var", v: tk.v }; }
+        throw new Error("変数か括弧が必要です");
+      };
+      const bin = (sub: () => Node, ops: string[], right = false): (() => Node) => () => {
+        let left = sub();
+        const parts = [left];
+        while (peek() && ops.includes(peek()!.t)) { const o = peek()!.t; p++; parts.push({ __op: o }); parts.push(sub()); }
+        if (parts.length === 1) return left;
+        if (!right) { // 左結合
+          let acc = parts[0];
+          for (let k = 1; k < parts.length; k += 2) acc = { op: parts[k].__op, a: acc, b: parts[k + 1] };
+          return acc;
+        } else { // 右結合
+          let acc = parts[parts.length - 1];
+          for (let k = parts.length - 2; k >= 1; k -= 2) acc = { op: parts[k].__op, a: parts[k - 1], b: acc };
+          return acc;
+        }
+      };
+      const and = bin(atom, ["and"]);
+      const or = bin(and, ["or"]);
+      const imp = bin(or, ["imp"], true);
+      const iff = bin(imp, ["iff"]);
+      const e = iff();
+      if (p !== toks.length) throw new Error("余分な記号があります");
+      return e;
+    };
+
+    const evalNode = (n: Node, env: Record<string, boolean>): boolean => {
+      switch (n.op) {
+        case "var": return env[n.v!];
+        case "not": return !evalNode(n.a, env);
+        case "and": return evalNode(n.a, env) && evalNode(n.b, env);
+        case "or": return evalNode(n.a, env) || evalNode(n.b, env);
+        case "imp": return !evalNode(n.a, env) || evalNode(n.b, env);
+        case "iff": return evalNode(n.a, env) === evalNode(n.b, env);
+      }
+      return false;
+    };
+    const collectVars = (n: Node, set: Set<string>) => {
+      if (n.op === "var") set.add(n.v!);
+      if (n.a) collectVars(n.a, set);
+      if (n.b) collectVars(n.b, set);
+    };
+    const pretty = (s: string) =>
+      s.replace(/<->/g, "↔").replace(/->/g, "→").replace(/~|!/g, "¬").replace(/&/g, "∧").replace(/\|/g, "∨");
+
+    const render = () => {
+      out!.innerHTML = "";
+      let ast: Node;
+      try { ast = parse(lex(input.value)); }
+      catch (e: any) { out!.innerHTML = `<p class="tt-err">式を解析できません: ${e.message}</p>`; return; }
+
+      const vars = [...new Set<string>((() => { const s = new Set<string>(); collectVars(ast, s); return s; })())].sort();
+      if (vars.length === 0) { out!.innerHTML = `<p class="tt-err">変数がありません。</p>`; return; }
+      if (vars.length > 5) { out!.innerHTML = `<p class="tt-err">変数が多すぎます（5個まで）。</p>`; return; }
+
+      const rows = 1 << vars.length;
+      let allT = true, allF = true;
+      let html = `<table class="tt-grid"><thead><tr>`;
+      vars.forEach((v) => (html += `<th>${v}</th>`));
+      html += `<th class="tt-fcol">${pretty(input.value)}</th></tr></thead><tbody>`;
+      for (let r = 0; r < rows; r++) {
+        const env: Record<string, boolean> = {};
+        vars.forEach((v, k) => (env[v] = !!((r >> (vars.length - 1 - k)) & 1)));
+        const val = evalNode(ast, env);
+        allT = allT && val; allF = allF && !val;
+        html += "<tr>";
+        vars.forEach((v) => (html += `<td class="${env[v] ? "tt-T" : "tt-F"}">${env[v] ? "T" : "F"}</td>`));
+        html += `<td class="tt-fcol ${val ? "tt-T" : "tt-F"}">${val ? "T" : "F"}</td></tr>`;
+      }
+      html += "</tbody></table>";
+
+      const verdict = allT
+        ? `<span class="tt-taut">トートロジー（恒真）</span>：どの付値でも真。＝論理的に正しい（妥当な）論理式。`
+        : allF
+          ? `<span class="tt-contra">矛盾（充足不能）</span>：どの付値でも偽。`
+          : `<span class="tt-sat">充足可能・恒真でない</span>：真にする付値も偽にする付値もある。`;
+      out!.innerHTML = html + `<p class="tt-verdict">${verdict}</p>`;
+    };
+
+    input.addEventListener("input", render);
+    presetBtns.forEach((b) => b.addEventListener("click", () => { input.value = b.dataset.f!; render(); }));
+    render();
+  }
+</script>
+
+<style>
+  .tt { margin: 26px 0; padding: 16px 18px 14px; border: 1px solid var(--line); border-radius: 10px; background: var(--card); }
+  .tt-controls { display: flex; flex-direction: column; gap: 8px; margin-bottom: 12px; }
+  .tt-label { font-size: 13px; font-weight: 600; color: var(--ink); font-family: var(--sans); }
+  .tt-input {
+    width: 100%; box-sizing: border-box; font-family: var(--mono); font-size: 15px;
+    padding: 8px 10px; border: 1px solid var(--line); border-radius: 8px; background: var(--paper-sunk); color: var(--ink);
+  }
+  .tt-input:focus-visible { outline: 2px solid var(--ai); outline-offset: -1px; }
+  .tt-presets { display: flex; flex-wrap: wrap; gap: 6px; }
+  .tt-presets button {
+    appearance: none; border: 1px solid var(--line); background: transparent; color: var(--ink-faint);
+    font-family: var(--sans); font-size: 12px; padding: 4px 10px; border-radius: 999px; cursor: pointer;
+  }
+  .tt-presets button:hover { border-color: var(--ai); color: var(--ai); }
+  .tt-out { overflow-x: auto; }
+  .tt-grid { border-collapse: collapse; margin: 0 auto; font-family: var(--mono); font-size: 14px; }
+  .tt-grid th, .tt-grid td { border: 1px solid var(--line); padding: 3px 12px; text-align: center; }
+  .tt-grid th { color: var(--ink-faint); font-family: var(--serif); }
+  .tt-fcol { border-left: 2px solid var(--ink-faint) !important; font-weight: 700; }
+  .tt-T { color: var(--ai); }
+  .tt-F { color: var(--ink-faint); }
+  .tt-verdict { margin-top: 12px; font-size: 13px; line-height: 1.7; color: var(--ink-faint); font-family: var(--sans); }
+  .tt-taut { color: var(--ai); font-weight: 700; }
+  .tt-contra { color: var(--shu); font-weight: 700; }
+  .tt-sat { color: var(--ink); font-weight: 700; }
+  .tt-err { color: var(--shu); font-size: 13px; font-family: var(--sans); }
+</style>

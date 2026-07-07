@@ -1,0 +1,137 @@
+---
+layout: ../../layouts/BaseLayout.astro
+title: 第9章 シークエント計算とカット除去
+description: 証明の構造を解析する。ゲンツェンのLK、カット規則、カット除去定理（Hauptsatz）とその証明の構造、部分論理式性・無矛盾性への帰結。
+---
+
+import Term from "../../components/assets/Term.astro";
+import Statement from "../../components/assets/Statement.astro";
+import Tree from "../../components/proof/Tree.astro";
+import Inf from "../../components/proof/Inf.astro";
+import Ax from "../../components/proof/Ax.astro";
+
+# 第9章 シークエント計算とカット除去
+
+## 証明そのものを、数学の対象にする
+
+ここまで「$\vdash$」を「導ける／導けない」という**有無**で使ってきました。証明論はもう一歩踏み込み、
+**証明の形そのもの**を数学的対象として解析します。証明はどんな構造をもつのか、余計な回り道を
+削れるのか、削るとどんな良いことが起きるのか。
+
+その舞台がゲンツェンの**シークエント計算 LK** です。自然演繹（第2章）が「仮定を立てて解消する」木だったのに対し、
+LK は「$\Gamma\vdash\Delta$（前提の並びから結論の並びへ）」という**シークエント**を書き換えていく、非常に対称的な体系です。
+そして LK の心臓が**カット規則**——補題を使う推論の形式化——と、その驚くべき除去可能性（**カット除去定理**）。
+カットが消せるという一事から、無矛盾性・部分論理式性・決定可能性が次々に流れ出ます。ゲンツェンが
+[算術の無矛盾性](/logic-foundations/13)を証明した道具でもあり、証明論の背骨です。
+
+> シークエント計算は証明を対称的な書き換えとして扱う。**カット除去**が、無矛盾性など深い帰結を生む。
+
+## シークエントと LK の規則
+
+<Statement kind="definition" title="シークエント">
+論理式の有限列 $\Gamma,\Delta$ に対し $\Gamma\vdash\Delta$ を<Term>シークエント</Term>という。意味は
+「$\Gamma$ の全部が真なら $\Delta$ の**少なくとも一つ**が真」＝ $\bigwedge\Gamma\to\bigvee\Delta$。左（<Term>前件</Term>）は「かつ」、
+右（<Term>後件</Term>）は「または」と読む。
+</Statement>
+
+LK の規則は、公理・構造規則・論理規則・カットの4種。各結合子に**左規則**（前件に導入）と**右規則**（後件に導入）が対で付きます。
+
+<Statement kind="definition" title="LK の規則（抜粋）">
+公理：$A\vdash A$。構造規則：<Term>weakening</Term>（式を足す）、<Term>contraction</Term>（重複を1つに）、<Term>exchange</Term>（順序替え）。
+論理規則の例：
+$$\text{（∧L）}\ \frac{\Gamma,A\vdash\Delta}{\Gamma,A\land B\vdash\Delta}\qquad \text{（∧R）}\ \frac{\Gamma\vdash A,\Delta \quad \Gamma\vdash B,\Delta}{\Gamma\vdash A\land B,\Delta}$$
+$$\text{（→R）}\ \frac{\Gamma,A\vdash B,\Delta}{\Gamma\vdash A\to B,\Delta}\qquad \text{（¬R）}\ \frac{\Gamma,A\vdash\Delta}{\Gamma\vdash\lnot A,\Delta}$$
+そして<Term>カット規則</Term>：
+$$\text{（Cut）}\ \frac{\Gamma\vdash A,\Delta \qquad \Gamma',A\vdash\Delta'}{\Gamma,\Gamma'\vdash\Delta,\Delta'}.$$
+</Statement>
+
+カット規則の意味は「**補題 $A$ を、片方で示し（$\vdash A$）、もう片方で使う（$A\vdash$）と、$A$ を消して繋げられる**」。
+数学者が「補題 $A$ を経由して」証明するのを形式化したものです。論理規則が結合子を**組み立てる**だけなのに対し、
+カットだけが「途中で現れて消える式 $A$」を許す——これがカットの特別さであり、除去の対象になる理由です。
+例として $\vdash(A\land B)\to(B\land A)$ を、**カットを使わずに**導きます。
+
+<Tree>
+  <Inf rule="→R" c="\ \vdash (A\land B)\to(B\land A)">
+    <Inf rule="∧R" c="A\land B \vdash B\land A">
+      <Inf rule="∧L" c="A\land B \vdash B"><Ax f="B \vdash B" /></Inf>
+      <Inf rule="∧L" c="A\land B \vdash A"><Ax f="A \vdash A" /></Inf>
+    </Inf>
+  </Inf>
+</Tree>
+
+下から読むと、$\to$ を後件に作り（→R）、$\land$ を後件に作り（∧R）、前件の $\land$ を分解（∧L）して公理に至る。
+**各段で扱う論理式は、下の結論の“部分”になっている**——この性質（部分論理式性）が、カットの無い証明の際立った特徴です。
+
+## カット除去定理
+
+<Statement kind="theorem" title="カット除去定理（ゲンツェンの基本定理 / Hauptsatz）">
+LK で導けるシークエントは、**カット規則を一切使わずに**導ける。
+</Statement>
+
+証明は「カットを木の上へ押し上げ、より単純なカットに分解して消す」という二重帰納法です。全ケースは膨大なので、
+帰納の骨格と鍵となる簡約を示します。
+
+<Statement kind="definition" title="カットの次数と階数">
+カットで消される式 $A$ の論理結合子の個数を<Term>次数</Term>、そのカットの直上にある部分証明の高さ（に関する量）を<Term>階数</Term>という。
+</Statement>
+
+<Statement kind="proof">
+一番上（一番右上）のカット1つに注目し、$(\text{次数},\ \text{階数})$ の辞書式順序による帰納法で、それを除去（または上方へ移動して分解）する。
+
+**(1) 非主要カット（階数の減少）：** カット式 $A$ が、直上の推論の主役（principal formula）でない場合。カットを、
+その推論の**上**へ滑らせる（permutation）と、カットの階数が下がる。帰納法の仮定で処理できる。
+
+**(2) 主要カット（次数の減少）：** $A$ が両側で直前に作られた（左は $A$ を後件に、右は $A$ を前件に導入した）場合、
+$A$ の形に応じて**より小さい部分論理式のカットに置き換える**。例：$A=B\land C$ のとき
+$$\frac{\dfrac{\Gamma\vdash B,\Delta\quad\Gamma\vdash C,\Delta}{\Gamma\vdash B\land C,\Delta}\ \ \dfrac{\Gamma',B\vdash\Delta'}{\Gamma',B\land C\vdash\Delta'}}{\Gamma,\Gamma'\vdash\Delta,\Delta'}(\text{Cut on }B\land C)$$
+は、$B$ に関するカット1つ $\dfrac{\Gamma\vdash B,\Delta\quad \Gamma',B\vdash\Delta'}{\Gamma,\Gamma'\vdash\Delta,\Delta'}$ に置き換わる。次数が
+$B\land C$ から $B$ へ真に減る。$\to,\lnot,\forall,\exists$ でも同様の**主要簡約**がある（量化子では代入が入る）。
+
+**(3) 公理・weakening との衝突：** カット式が公理 $A\vdash A$ 由来、または weakening で入った場合、カットは自明に消える。
+
+各ステップでカットは消えるか、$(\text{次数},\text{階数})$ が真に減少する。辞書式順序に無限降下列は無いので、
+有限回で全カットが除去される。∎
+</Statement>
+
+証明の“エンジン”は、主要カットが**カット式の部分論理式に関する小さいカットへ分解される**こと。
+$B\land C$ のカットが $B$（または $C$）のカットに落ちる——結合子が1つ減る。この降下が停止性を保証します
+（ただし、証明の大きさは超指数的に爆発しうる。効率と可能性は別問題）。
+
+## カット除去の帰結
+
+カットが消せると、証明が「部分論理式だけで組み上がる」形に正規化され、深い系が一気に出ます。
+
+<Statement kind="corollary" title="部分論理式性・無矛盾性・その他">
+- **部分論理式性（subformula property）**：カットの無い証明には、結論のシークエントに現れる論理式の**部分論理式しか**現れない。
+- **無矛盾性**：空シークエント $\vdash$（＝ $\bot$）はカットの無い証明をもたない（どの規則も空の結論を出せない）。カット除去より、そもそも $\vdash$ は導けない。**LK は無矛盾**。
+- **一貫性・整合性**：$A$ と $\lnot A$ が同時に導ければカットで $\vdash$ が出るが、それは不可能。
+- **決定可能性（命題論理）**：部分論理式性により証明探索の空間が有限に絞られ、命題論理の妥当性は機械的に判定できる。
+- **クレイグの補間定理**：カット除去の精密化から、$\vdash A\to B$ なら $A,B$ 共通の語彙だけの補間式 $C$ で $\vdash A\to C,\ \vdash C\to B$ が取れる。
+</Statement>
+
+無矛盾性の証明が「空シークエントはどの規則の結論にもならない」というほとんど**目視で分かる**議論に落ちるのが、
+カット除去の威力です。意味論（健全性）を経由せず、**証明の構文的構造だけ**から無矛盾性が出る——この“純構文的な
+無矛盾性証明”の路線が、第13章のゲンツェンによる算術の無矛盾性証明（$\varepsilon_0$ までの超限帰納法）へ発展します。
+
+<Statement kind="remark" title="なぜ「純構文的」が重要か">
+健全性による無矛盾性証明は「モデルが存在する」という意味論（＝より強い前提）に頼る。カット除去は記号操作だけで
+無矛盾性を出すので、ヒルベルトの「有限の立場で無矛盾性を示す」計画に近い。第二不完全性定理（第13章）が
+「体系は自分の無矛盾性を自分では証明できない」と言うため、ゲンツェンはあえて $\varepsilon_0$ 帰納法という
+体系の外の原理を1つだけ借りて算術の無矛盾性を証明した。カット除去はその技術的核心。
+</Statement>
+
+## つまずきポイント
+
+<Statement kind="remark" title="よくある誤解">
+- **カットは「あっても導けるものは同じ」。** カット除去は導出可能性を変えない（カット入り LK とカットフリー LK は同じシークエントを導く）。消せるのは「使わずに済む」という意味で、体系が弱くなるのではない。
+- **カット除去は証明を短くしない。** むしろサイズは超指数的に増えうる。得られるのは「構造の良さ（部分論理式性）」であって効率ではない。
+- **無矛盾性は意味論なしで出る。** カット除去による無矛盾性証明は純構文的。これがヒルベルト計画・ゲンツェンの路線の核。
+</Statement>
+
+## この章のまとめ
+
+- **シークエント計算 LK** は $\Gamma\vdash\Delta$ を書き換える対称的な体系。各結合子に左右の規則があり、**カット規則**が「補題を経由する推論」を担う。
+- **カット除去定理**：カットは常に除去できる。証明は $(\text{次数},\text{階数})$ の二重帰納法で、主要カットを**部分論理式の小さいカットへ分解**するのがエンジン。
+- 帰結：**部分論理式性・無矛盾性（空シークエントは導けない）・命題論理の決定可能性・クレイグ補間**。純構文的な無矛盾性証明はゲンツェンの算術無矛盾性へ繋がる。
+
+次章は、これまでの**古典**論理を相対化します。直観主義論理・様相論理・高階論理という**非古典・高階**の論理へ進みます。

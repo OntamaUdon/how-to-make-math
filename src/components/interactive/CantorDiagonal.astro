@@ -1,0 +1,94 @@
+---
+/* CantorDiagonal.astro — カントールの対角線論法の体験装置。
+   無限に続く 0/1 の列を縦に並べた「表」を作り、対角線を取り出して
+   すべて反転した列 d を下に表示する。d は第 i 行と第 i 桁で必ず食い違うので、
+   どの行にも一致しない＝表に載っていない。ボタンで表を作り直せる。
+   「無限に並べても必ず漏れる列が作れる」を手を動かして確かめる。
+   状態はメモリ内のみ（storage 不使用）。 */
+---
+
+<figure class="cd" role="group" aria-label="カントールの対角線論法の可視化">
+  <div class="cd-controls">
+    <button id="cd-regen" type="button" class="cd-btn">別の表で作り直す</button>
+  </div>
+  <div id="cd-table" class="cd-table" aria-hidden="true"></div>
+  <figcaption id="cd-caption" class="cd-caption"></figcaption>
+</figure>
+
+<script>
+  const host = document.getElementById("cd-table");
+  const btn = document.getElementById("cd-regen");
+  const caption = document.getElementById("cd-caption");
+
+  if (host && btn && caption) {
+    const N = 9; // 行数＝桁数（正方の表）
+
+    const build = () => {
+      // ランダムな 0/1 の表
+      const rows: number[][] = [];
+      for (let i = 0; i < N; i++) {
+        const r: number[] = [];
+        for (let j = 0; j < N; j++) r.push(Math.random() < 0.5 ? 0 : 1);
+        rows.push(r);
+      }
+      const diag = rows.map((r, i) => r[i]);
+      const d = diag.map((b) => 1 - b); // 反転した列
+
+      let html = '<table class="cd-grid"><tbody>';
+      for (let i = 0; i < N; i++) {
+        html += "<tr>";
+        html += `<th scope="row">s<sub>${i + 1}</sub></th>`;
+        for (let j = 0; j < N; j++) {
+          const cls = i === j ? ' class="cd-diag"' : "";
+          html += `<td${cls}>${rows[i][j]}</td>`;
+        }
+        html += "<td class='cd-dots'>…</td></tr>";
+      }
+      // 構成した列 d
+      html += '<tr class="cd-drow"><th scope="row">d</th>';
+      for (let j = 0; j < N; j++) html += `<td class="cd-dcell">${d[j]}</td>`;
+      html += "<td class='cd-dots'>…</td></tr>";
+      html += "</tbody></table>";
+      host.innerHTML = html;
+
+      caption.innerHTML =
+        "各行 s<sub>1</sub>, s<sub>2</sub>, … は「無限に続く 0/1 の列」。" +
+        "藍色の<b>対角線</b>を取り出して 0↔1 をすべて反転させたのが最下段の <b>d</b>（朱色）。" +
+        "すると d は第 i 行と <b>第 i 桁で必ず食い違う</b>ので、どの行とも一致しない。" +
+        "＝どんなに列を並べても、必ず漏れる列 d を作れる。だから 0/1 の無限列全体は<b>可算でない</b>。";
+    };
+
+    btn.addEventListener("click", build);
+    build();
+  }
+</script>
+
+<style>
+  .cd {
+    margin: 26px 0;
+    padding: 16px 18px 12px;
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    background: var(--card);
+  }
+  .cd-controls { margin-bottom: 12px; }
+  .cd-btn {
+    appearance: none; border: 1px solid var(--line); background: var(--paper-sunk);
+    color: var(--ink); font-family: var(--sans); font-size: 13px; font-weight: 600;
+    padding: 7px 14px; border-radius: 8px; cursor: pointer;
+  }
+  .cd-btn:hover { border-color: var(--ai); color: var(--ai); }
+  .cd-table { overflow-x: auto; }
+  .cd-grid {
+    border-collapse: collapse; margin: 0 auto;
+    font-family: var(--mono); font-size: 15px; color: var(--ink);
+  }
+  .cd-grid th { color: var(--ink-faint); font-weight: 600; padding: 2px 10px 2px 2px; font-family: var(--serif); }
+  .cd-grid td { width: 26px; height: 26px; text-align: center; }
+  .cd-diag { background: var(--ai-wash); color: var(--ai); font-weight: 700; border-radius: 4px; }
+  .cd-dots { color: var(--ink-faint); }
+  .cd-drow th { color: var(--shu); }
+  .cd-dcell { background: var(--shu-wash); color: var(--shu); font-weight: 700; border-radius: 4px; }
+  .cd-caption { margin-top: 12px; font-size: 13px; line-height: 1.8; color: var(--ink-faint); font-family: var(--sans); }
+  .cd-caption b { color: var(--ink); font-weight: 700; }
+</style>

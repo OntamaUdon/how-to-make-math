@@ -1,0 +1,105 @@
+---
+/* Cobweb.astro — 縮小写像とバナッハの不動点定理の体験装置。
+   写像 f(x)=a·x+b の反復 x→f(x)→f(f(x))→… を「クモの巣図」で描く。
+   傾き a のスライダーで、|a|<1（縮小）なら不動点 x*=b/(1-a) に必ず収束し、
+   |a|>1 なら発散する様子が見える。開始点 x₀ も動かせる。
+   「縮小率が 1 未満なら、どこから始めても一点に吸い込まれる」を体感する。
+   状態はメモリ内のみ（storage 不使用）。 */
+---
+
+<figure class="cw" role="group" aria-label="縮小写像の反復（クモの巣図）">
+  <div class="cw-controls">
+    <label class="cw-label">傾き a = <output id="cw-a-v">0.6</output>
+      <input id="cw-a" type="range" min="-1.4" max="1.4" step="0.05" value="0.6" /></label>
+    <label class="cw-label">開始点 x₀ = <output id="cw-x-v">-2.0</output>
+      <input id="cw-x" type="range" min="-3.5" max="3.5" step="0.1" value="-2" /></label>
+  </div>
+  <svg id="cw-svg" viewBox="0 0 420 360" class="cw-svg" role="img"
+       aria-label="写像の反復が不動点へ収束（または発散）する図"></svg>
+  <figcaption id="cw-caption" class="cw-caption"></figcaption>
+</figure>
+
+<script>
+  const svg = document.getElementById("cw-svg");
+  const aIn = document.getElementById("cw-a") as HTMLInputElement | null;
+  const xIn = document.getElementById("cw-x") as HTMLInputElement | null;
+  const aOut = document.getElementById("cw-a-v");
+  const xOut = document.getElementById("cw-x-v");
+  const caption = document.getElementById("cw-caption");
+
+  if (svg && aIn && xIn && aOut && xOut && caption) {
+    const NS = "http://www.w3.org/2000/svg";
+    const b = 1;                          // 切片は固定
+    const L = 4, W = 420, H = 360, pad = 30;
+    const sx = (x: number) => pad + (x + L) / (2 * L) * (W - 2 * pad);
+    const sy = (y: number) => H - pad - (y + L) / (2 * L) * (H - 2 * pad);
+    const el = (n: string, a: Record<string, string | number>) => {
+      const e = document.createElementNS(NS, n);
+      for (const k in a) e.setAttribute(k, String(a[k]));
+      return e;
+    };
+    const seg = (x1: number, y1: number, x2: number, y2: number, stroke: string, w = 1, opacity = 1) =>
+      el("line", { x1: sx(x1), y1: sy(y1), x2: sx(x2), y2: sy(y2), stroke, "stroke-width": w, opacity });
+
+    function draw(a: number, x0: number) {
+      svg.innerHTML = "";
+      // 軸
+      svg.appendChild(seg(-L, 0, L, 0, "var(--line)", 1));
+      svg.appendChild(seg(0, -L, 0, L, "var(--line)", 1));
+      // y = x（対角線）
+      svg.appendChild(seg(-L, -L, L, L, "var(--ink-faint)", 1, 0.7));
+      // y = f(x) = a x + b
+      svg.appendChild(seg(-L, a * -L + b, L, a * L + b, "var(--ai)", 2.2));
+
+      // 反復のクモの巣
+      let x = x0;
+      for (let i = 0; i < 40; i++) {
+        const fx = a * x + b;
+        // 縦: (x, x) → (x, f(x))   横: (x, f(x)) → (f(x), f(x))
+        svg.appendChild(seg(x, x, x, fx, "var(--shu)", 1.4, 0.9));
+        svg.appendChild(seg(x, fx, fx, fx, "var(--shu)", 1.4, 0.9));
+        x = fx;
+        if (Math.abs(x) > 12) break;
+      }
+      // 開始点
+      svg.appendChild(el("circle", { cx: sx(x0), cy: sy(0), r: 3.5, fill: "var(--shu)" }));
+
+      // 不動点 x* = b/(1-a)
+      const contract = Math.abs(a) < 1;
+      aOut.textContent = a.toFixed(2);
+      xOut.textContent = x0.toFixed(1);
+      if (contract) {
+        const star = b / (1 - a);
+        svg.appendChild(el("circle", { cx: sx(star), cy: sy(star), r: 4.5, fill: "none", stroke: "var(--ai)", "stroke-width": 2 }));
+        caption.innerHTML =
+          `|a| = ${Math.abs(a).toFixed(2)} < 1 なので f は<b>縮小写像</b>。開始点をどこにとっても、` +
+          `反復は<b>ただ一つの不動点</b> x* = ${star.toFixed(2)}（藍の○）に吸い込まれます。これがバナッハの不動点定理。`;
+      } else {
+        caption.innerHTML =
+          `|a| = ${Math.abs(a).toFixed(2)} ≥ 1 なので縮小写像ではありません。` +
+          `反復は不動点から<b>遠ざかって発散</b>します。縮小率が 1 未満であることが収束の鍵だと分かります。`;
+      }
+    }
+
+    const update = () => draw(parseFloat(aIn.value), parseFloat(xIn.value));
+    aIn.addEventListener("input", update);
+    xIn.addEventListener("input", update);
+    update();
+  }
+</script>
+
+<style>
+  .cw {
+    margin: 26px 0;
+    padding: 16px 18px 12px;
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    background: var(--card);
+  }
+  .cw-controls { display: flex; flex-wrap: wrap; gap: 8px 24px; margin-bottom: 10px; }
+  .cw-label { font-size: 13px; font-weight: 600; color: var(--ink); font-family: var(--sans); display: flex; flex-direction: column; gap: 4px; }
+  .cw-label input { width: 180px; accent-color: var(--shu); }
+  .cw-svg { width: 100%; max-width: 440px; height: auto; display: block; margin: 0 auto; }
+  .cw-caption { margin-top: 10px; font-size: 13px; line-height: 1.7; color: var(--ink-faint); font-family: var(--sans); }
+  .cw-caption b { color: var(--ink); font-weight: 700; }
+</style>

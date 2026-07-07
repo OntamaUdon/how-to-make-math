@@ -1,0 +1,185 @@
+---
+layout: ../../layouts/BaseLayout.astro
+title: 第3章 健全性と完全性（命題論理）
+description: 構文 ⊢ と意味 ⊨ が一致することの完全な証明。健全性、極大無矛盾集合による完全性、そして命題論理のコンパクト性。
+---
+
+import Term from "../../components/assets/Term.astro";
+import Statement from "../../components/assets/Statement.astro";
+
+# 第3章 健全性と完全性（命題論理）
+
+## 「導ける」と「正しい」は一致するのか
+
+ここまでで2つの正しさを手にしました。意味論の $\models\varphi$（全付値で真）と、構文の $\vdash\varphi$
+（規則で導ける）。定義はまったく無関係です。片方は無限の付値を見渡し、もう片方は有限の記号操作。
+この2つが**ぴったり一致する**なら、それは驚くべきことです。
+
+$$\vdash\varphi \iff \models\varphi.$$
+
+左向き（$\vdash\Rightarrow\models$）を**健全性**、右向き（$\models\Rightarrow\vdash$）を**完全性**といいます。
+健全性は「導けたものは本当に正しい」（体系が嘘をつかない）、完全性は「正しいものは必ず導ける」
+（体系に穴が無い）。この章では両方を**完全に証明**します。とくに完全性の証明で編み出す
+「無矛盾なら充足可能」という技法（極大無矛盾集合）は、次章以降の述語論理の完全性
+（ゲーデル、第7章）の縮小版であり、この分野で最も重要な証明技術です。
+
+> 健全性＝導けたものは正しい。完全性＝正しいものは導ける。両者で $\vdash$ と $\models$ が一致する。
+
+## 健全性
+
+<Statement kind="theorem" title="健全性定理">
+$\Gamma\vdash\varphi \Rightarrow \Gamma\models\varphi$。特に $\vdash\varphi\Rightarrow\models\varphi$。
+</Statement>
+
+<Statement kind="proof">
+$\Gamma\vdash\varphi$ の証明 $\theta_1,\dots,\theta_n=\varphi$ の各 $\theta_k$ について
+「$\Gamma$ を真にする任意の付値 $v$ で $\bar v(\theta_k)=\mathrm T$」を $k$ に関する帰納法で示す。
+
+まず**公理はすべてトートロジー**である（真理値表で確認できる。例：(A1) $\varphi\to(\psi\to\varphi)$ は
+$\bar v(\varphi)=\mathrm F$ なら前件が偽で真、$\bar v(\varphi)=\mathrm T$ なら後件 $\psi\to\varphi$ が真で真。(A2),(A3) も同様）。
+
+- $\theta_k$ が公理なら、トートロジーゆえ全付値で真、特に $v$ で真。
+- $\theta_k\in\Gamma$ なら、$v$ は $\Gamma$ を真にするので真。
+- $\theta_k$ が $\theta_i,\ \theta_j=\theta_i\to\theta_k$ からの MP なら、帰納法の仮定で $\bar v(\theta_i)=\bar v(\theta_i\to\theta_k)=\mathrm T$。
+  $\to$ の真理値規則より $\bar v(\theta_k)=\mathrm T$。
+
+よって $\bar v(\varphi)=\mathrm T$。$v$ は任意だったから $\Gamma\models\varphi$。∎
+</Statement>
+
+健全性の証明は素直です。**公理が真で、MP が真を保つ**——この2点だけで、導出のどの段も真だと言える。
+逆の完全性は、はるかに深い議論を要します。
+
+## 無矛盾性と充足可能性
+
+完全性を「$\models\Rightarrow\vdash$」の形で直接示すのは難しいので、対偶と、意味論・構文の橋になる次の言葉を使います。
+
+<Statement kind="definition" title="無矛盾">
+論理式の集合 $\Gamma$ が<Term>無矛盾</Term>（consistent）とは、ある論理式 $\varphi$ について
+$\Gamma\vdash\varphi$ と $\Gamma\vdash\lnot\varphi$ が同時には成り立たないこと。
+（同値：$\Gamma\not\vdash\bot$。矛盾した集合からは任意の式が導ける＝爆発律による。）
+</Statement>
+
+完全性の核心は次の**モデル存在定理**に凝縮されます。「証明で矛盾しないもの（構文）は、必ず現実のモデルをもつ（意味論）」。
+
+<Statement kind="theorem" title="モデル存在定理（命題論理）">
+$\Gamma$ が無矛盾ならば、$\Gamma$ は充足可能（$\Gamma$ の全要素を真にする付値が存在）。
+</Statement>
+
+これさえ言えれば完全性は一瞬で出ます（後述）。証明は2段構え：(1) 無矛盾な $\Gamma$ を、
+これ以上式を足せない極限まで膨らませ（**極大無矛盾集合**）、(2) その極大集合から付値を読み取る、という流れです。
+
+## 完全性の証明
+
+### 段階1：リンデンバウムの補題（極大無矛盾集合への拡大）
+
+<Statement kind="definition" title="極大無矛盾集合">
+$\Delta$ が<Term>極大無矛盾</Term>とは、無矛盾であって、かつ $\Delta$ に属さないどの論理式を加えても矛盾すること。
+</Statement>
+
+<Statement kind="lemma" title="リンデンバウムの補題">
+任意の無矛盾集合 $\Gamma$ は、ある極大無矛盾集合 $\Delta\supseteq\Gamma$ に拡大できる。
+</Statement>
+
+<Statement kind="proof">
+論理式は可算個なので $\varphi_0,\varphi_1,\varphi_2,\dots$ と一列に並べられる。$\Delta_0=\Gamma$ とし、
+$$\Delta_{n+1}=\begin{cases}\Delta_n\cup\{\varphi_n\} & (\Delta_n\cup\{\varphi_n\}\ \text{が無矛盾})\\ \Delta_n & (\text{そうでない})\end{cases}$$
+と定める。各 $\Delta_n$ は無矛盾（帰納的に）。$\Delta=\bigcup_n\Delta_n$ とおく。
+
+$\Delta$ は無矛盾：もし $\Delta\vdash\bot$ なら、その証明は有限個の式しか使わないので、ある $\Delta_n$ で
+すでに $\Delta_n\vdash\bot$ となり無矛盾性に反する。
+
+$\Delta$ は極大：$\varphi_n\notin\Delta$ とすると、$\Delta_{n+1}$ の定め方から $\Delta_n\cup\{\varphi_n\}$ は矛盾していた。
+よって $\Delta\cup\{\varphi_n\}\supseteq\Delta_n\cup\{\varphi_n\}$ も矛盾する。∎
+</Statement>
+
+「式を一つずつ吟味し、足しても矛盾しないなら足す」を全論理式について行う。有限性（証明は有限個しか使わない）が、
+無限回の操作の後でも無矛盾性を保証する要です。可算だから番号づけできましたが、非可算な言語では
+ここで[ツォルンの補題](/set-topology/2)（選択公理）を使います——次章以降の伏線です。
+
+### 段階2：極大無矛盾集合の性質
+
+<Statement kind="lemma" title="極大無矛盾集合の完全性">
+$\Delta$ が極大無矛盾なら、任意の論理式 $\varphi,\psi$ について：
+（a）$\Delta\vdash\varphi \iff \varphi\in\Delta$（演繹で閉じている）。
+（b）$\varphi\in\Delta$ または $\lnot\varphi\in\Delta$ のちょうど一方が成り立つ。
+（c）$(\varphi\to\psi)\in\Delta \iff (\varphi\notin\Delta$ または $\psi\in\Delta)$。
+</Statement>
+
+<Statement kind="proof">
+（a）$\Leftarrow$ は自明。$\Rightarrow$：$\Delta\vdash\varphi$ かつ $\varphi\notin\Delta$ とすると、極大性より
+$\Delta\cup\{\varphi\}$ は矛盾、演繹定理から $\Delta\vdash\lnot\varphi$。これと $\Delta\vdash\varphi$ で $\Delta$ が矛盾し不合理。
+
+（b）両方属すれば $\Delta$ が矛盾するので、多くて一方。少なくとも一方：$\varphi\notin\Delta$ なら極大性で
+$\Delta\cup\{\varphi\}$ は矛盾、演繹定理で $\Delta\vdash\lnot\varphi$、(a) より $\lnot\varphi\in\Delta$。
+
+（c）$\Rightarrow$：$(\varphi\to\psi)\in\Delta$ かつ $\varphi\in\Delta$ なら MP で $\Delta\vdash\psi$、(a) で $\psi\in\Delta$。
+$\Leftarrow$：$\varphi\notin\Delta$ なら (b) で $\lnot\varphi\in\Delta$、$\lnot\varphi\vdash\varphi\to\psi$（爆発律的に導ける）ゆえ
+$(\varphi\to\psi)\in\Delta$。$\psi\in\Delta$ なら (A1) と MP で $(\varphi\to\psi)\in\Delta$。∎
+</Statement>
+
+(b)(c) が言っているのは、極大無矛盾集合が**真理値表の規則そのもの**を満たすということ。
+「$\Delta$ に属する ＝ 真」とみなせば、$\lnot$ も $\to$ も付値の規則どおりに振る舞う。これで付値が作れます。
+
+### 段階3：真理補題とモデル存在定理
+
+<Statement kind="proof">
+$\Delta\supseteq\Gamma$ を極大無矛盾集合（リンデンバウム）とし、付値を
+$$v(p):=\mathrm T \iff p\in\Delta$$
+で定める。**真理補題**「任意の論理式 $\varphi$ について $\bar v(\varphi)=\mathrm T \iff \varphi\in\Delta$」を
+構造的帰納法で示す。原子式は $v$ の定義そのもの。$\lnot\varphi$：$\bar v(\lnot\varphi)=\mathrm T \iff \bar v(\varphi)=\mathrm F
+\iff \varphi\notin\Delta \iff \lnot\varphi\in\Delta$（最後は補題(b)）。$\varphi\to\psi$：真理値規則と補題(c) が
+そのまま対応する。
+
+よって $\Delta\supseteq\Gamma$ の全要素が $v$ で真、すなわち $\Gamma$ は充足可能。モデル存在定理が示せた。∎
+</Statement>
+
+<Statement kind="theorem" title="完全性定理（命題論理）">
+$\Gamma\models\varphi \Rightarrow \Gamma\vdash\varphi$。
+</Statement>
+
+<Statement kind="proof">
+対偶を示す。$\Gamma\not\vdash\varphi$ と仮定する。すると $\Gamma\cup\{\lnot\varphi\}$ は無矛盾
+（もし矛盾すれば演繹定理から $\Gamma\vdash\lnot\lnot\varphi$、二重否定除去で $\Gamma\vdash\varphi$ となり仮定に反する）。
+モデル存在定理より $\Gamma\cup\{\lnot\varphi\}$ は充足可能——$\Gamma$ を真にし $\varphi$ を偽にする付値がある。
+これは $\Gamma\models\varphi$ を否定する。ゆえに $\Gamma\not\models\varphi$。∎
+</Statement>
+
+健全性とあわせ、$\vdash$ と $\models$ は完全に一致します。**有限の記号操作で、無限の付値にわたる真理を
+過不足なく捉えられる**——論理学最初の到達点です。
+
+## コンパクト性
+
+完全性の“ご褒美”として、意味論だけを見ていては非自明な定理が転がり出ます。
+
+<Statement kind="theorem" title="コンパクト性定理（命題論理）">
+論理式の集合 $\Gamma$ が充足可能 $\iff$ $\Gamma$ の**すべての有限部分集合**が充足可能。
+</Statement>
+
+<Statement kind="proof">
+$\Rightarrow$ は自明。$\Leftarrow$：対偶で、$\Gamma$ が充足不能なら有限部分が充足不能、を示す。
+$\Gamma$ が充足不能なら（モデル存在定理の対偶で）$\Gamma$ は矛盾、すなわち $\Gamma\vdash\bot$。
+この証明は**有限個**の $\Gamma$ の要素しか使わない。その有限部分 $\Gamma_0$ で $\Gamma_0\vdash\bot$、
+健全性より $\Gamma_0$ は充足不能。∎
+</Statement>
+
+証明の心臓は「**$\vdash$ の証明は有限**」という一点。無限の条件（$\Gamma$ 全体の充足可能性）が、
+有限の条件（各有限部分）に還元される。この「無限を有限に落とす」構図は、名前のとおり
+[位相空間のコンパクト性](/set-topology/11)と深く通じており、実際 $\{\mathrm T,\mathrm F\}^{\text{変数}}$ に
+積位相を入れてチコノフの定理から証明することもできます。次章以降、述語論理でもコンパクト性は
+「無限の情報を有限で操る」最強の道具になります。
+
+## つまずきポイント
+
+<Statement kind="remark" title="よくある誤解">
+- **健全性と完全性は別の主張。** 健全性（導ける⇒正しい）は易しく、完全性（正しい⇒導ける）は難しい。「完全」は体系に穴が無いこと（第13章の不完全性とは別概念）。
+- **完全性 vs 不完全性。** ゲーデルの完全性定理（第7章）は「妥当な式は導ける」、不完全性定理（第13章）は「算術には決定できない命題がある」。矛盾せず、対象が違う。
+- **モデル存在定理が完全性の本体。** 「無矛盾⇒充足可能」を示せば、完全性もコンパクト性も系として出る。この技法を身につけるのが最重要。
+</Statement>
+
+## この章のまとめ
+
+- **健全性**（$\vdash\Rightarrow\models$）は「公理が真・MP が真を保つ」で素直に証明できる。
+- **完全性**（$\models\Rightarrow\vdash$）の本体は**モデル存在定理**「無矛盾⇒充足可能」。リンデンバウムで極大無矛盾集合へ拡大し、その帰属関係から付値を読み取り（真理補題）モデルを作る。
+- 系として**コンパクト性**が出る。心は「証明は有限個しか使わない」。$\vdash$ と $\models$ は完全に一致する。
+
+命題論理を完全に把握しました。次章から、量化子 $\forall,\exists$ をもつ**一階述語論理**へ進み、まず構文を厳密に立てます。

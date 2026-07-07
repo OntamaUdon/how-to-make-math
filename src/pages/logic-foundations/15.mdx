@@ -1,0 +1,152 @@
+---
+layout: ../../layouts/BaseLayout.astro
+title: 第15章 独立性 — L・強制法・巨大基数
+description: ZFCで決められない命題。相対無矛盾性、構成可能集合Lとゲーデル、コーエンの強制法、連続体仮説の独立性、巨大基数と決定性公理。
+---
+
+import Term from "../../components/assets/Term.astro";
+import Statement from "../../components/assets/Statement.astro";
+
+# 第15章 独立性 — L・強制法・巨大基数
+
+## 「証明も反証もできない」を、証明する
+
+カントールは問いました——**無限集合の大きさに、$\aleph_0$ と $2^{\aleph_0}$ の間はあるか？** 「無い」（$2^{\aleph_0}=\aleph_1$）というのが
+連続体仮説（CH）です。カントールは生涯これを解こうとして果たせませんでした。20世紀、答えは衝撃的な形で出ます——
+**CH は ZFC から証明も反証もできない**（独立）。
+
+第13章のゲーデル文は人工的に作った自己言及文でしたが、CH は数学者が心から知りたかった**自然な**問題です。
+それが「決定不能」だと**証明された**。この章は、その二方向の証明技法——ゲーデルの**構成可能集合 L**（CH を否定できないことを示す）と、
+コーエンの**強制法**（CH を証明できないことを示す）——を追います。集合論が「唯一の真理」ではなく、
+複数の無矛盾な宇宙を扱う学問だと明らかになる、この分野のクライマックスです。
+
+> CH は ZFC から独立。L が「CH は反証できない」を、強制法が「CH は証明できない」を示す。
+
+## 相対無矛盾性
+
+第13章より ZFC は自分の無矛盾性 $\mathrm{Con}(\mathrm{ZFC})$ を証明できません。だから「$\mathrm{ZFC}+\mathrm{CH}$ は無矛盾」を絶対的には示せない。
+代わりに示すのは**相対**無矛盾性です。
+
+<Statement kind="definition" title="相対無矛盾性と独立性">
+「$\mathrm{Con}(\mathrm{ZFC})\Rightarrow\mathrm{Con}(\mathrm{ZFC}+\varphi)$」を「$\varphi$ は ZFC に対し<Term>相対的に無矛盾</Term>」という
+（ZFC が無矛盾なら $\varphi$ を足しても矛盾しない）。$\varphi$ と $\lnot\varphi$ が**ともに**相対的に無矛盾なとき、$\varphi$ は
+ZFC から<Term>独立</Term>という。
+</Statement>
+
+CH の独立性を示すには、「$\mathrm{ZFC}+\mathrm{CH}$」と「$\mathrm{ZFC}+\lnot\mathrm{CH}$」の両方が相対的に無矛盾だと言えばよい。
+その道具が、モデルを作る2つの技法です。
+
+## 構成可能集合 L
+
+ゲーデル（1938）のアイデアは「集合の宇宙を、**定義可能なものだけ**に絞る」こと。恣意的な集合を排し、
+一段ずつ論理式で定義できる集合だけを積み上げます。
+
+<Statement kind="definition" title="構成可能宇宙 L">
+$L_0=\emptyset$、$L_{\alpha+1}=\{X\subseteq L_\alpha: X\ \text{は}\ L_\alpha\ \text{上のパラメータ付き論理式で定義可能}\}$、
+極限で $L_\lambda=\bigcup_{\alpha<\lambda}L_\alpha$、$L=\bigcup_\alpha L_\alpha$。$L$ を<Term>構成可能宇宙</Term>という。
+公理「$V=L$（すべての集合は構成可能）」を考えられる。
+</Statement>
+
+累積階層 $V$（前章）が各段で「$L_\alpha$ の**すべての**部分集合」を取ったのに対し、$L$ は「**定義できる**部分集合」だけを取ります。
+$L$ は $V$ の内部モデル（<Term>内部モデル</Term>）で、次の著しい性質をもちます。
+
+<Statement kind="theorem" title="Lの性質（ゲーデル）">
+$L$ は ZFC のすべての公理を満たす（$L\models\mathrm{ZFC}$）。さらに $L\models(V=L)$、$L\models\mathrm{AC}$、そして
+$L\models\mathrm{GCH}$（一般連続体仮説 $2^{\aleph_\alpha}=\aleph_{\alpha+1}$、特に CH）。
+</Statement>
+
+証明の心は「$L$ が定義可能なものだけからなるので、部分集合が“少なく”、$\mathcal P(\aleph_\alpha)$ が
+ちょうど $\aleph_{\alpha+1}$ で収まる」こと（凝縮補題による）。ここから相対無矛盾性が出ます。
+
+<Statement kind="corollary" title="AC と CH は反証できない">
+ZFC が無矛盾なら、$L$ が $\mathrm{ZFC}+\mathrm{AC}+\mathrm{GCH}$ のモデルを与えるので、
+$\mathrm{Con}(\mathrm{ZFC})\Rightarrow\mathrm{Con}(\mathrm{ZFC}+\mathrm{AC}+\mathrm{CH})$。すなわち ZFC から $\lnot\mathrm{CH}$ も $\lnot\mathrm{AC}$ も**証明できない**。
+</Statement>
+
+これで CH の半分（「反証できない」）が片付きました。$L$ はまた、選択公理が集合論の他の公理と衝突しないこと（AC の相対無矛盾性）も示し、
+AC への疑念に決着をつけました。残るは「CH は証明できるか？」——ここでゲーデルは止まり、四半世紀後にコーエンが答えます。
+
+## 強制法
+
+コーエン（1963、フィールズ賞）の**強制法（forcing）**は、既存のモデル $M$ に**新しい集合を付け加えて**、
+狙った性質をもつ拡大モデル $M[G]$ を作る技法です。CH を**壊す**（$2^{\aleph_0}$ を大きくする）ために使います。
+
+<Statement kind="definition" title="強制法の概要">
+ZFC の可算推移的モデル $M$（<Term>基礎モデル</Term>）と、$M$ 内の半順序 $\mathbb P$（<Term>強制概念</Term>：近似の集まり）をとる。
+$M$ の外から $\mathbb P$ 上の<Term>ジェネリックフィルター</Term> $G$（$M$ の稠密集合すべてと交わる“十分一般的”な選び方）をとり、
+$M[G]$ を「$M$ と $G$ から構成される最小の ZFC モデル」とする。$M[G]\models\mathrm{ZFC}$ で、$G$ が新しい集合を導入する。
+</Statement>
+
+イメージは「無限に続く近似 $p_0\le p_1\le\dots$ を、$M$ の中のあらゆる要求（稠密集合）を満たすように選び切って、
+新しい対象 $G$ を作る」。$M$ は可算なので稠密集合も可算個、それらを1つずつ満たしていけば $G$ が作れます
+（存在は[ベールのカテゴリー的な議論](/set-topology/4)）。決定的なのは**強制関係** $p\Vdash\varphi$——「近似 $p$ が $\varphi$ を強制する」——が
+$M$ **の内部で定義でき**、$M[G]\models\varphi\iff$ ある $p\in G$ で $p\Vdash\varphi$、が成り立つこと。これで拡大モデルの性質を
+基礎モデルから制御できます。
+
+<Statement kind="theorem" title="CHの否定の無矛盾性（コーエン）">
+$\aleph_2$ 個の新しい実数を付け加える強制概念で $M[G]\models 2^{\aleph_0}\ge\aleph_2$、すなわち $M[G]\models\lnot\mathrm{CH}$。
+基数 $\aleph_1,\aleph_2$ が拡大で潰れない（<Term>基数保存</Term>）ことを、強制概念の**可算鎖条件**で保証する。
+ゆえに $\mathrm{Con}(\mathrm{ZFC})\Rightarrow\mathrm{Con}(\mathrm{ZFC}+\lnot\mathrm{CH})$。
+</Statement>
+
+<Statement kind="theorem" title="連続体仮説の独立性">
+$L$（ゲーデル）と強制法（コーエン）を合わせ、$\mathrm{CH}$ は ZFC から**独立**：ZFC が無矛盾なら、
+$\mathrm{ZFC}+\mathrm{CH}$ も $\mathrm{ZFC}+\lnot\mathrm{CH}$ も無矛盾。
+</Statement>
+
+強制法は連続体問題を超えて、集合論の独立性証明の**万能技法**になりました（マーティンの公理、スーサ問題、
+さまざまな基数不変量の独立性…）。基礎モデルに“ダイヤルを回して”作りたい宇宙を設計する——集合論が
+「複数の可能な宇宙（<Term>多宇宙</Term>）」を扱う学問になった転換点です。
+
+## 巨大基数
+
+独立命題を決める“追加公理”の最有力候補が**巨大基数公理**です。「途方もなく大きい基数の存在」を要請します。
+
+<Statement kind="definition" title="巨大基数の階層">
+<Term>到達不能基数</Term>：正則かつ極限で、$\lambda<\kappa\Rightarrow2^\lambda<\kappa$（下からの操作で届かない）。
+その上に<Term>マーロ基数</Term>、<Term>可測基数</Term>（$\kappa$ 上の非自明な2値測度がある＝初等埋め込み $j:V\to M$ の臨界点）、
+ウッディン基数、超コンパクト基数…と、強さの順に一直線に並ぶ階層をなす。
+</Statement>
+
+<Statement kind="theorem" title="巨大基数と無矛盾性の強さ">
+到達不能基数 $\kappa$ があれば $V_\kappa\models\mathrm{ZFC}$ なので $\mathrm{Con}(\mathrm{ZFC})$ が従う。第13章より ZFC は
+$\mathrm{Con}(\mathrm{ZFC})$ を証明できないから、ZFC は到達不能基数の存在を**証明できない**。巨大基数公理は無矛盾性の強さを
+真に増やしていく（各々が下の理論の無矛盾性を証明する）。
+</Statement>
+
+巨大基数は「無矛盾性の強さの目盛り」として、あらゆる数学的主張の強さを測る**標準物差し**の役割を果たします。
+驚くべきことに、集合論から遠く離れた組合せ論や解析の命題の強さも、この物差しの上に位置づけられます。
+
+## 決定性公理
+
+選択公理を**否定**する代わりに、良い性質をもたらす公理もあります。
+
+<Statement kind="definition" title="決定性公理 AD">
+2人が自然数を交互に無限に選ぶ<Term>無限ゲーム</Term>で、勝敗集合 $A\subseteq\mathbb N^{\mathbb N}$ を決める。$A$ が<Term>決定的</Term>とは、
+どちらかに必勝戦略があること。「**すべての** $A$ が決定的」を主張するのが<Term>決定性公理</Term>（AD）。
+</Statement>
+
+<Statement kind="remark" title="AD の帰結と AC との関係">
+AD は AC と矛盾する（AC を使うと決定的でないゲームが作れる）。だが AD のもとでは、**すべての実数集合がルベーグ可測**で、
+ベールの性質・完全集合性をもつ——[測度論](/measure-theory)の“病的な集合”（ヴィタリ集合）が消える、非常に“行儀の良い”世界になる。
+AD 自体は $V$ 全体では採らないが、$L(\mathbb R)$（実数から構成可能な宇宙）では、十分な巨大基数（無限個のウッディン基数）が
+あれば $L(\mathbb R)\models\mathrm{AD}$ が成り立つ。巨大基数・決定性・内部モデルが深く絡み合う、現代集合論の中心テーマ。
+</Statement>
+
+## つまずきポイント
+
+<Statement kind="remark" title="よくある誤解">
+- **独立＝「真偽が無い」ではない（立場次第）。** 形式的には ZFC から決まらないだけ。CH が“本当は”真か偽かは哲学的立場（プラトニズム対形式主義）で見解が分かれる。
+- **強制法は基礎モデルを壊さない。** $M$ はそのまま、$M[G]$ を**外側に**作る。$M$ が可算だから外にジェネリック $G$ が取れる。
+- **巨大基数は「大きいから存在する」ではない。** 存在は ZFC から証明できず、追加公理として要請する。その見返りが無矛盾性の強さと独立命題への決着。
+- **L は「本当の宇宙」ではない。** $V=L$ は採用可能な追加公理の一つ。多くの集合論者は巨大基数と両立しない $V=L$ を採らない。
+</Statement>
+
+## この章のまとめ
+
+- 第13章より $\mathrm{Con}(\mathrm{ZFC})$ は証明できないので、示すのは**相対無矛盾性**。$\varphi,\lnot\varphi$ がともに相対的に無矛盾なら $\varphi$ は**独立**。
+- **構成可能宇宙 L**（定義可能な集合だけ）は $\mathrm{ZFC}+\mathrm{AC}+\mathrm{GCH}$ のモデルで、CH と AC が**反証できない**ことを示す（ゲーデル）。
+- **強制法**は基礎モデルにジェネリック集合を付け加えて拡大モデルを作り、$\lnot\mathrm{CH}$ が**証明できない**ことを示す（コーエン）。合わせて **CH は独立**。
+- **巨大基数**は無矛盾性の強さの物差しで、その存在は ZFC で証明できない。**決定性公理 AD** は AC と矛盾するが、実数集合をすべて可測にする“行儀の良い”宇宙を与え、巨大基数と結びつく。
+
+最終章は、証明とプログラムを同一視する**型理論**と、定理を証明強度で分類する**構成的数学・逆数学**へ進みます。
