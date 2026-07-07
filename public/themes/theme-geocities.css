@@ -1,0 +1,19 @@
+/* theme-geocities — あえてダサい①：90年代の個人ホームページ。
+   紫地にネオン、Comic 体、角ゼロ。＜BLINK＞が似合う世界観。 */
+@import url('https://fonts.googleapis.com/css2?family=Comic+Neue:wght@400;700&family=Yusei+Magic&display=swap');
+@import "./_base.css";
+
+:root {
+  --paper: #2a0a4a; --paper-sunk: #1a0033; --card: #3a1a5a;
+  --ink: #ffe600; --ink-soft: #ff99ff; --ink-faint: #9fd0ff; --line: #ff00ff;
+  --ai: #00ffff; --ai-soft: #7bffff; --ai-wash: rgba(0, 255, 255, 0.18);
+  --shu: #ff3399; --shu-wash: rgba(255, 51, 153, 0.20);
+
+  --serif: "Comic Neue", "Yusei Magic", "Comic Sans MS", cursive;
+  --sans:  "Comic Neue", "Yusei Magic", "Comic Sans MS", cursive;
+  --latin: "Comic Neue", "Comic Sans MS", cursive;
+  --mono:  "Comic Neue", ui-monospace, monospace;
+
+  --topbar-h: 60px; --rail-w: 300px; --content-max: 760px; --layout-max: 1440px; --gap: 34px;
+  --radius: 0px; --body-size: 17px; --body-leading: 1.7; --tracking: 0.01em;
+}

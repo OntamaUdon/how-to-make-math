@@ -1,0 +1,107 @@
+---
+/* Statement.astro — 定理 / 補題 / 命題 / 系 / 定義 / 例 / 注意 / 証明 の囲み。
+   種類ごとの違いは下の STYLES（表）に集約してあるので、
+   新しい種類を足したいときはこの表に 1 行追加するだけでよい。
+
+   使い方（.mdx の中で）:
+     <Statement kind="theorem" title="ラグランジュの定理">…</Statement>
+     <Statement kind="proof">…</Statement>           // 末尾に ∎ が付く
+*/
+type StatementKind = keyof typeof STYLES;
+
+interface Props {
+  kind: StatementKind;
+  /** 見出しに添える名前や番号（任意）例: "2.1 ラグランジュの定理" */
+  title?: string;
+}
+
+const { kind, title } = Astro.props;
+
+// 種類 → ラベルと色のトーン（tone は CSS 側の配色名）
+const STYLES = {
+  theorem:     { label: "定理",   tone: "ai" },
+  metatheorem: { label: "メタ定理", tone: "ai" },
+  proposition: { label: "命題",   tone: "ai" },
+  lemma:       { label: "補題",   tone: "ai" },
+  corollary:   { label: "系",     tone: "ai" },
+  definition:  { label: "定義",   tone: "shu" },
+  example:     { label: "例",     tone: "muted" },
+  remark:      { label: "注意",   tone: "muted" },
+  proof:       { label: "証明",   tone: "proof" },
+};
+
+const { label, tone } = STYLES[kind];
+const isProof = kind === "proof";
+---
+
+<div class:list={["statement", `tone-${tone}`]} data-kind={kind}>
+  <p class="statement-head">
+    <span class="statement-label">{label}</span>
+    {title && <span class="statement-title">{title}</span>}
+  </p>
+  <div class="statement-body">
+    <slot />
+    {isProof && <span class="qed" aria-hidden="true">∎</span>}
+  </div>
+</div>
+
+<style>
+  .statement {
+    margin: 26px 0;
+    padding: 15px 20px 13px;
+    border: 1px solid var(--line);
+    border-left-width: 4px;
+    border-radius: 8px;
+    background: var(--card);
+  }
+  .statement-head {
+    margin: 0 0 6px;
+    font-family: var(--serif);
+    font-weight: 700;
+    line-height: 1.5;
+  }
+  .statement-label {
+    display: inline-block;
+    margin-right: 10px;
+    padding: 1px 10px;
+    border-radius: 6px;
+    font-size: 0.9em;
+    color: #fff;
+  }
+  .statement-title { color: var(--ink); }
+
+  /* 中身の最初/最後の余白を詰めて、囲みの収まりを良くする */
+  .statement-body > :first-child { margin-top: 0; }
+  .statement-body > :last-child { margin-bottom: 0; }
+
+  .qed { float: right; margin-left: 8px; color: var(--ink-faint); font-size: 1.1em; }
+
+  /* ── 配色のトーン ── */
+  /* 藍系：定理・命題・補題・系 */
+  .tone-ai { background: var(--ai-wash); border-left-color: var(--ai); }
+  .tone-ai .statement-label { background: var(--ai); }
+
+  /* 朱系：定義 */
+  .tone-shu { background: var(--shu-wash); border-left-color: var(--shu); }
+  .tone-shu .statement-label { background: var(--shu); }
+
+  /* 控えめ：例・注意 */
+  .tone-muted { background: var(--paper-sunk); border-left-color: var(--ink-faint); }
+  .tone-muted .statement-label { background: var(--ink-faint); }
+
+  /* 証明：枠で囲わず、左罫線だけの軽い体裁。末尾に ∎ */
+  .tone-proof {
+    background: transparent;
+    border: none;
+    border-left: 3px solid var(--line);
+    border-radius: 0;
+    padding: 2px 0 2px 18px;
+    margin: 20px 0;
+  }
+  .tone-proof .statement-label {
+    background: none;
+    color: var(--ink-faint);
+    padding: 0;
+    font-style: italic;
+  }
+</style>

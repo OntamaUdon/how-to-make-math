@@ -1,0 +1,81 @@
+---
+/* SiteNav.astro — ページ下部に置く「サイト全体の目次（階層ナビ）」。
+   Sidebar と同じ siteNav から作るので、片方を直せば両方そろう。 */
+import { siteNav, isCurrent } from "../../config/navigation";
+
+const pathname = Astro.url.pathname;
+---
+
+<nav class="sitemap" aria-label="サイト全体の目次">
+  <p class="sitemap-head">サイト全体の目次</p>
+
+  <div class="sitemap-grid">
+    {siteNav.map((section) => (
+      <section class="sitemap-col">
+        <h2 class="sitemap-title">
+          {section.badge && <span class="badge">{section.badge}</span>}
+          {section.href
+            ? <a href={section.href}>{section.title}</a>
+            : <span>{section.title}</span>}
+        </h2>
+        <ul>
+          {section.items.map((item) => (
+            <li>
+              <a
+                href={item.href}
+                class:list={{ active: isCurrent(item.href, pathname) }}
+                aria-current={isCurrent(item.href, pathname) ? "page" : undefined}
+              >{item.title}</a>
+            </li>
+          ))}
+        </ul>
+      </section>
+    ))}
+  </div>
+</nav>
+
+<style>
+  .sitemap { max-width: var(--layout-max); margin: 0 auto; padding: 8px 24px; }
+  .sitemap-head {
+    font-family: var(--serif);
+    font-weight: 700;
+    color: var(--ai);
+    font-size: 14px;
+    letter-spacing: 0.08em;
+    margin: 0 0 18px;
+  }
+
+  /* 章を横並びのカラムに。画面幅に応じて自動で列数が変わる */
+  .sitemap-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
+    gap: 22px 30px;
+  }
+
+  .sitemap-title {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-family: var(--serif);
+    font-size: 15px;
+    color: var(--ink);
+    margin: 0 0 8px;
+    padding-bottom: 6px;
+    border-bottom: 1px solid var(--line);
+  }
+  .sitemap-title a { color: inherit; }
+  .badge {
+    font-family: var(--latin);
+    font-size: 11px;
+    background: var(--ai);
+    color: #fff;
+    border-radius: 5px;
+    padding: 1px 7px;
+  }
+
+  .sitemap-col ul { list-style: none; margin: 0; padding: 0; font-size: 13.5px; }
+  .sitemap-col li { margin: 4px 0; }
+  .sitemap-col a { color: var(--ink-soft); }
+  .sitemap-col a:hover { color: var(--ai); }
+  .sitemap-col a.active { color: var(--ai); font-weight: 700; }
+</style>

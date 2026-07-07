@@ -1,0 +1,18 @@
+/* theme-midnight — クリーンなダークモード（スレート地＋シアン） */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Newsreader:opsz,wght@6..72,400;6..72,600&family=Noto+Sans+JP:wght@400;500;700&family=Noto+Serif+JP:wght@600;700&display=swap');
+@import "./_base.css";
+
+:root {
+  --paper: #0f141a; --paper-sunk: #1b232c; --card: #161d25;
+  --ink: #e6edf3; --ink-soft: #9fb0c0; --ink-faint: #6b7d8f; --line: #263039;
+  --ai: #38bdf8; --ai-soft: #7dd3fc; --ai-wash: rgba(56, 189, 248, 0.12);
+  --shu: #fbbf24; --shu-wash: rgba(251, 191, 36, 0.12);
+
+  --serif: "Newsreader", "Noto Serif JP", serif;
+  --sans:  "Inter", "Noto Sans JP", system-ui, sans-serif;
+  --latin: "Newsreader", serif;
+  --mono:  ui-monospace, Consolas, monospace;
+
+  --topbar-h: 60px; --rail-w: 300px; --content-max: 740px; --layout-max: 1440px; --gap: 38px;
+  --radius: 10px; --body-size: 16.5px; --body-leading: 1.8;
+}

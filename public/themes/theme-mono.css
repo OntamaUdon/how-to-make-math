@@ -1,0 +1,18 @@
+/* theme-mono — ミニマル・モノクロ（スイス風。差し色を1色だけ） */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Noto+Sans+JP:wght@400;500;700&display=swap');
+@import "./_base.css";
+
+:root {
+  --paper: #ffffff; --paper-sunk: #f2f2f2; --card: #ffffff;
+  --ink: #111111; --ink-soft: #444444; --ink-faint: #8a8a8a; --line: #e6e6e6;
+  --ai: #111111; --ai-soft: #333333; --ai-wash: #f2f2f2;
+  --shu: #e0245e; --shu-wash: #fdecf1;
+
+  --serif: "Inter", "Noto Sans JP", system-ui, sans-serif;
+  --sans:  "Inter", "Noto Sans JP", system-ui, sans-serif;
+  --latin: "Inter", sans-serif;
+  --mono:  ui-monospace, Consolas, monospace;
+
+  --topbar-h: 58px; --rail-w: 280px; --content-max: 720px; --layout-max: 1380px; --gap: 32px;
+  --radius: 0px; --body-size: 16.5px; --body-leading: 1.75; --tracking: 0em;
+}

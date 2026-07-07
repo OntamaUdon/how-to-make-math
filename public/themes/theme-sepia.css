@@ -1,0 +1,19 @@
+/* theme-sepia — 書籍・エディトリアル（生成りの紙＋セピア＋明朝本文） */
+@import url('https://fonts.googleapis.com/css2?family=Spectral:ital,wght@0,400;0,600;0,700;1,400&family=Noto+Serif+JP:wght@500;600;700&display=swap');
+@import "./_base.css";
+
+:root {
+  --paper: #f4ecd8; --paper-sunk: #e9ddc2; --card: #fbf5e6;
+  --ink: #3a2f24; --ink-soft: #5e5141; --ink-faint: #8a7b64; --line: #ddccab;
+  --ai: #855e3b; --ai-soft: #a07748; --ai-wash: #ece0c8;
+  --shu: #9c3b2e; --shu-wash: #f0ddd5;
+
+  --serif: "Noto Serif JP", "Spectral", serif;
+  --sans:  "Spectral", "Noto Serif JP", Georgia, serif;
+  --latin: "Spectral", Georgia, serif;
+  --mono:  ui-monospace, Consolas, monospace;
+
+  --topbar-h: 60px; --rail-w: 300px; --content-max: 720px; --layout-max: 1400px; --gap: 34px;
+  --radius: 4px; --body-size: 18px; --body-leading: 1.95;
+  --grain-opacity: 0.35;
+}

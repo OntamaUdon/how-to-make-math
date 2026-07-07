@@ -1,0 +1,116 @@
+---
+layout: ../../layouts/BaseLayout.astro
+title: 第3章 線形写像
+description: 構造を保つ写像とは何か。核と像、階数、そしてすべてを貫く次元定理（rank–nullity）と同型定理。
+---
+
+import Term from "../../components/assets/Term.astro";
+import Statement from "../../components/assets/Statement.astro";
+
+# 第3章 線形写像
+
+## 「空間を、まっすぐさを壊さずに移す」写像
+
+ベクトル空間そのものを調べてきましたが、数学の主役はいつも**対象そのものより、対象の間の写像**です
+（この見方を突き詰めると[圏論](/category-theory)になります）。ベクトル空間にとって自然な写像とは、
+その構造——足し算とスカラー倍——を壊さない写像。これを線形写像といいます。
+
+イメージは「原点を固定したまま、格子を格子のまま伸ばす・回す・つぶす」変換。曲げたりずらしたり
+しない。回転・拡大・射影・微分・積分——一見バラバラな操作が、実はすべて線形写像です。
+そして線形写像は、その「つぶれ方（核）」と「届く範囲（像）」の2つで、性格がほぼ決まります。
+
+> 線形写像 ＝ 足し算とスカラー倍を保つ写像。「何がつぶれ、どこに届くか」で本質が分かる。
+
+## 定義と例
+
+<Statement kind="definition" title="線形写像">
+ベクトル空間 $V,W$ の間の写像 $T:V\to W$ が<Term>線形写像</Term>とは、
+$$T(\mathbf u+\mathbf v)=T(\mathbf u)+T(\mathbf v),\qquad T(a\mathbf v)=a\,T(\mathbf v).$$
+まとめて $T(a\mathbf u+b\mathbf v)=aT(\mathbf u)+bT(\mathbf v)$。$V=W$ のときは<Term>線形変換</Term>ともいう。
+</Statement>
+
+<Statement kind="example" title="線形写像はどこにでもいる">
+行列を掛ける $\mathbf x\mapsto A\mathbf x$、平面の回転、$\mathbb R^3\to\mathbb R^2$ の射影（$z$ を捨てる）、
+多項式を微分する $p\mapsto p'$、関数を積分する $f\mapsto\int_a^x f$。最後の2つのように、
+線形代数は微積分（→[微分積分学](/calculus)）とも直結する。
+</Statement>
+
+線形性の帰結として、$T(\mathbf 0)=\mathbf 0$ が必ず成り立ちます（原点は動かない）。
+また、基底 $\{\mathbf e_i\}$ での行き先 $T(\mathbf e_i)$ さえ決めれば、$T(\sum x_i\mathbf e_i)=\sum x_i T(\mathbf e_i)$ で
+**すべてのベクトルの行き先が決まる**。線形写像は「基底の行き先だけ」で完全に指定できる——
+これが次章の「行列表示」の種になります。
+
+## 核と像：つぶれ方と届く範囲
+
+<Statement kind="definition" title="核と像">
+<Term>核</Term> $\ker T=\{\mathbf v\in V: T(\mathbf v)=\mathbf 0\}$（$\mathbf 0$ につぶれるベクトル全体）、
+<Term>像</Term> $\operatorname{im}T=\{T(\mathbf v):\mathbf v\in V\}$（届く先の全体）。
+どちらも部分空間である。$\dim(\operatorname{im}T)$ を $T$ の<Term>階数</Term> $\operatorname{rank}T$、
+$\dim(\ker T)$ を<Term>退化次数</Term>という。
+</Statement>
+
+核は「情報が消える方向」、像は「出力に現れる範囲」。この2つが、写像が単射か全射かを直接教えます。
+
+<Statement kind="proposition" title="単射・全射の判定">
+$T$ が単射 $\iff \ker T=\{\mathbf 0\}$（つぶれる方向が無い）。
+$T$ が全射 $\iff \operatorname{im}T=W$。
+</Statement>
+
+とくに単射の判定が強力です。一般の写像なら「$T(\mathbf u)=T(\mathbf v)\Rightarrow\mathbf u=\mathbf v$」を
+確かめねばなりませんが、線形なら $T(\mathbf u-\mathbf v)=\mathbf 0$、つまり**核が原点だけかを見るだけ**。
+差に着目すれば一点の話に帰着する——線形性のありがたみです。
+
+## すべてを貫く次元定理
+
+核（つぶれる分）と像（残る分）は、次の一本の等式で結ばれます。線形代数で最も使う定理です。
+
+<Statement kind="theorem" title="次元定理（rank–nullity）">
+$T:V\to W$（$V$ は有限次元）に対し
+$$\dim V=\operatorname{rank}T+\dim(\ker T)=\dim(\operatorname{im}T)+\dim(\ker T).$$
+</Statement>
+
+意味は保存則です。**入力の次元 ＝ 出力に残る次元 ＋ つぶれて消える次元**。
+$V$ の基底のうち、$\ker T$ を張る分は消え、残りが像を過不足なく張る——だから足すと元に戻る。
+$T(\mathbf e_i)$ の行き先を数えるだけで、この分配が見えます。
+
+<Statement kind="example" title="次元定理の使い方">
+$T:\mathbb R^5\to\mathbb R^3$ が全射なら $\operatorname{rank}T=3$ なので $\dim\ker T=5-3=2$。
+「連立方程式 $A\mathbf x=\mathbf 0$（$A$ は $3\times5$）の解空間は $2$ 次元」——解を一つも求めずに、
+自由度が分かる。方程式の理論が、そっくり次元の勘定に翻訳される。
+</Statement>
+
+## 同型定理
+
+線形写像で「同じ構造」を持つ空間を結びつけます。
+
+<Statement kind="definition" title="同型">
+全単射な線形写像 $T:V\to W$ が存在するとき $V$ と $W$ は<Term>同型</Term>($V\cong W$)という。
+同型な空間は、線形代数の立場では**まったく同じ**とみなせる。
+</Statement>
+
+<Statement kind="theorem" title="同型定理と次元による分類">
+準同型定理：$V/\ker T\cong\operatorname{im}T$。とくに有限次元では、
+$$V\cong W\iff\dim V=\dim W.$$
+したがって $n$ 次元空間はすべて $\mathbb R^n$（または $K^n$）と同型。
+</Statement>
+
+後半は驚くべき単純さです。**有限次元ベクトル空間は、次元というたった一つの数で完全に分類される**。
+次数 $\le n$ の多項式も、$m\times n$ 行列全体も、次元が合えば $K^n$ と本質的に同じ。
+だからこそ、抽象的な空間の問題を、いつでも数ベクトルと行列の計算に落とせるのです。
+
+## つまずきポイント
+
+<Statement kind="remark" title="よくある誤解">
+- **核が原点だけ＝単射。** 「核が小さい」ではなく「核が $\{\mathbf 0\}$ ちょうど」が単射の条件。
+- 次元定理の $\dim V$ は**始域**の次元。終域 $W$ の次元ではない。混同しやすい。
+- 同型「$\cong$」は「等しい」ではなく「構造が同じ」。座標を通して同一視しているだけで、
+  中身（多項式か行列か）は違う。
+</Statement>
+
+## この章のまとめ
+
+- 線形写像は足し算とスカラー倍を保つ写像。**基底の行き先だけ**で完全に決まる。
+- **核**（つぶれる方向）と**像**（届く範囲）で単射・全射が判定でき、両者は**次元定理** $\dim V=\operatorname{rank}+\dim\ker$ で結ばれる。
+- **同型定理**により、有限次元空間は次元だけで分類される。抽象的な空間はいつでも $K^n$ と行列に翻訳できる。
+
+次章は、その翻訳を具体化します。線形写像を**行列で表し**、基底を変えると行列がどう変わるかを見ます。

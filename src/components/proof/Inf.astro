@@ -1,0 +1,54 @@
+---
+/* Inf.astro — 1 つの推論。前提（子要素）を上に横並び、横線、結論を下に置く。
+   props:
+     c    … 結論の数式（KaTeX 記法。$ は不要）
+     rule … 右肩に出す規則名（プレーンテキスト。例: MP, ≡, A1-1(P,Q), 演繹定理2,1）
+   前提が無い（公理の導入）ときは子要素を書かなければよい。 */
+import katex from "katex";
+
+interface Props {
+  c: string;
+  rule?: string;
+}
+const { c, rule = "" } = Astro.props;
+const concl = katex.renderToString(c, { throwOnError: false });
+---
+
+<div class="inf">
+  <div class="inf-prem"><slot /></div>
+  <div class="inf-bar">{rule && <span class="inf-rule">{rule}</span>}</div>
+  <div class="inf-concl" set:html={concl} />
+</div>
+
+<style>
+  .inf {
+    display: inline-flex;
+    flex-direction: column;
+    align-items: center;
+    vertical-align: bottom;
+    margin: 0 0.45em;
+  }
+  .inf-prem {
+    display: flex;
+    align-items: flex-end;
+    justify-content: center;
+    gap: 1.2em;
+    min-height: 0;
+  }
+  .inf-bar {
+    position: relative;
+    align-self: stretch;
+    border-top: 1px solid var(--ink-soft);
+    margin: 4px 0;
+  }
+  .inf-rule {
+    position: absolute;
+    left: calc(100% + 6px);
+    top: 50%;
+    transform: translateY(-50%);
+    white-space: nowrap;
+    font-size: 10.5px;
+    color: var(--ink-faint);
+  }
+  .inf-concl { text-align: center; white-space: nowrap; padding: 0 0.2em; }
+</style>

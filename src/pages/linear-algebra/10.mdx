@@ -1,0 +1,105 @@
+---
+layout: ../../layouts/BaseLayout.astro
+title: 第10章 内積空間
+description: 空間に「長さ」と「角度」を入れる。内積とコーシー–シュワルツ、正規直交基底とグラム–シュミット、直交射影。
+---
+
+import Term from "../../components/assets/Term.astro";
+import Statement from "../../components/assets/Statement.astro";
+
+# 第10章 内積空間
+
+## ベクトル空間には、まだ「長さ」が無かった
+
+ここまでの9章、実は一度も「長さ」や「角度」を使っていません。ベクトル空間の公理は
+足し算とスカラー倍だけで、「このベクトルは長い」「この2本は直角」は語れなかったのです。
+一次独立は「ダブりが無い」であって「直交」ではなかった（第1章の注意）——これがその理由です。
+
+でも幾何をやるには、長さと角度が要ります。それを一挙に導入する魔法の一手が**内積**。
+2本のベクトルに一つの数を対応させるだけで、そこから長さ・角度・直交・射影がすべて定義できます。
+内積の入ったベクトル空間を内積空間といい、ここでようやく線形代数が“幾何”になります。
+
+> 内積 ＝ 2ベクトルに数を返す積。これ一つから長さ・角度・直交・射影が生まれる。
+
+## 内積と、そこから出る長さ・角度
+
+<Statement kind="definition" title="内積">
+実ベクトル空間上の<Term>内積</Term> $\langle\mathbf u,\mathbf v\rangle$ は、次を満たす：
+対称性 $\langle\mathbf u,\mathbf v\rangle=\langle\mathbf v,\mathbf u\rangle$、各引数について線形、
+正定値性 $\langle\mathbf v,\mathbf v\rangle\ge0$（等号は $\mathbf v=\mathbf 0$ のみ）。
+$\mathbb R^n$ の標準内積は $\langle\mathbf u,\mathbf v\rangle=\sum u_iv_i$。
+（複素の場合は $\langle\mathbf u,\mathbf v\rangle=\overline{\langle\mathbf v,\mathbf u\rangle}$ のエルミート内積。）
+</Statement>
+
+内積から長さ（<Term>ノルム</Term>）を $\|\mathbf v\|=\sqrt{\langle\mathbf v,\mathbf v\rangle}$ と定め、
+角度を $\cos\theta=\dfrac{\langle\mathbf u,\mathbf v\rangle}{\|\mathbf u\|\,\|\mathbf v\|}$ で定めます。
+とくに $\langle\mathbf u,\mathbf v\rangle=0$ を<Term>直交</Term>と呼ぶ。角度の定義が意味を持つのは、
+分数の絶対値が $1$ を超えないことが保証されるからで、それが次の基本不等式です。
+
+<Statement kind="theorem" title="コーシー–シュワルツの不等式">
+$$|\langle\mathbf u,\mathbf v\rangle|\le\|\mathbf u\|\,\|\mathbf v\|,$$
+等号成立は $\mathbf u,\mathbf v$ が平行なとき。これから三角不等式 $\|\mathbf u+\mathbf v\|\le\|\mathbf u\|+\|\mathbf v\|$ が従う。
+</Statement>
+
+「内積は、それぞれの長さの積を超えられない」。$\|\mathbf u-t\mathbf v\|^2\ge0$ を $t$ の二次式とみて
+判別式をとるだけで出ます。この不等式は $\sum u_iv_i\le\sqrt{\sum u_i^2}\sqrt{\sum v_i^2}$ や、
+積分版（→[微分積分学](/calculus)・[関数解析](/functional-analysis)の $L^2$）まで、
+形を変えて数学中に現れる最重要不等式です。
+
+## 正規直交基底とグラム–シュミット
+
+基底の中でも、**互いに直交して長さ $1$** のものが飛び抜けて扱いやすい。座標が内積で一発で読めるからです。
+
+<Statement kind="definition" title="正規直交基底">
+$\langle\mathbf e_i,\mathbf e_j\rangle=\delta_{ij}$（直交かつ各長さ $1$）を満たす基底を<Term>正規直交基底</Term>という。
+このとき任意の $\mathbf v$ の座標は $\mathbf v=\sum_i\langle\mathbf v,\mathbf e_i\rangle\mathbf e_i$ と、内積で直接求まる。
+</Statement>
+
+一般の基底だと座標を求めるのに連立方程式が要りますが、正規直交基底なら「各軸へ内積で射影するだけ」。
+では、普通の基底から正規直交基底を作れるか？ できます。
+
+<Statement kind="theorem" title="グラム–シュミットの直交化">
+一次独立な $\mathbf a_1,\dots,\mathbf a_n$ から、同じ空間を張る正規直交基底 $\mathbf e_1,\dots,\mathbf e_n$ が作れる：
+各段で「これまでの $\mathbf e_i$ 方向の成分を引き去って」直交させ、長さ $1$ に正規化する。
+$$\mathbf u_k=\mathbf a_k-\sum_{i<k}\langle\mathbf a_k,\mathbf e_i\rangle\mathbf e_i,\qquad \mathbf e_k=\mathbf u_k/\|\mathbf u_k\|.$$
+</Statement>
+
+発想は「新しいベクトルから、すでに作った直交軸への影を全部差し引く」。残った成分は
+自動的に既存の軸すべてと直交します。これは行列の $QR$ 分解の背骨でもあり、次章の
+スペクトル定理（直交行列で対角化）を支えます。
+
+## 直交補空間と直交射影
+
+<Statement kind="definition" title="直交補空間">
+部分空間 $W$ に対し、$W$ のすべてと直交するベクトル全体 $W^\perp=\{\mathbf v:\langle\mathbf v,\mathbf w\rangle=0\ \forall\mathbf w\in W\}$ を
+<Term>直交補空間</Term>という。$V=W\oplus W^\perp$、$\dim W^\perp=\dim V-\dim W$。
+</Statement>
+
+空間が $W$ と $W^\perp$ の直和（第5章）に、しかも**直角に**分かれる。だから任意のベクトルは
+「$W$ 内の成分」と「$W$ に直交する成分」に一意に分けられます。この前者を取り出すのが射影です。
+
+<Statement kind="theorem" title="直交射影と最短近似">
+$\mathbf v$ の $W$ への<Term>直交射影</Term> $P_W\mathbf v=\sum_i\langle\mathbf v,\mathbf e_i\rangle\mathbf e_i$
+（$\{\mathbf e_i\}$ は $W$ の正規直交基底）は、**$W$ の中で $\mathbf v$ に最も近い点**：
+$\|\mathbf v-P_W\mathbf v\|\le\|\mathbf v-\mathbf w\|\ (\forall\mathbf w\in W)$。
+</Statement>
+
+「影を落とすのが最短の近似」。最小二乗法（データに最も合う直線を引く）は、まさにこの直交射影で、
+$W$ を「実現可能な予測の空間」とみて、観測に一番近い予測を射影で選ぶ操作です。
+線形代数が統計や数値解析へ直結する、実用の要所です。
+
+## つまずきポイント
+
+<Statement kind="remark" title="よくある誤解">
+- **内積は空間に後から入れる“追加の構造”。** 同じベクトル空間でも内積の入れ方を変えれば長さ・直交が変わる。標準内積が唯一ではない。
+- **直交 ⇒ 一次独立だが、逆は成り立たない。** 独立でも直交とは限らない。直交させるのがグラム–シュミット。
+- 複素内積は片方の引数で共役をとる（エルミート）。実の感覚のまま複素で計算すると符号を落とす。
+</Statement>
+
+## この章のまとめ
+
+- **内積**を入れると、長さ・角度・直交・射影がすべて定義できる。線形代数がここで“幾何”になる。**コーシー–シュワルツ**が角度の定義を支える最重要不等式。
+- **正規直交基底**は座標が内積で読める最良の基底。任意の基底から**グラム–シュミット**で作れる。
+- 空間は $W\oplus W^\perp$ と直角に分かれ、**直交射影**は「$W$ 内で最も近い点」を与える（最小二乗法の心）。
+
+内積が入ったことで、作用素にも「対称・ユニタリ」といった良い分類が生まれます。次章は**随伴作用素とスペクトル定理**へ。

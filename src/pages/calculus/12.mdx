@@ -1,0 +1,129 @@
+---
+layout: ../../layouts/BaseLayout.astro
+title: 第12章 ベクトル解析
+description: 線積分・面積分、勾配・発散・回転、そしてグリーン・ストークス・ガウスの3つの積分定理という総仕上げ。
+---
+
+import Term from "../../components/assets/Term.astro";
+import Statement from "../../components/assets/Statement.astro";
+
+# 第12章 ベクトル解析
+
+## 微積分学の基本定理を、もう一度・もっと高い次元で
+
+第7章で微積分学の基本定理を学びました。$\int_a^b F'\,dx=F(b)-F(a)$。
+一言でいえば**「中身の微分を積分すると、境界の値だけで決まる」**。
+区間 $[a,b]$ の「中身」を積分したのに、答えは端点 $a,b$（＝境界）だけで書けた。
+
+この驚きを、平面・曲面・空間へ拡張したのがベクトル解析です。
+グリーン・ストークス・ガウスの3定理は、見た目は違えど**すべて同じ主張の変奏**：
+「領域の内部で微分したものの積分 ＝ 境界の上の積分」。最後にこの統一が見えたとき、
+微積分学は一つの物語として閉じます。
+
+> 3つの積分定理は、微積分学の基本定理を**次元を上げて言い直したもの**。
+> 内部の情報が、境界にすべて凝縮される。
+
+## 場と、3つの微分演算
+
+まず舞台。空間の各点にベクトルを割り当てたものを**ベクトル場**（風速、電場、水流など）、
+数を割り当てたものを**スカラー場**（気温、標高など）といいます。これらに対し、
+勾配・発散・回転という3種類の微分があります。
+
+<Statement kind="definition" title="勾配・発散・回転">
+$\nabla=(\partial_x,\partial_y,\partial_z)$ を形式的なベクトルとみて、
+- <Term>勾配</Term> $\operatorname{grad}f=\nabla f$：スカラー場 → ベクトル場（最急増加方向）
+- <Term>発散</Term> $\operatorname{div}\mathbf F=\nabla\cdot\mathbf F$：ベクトル場 → スカラー場（湧き出しの量）
+- <Term>回転</Term> $\operatorname{rot}\mathbf F=\nabla\times\mathbf F$：ベクトル場 → ベクトル場（渦の強さ）
+</Statement>
+
+発散は「その点で場がどれだけ湧き出す/吸い込むか」、回転は「その点で場がどれだけ渦を巻くか」。
+言葉のイメージを持っておくと、定理の意味がすっと入ります。
+
+## 線積分と面積分
+
+積分する舞台を、区間から**曲線・曲面**へ広げます。
+
+<Statement kind="definition" title="線積分">
+曲線 $C:\mathbf r(t)\ (a\le t\le b)$ 上で、ベクトル場 $\mathbf F$ の<Term>線積分</Term>は
+$$\int_C \mathbf F\cdot d\mathbf r=\int_a^b \mathbf F(\mathbf r(t))\cdot\mathbf r'(t)\,dt.$$
+（$\mathbf F$ を力とみれば、経路 $C$ に沿って動くときの**仕事**。）
+</Statement>
+
+<Statement kind="definition" title="面積分">
+曲面 $S$ 上で $\mathbf F$ の<Term>面積分（流束）</Term>は
+$$\iint_S \mathbf F\cdot d\mathbf S=\iint_S \mathbf F\cdot\mathbf n\,dA,$$
+$\mathbf n$ は単位法線。曲面を通って**流れ出る量**を表す。面積要素 $dA$ は第11章の要領で計算する。
+</Statement>
+
+## 保存場：線積分版の基本定理
+
+線積分は一般に経路によって値が変わります。ところが場が勾配 $\mathbf F=\nabla f$ の形（**保存場**）だと、
+経路によらず端点だけで決まる——これはまさに基本定理そのものです。
+
+<Statement kind="theorem" title="線積分の基本定理">
+$\mathbf F=\nabla f$（$f$ を<Term>ポテンシャル</Term>という）なら
+$$\int_C \mathbf F\cdot d\mathbf r=f(\text{終点})-f(\text{始点}).$$
+特に閉曲線に沿う積分は $0$。逆に、単連結領域で $\operatorname{rot}\mathbf F=\mathbf 0$ なら $\mathbf F$ は保存場。
+</Statement>
+
+$\int_a^b F'=F(b)-F(a)$ の完全な多次元版。「回転が $0$（渦が無い）ならポテンシャルがある」という
+判定は、物理の保存力・電位の話と直結します。
+
+## 3つの積分定理
+
+いよいよ本丸。いずれも「内部の微分の積分 ＝ 境界の積分」という同じ型です。
+
+<Statement kind="theorem" title="グリーンの定理（平面）">
+平面領域 $D$ とその境界 $\partial D$（反時計回り）について
+$$\oint_{\partial D}(P\,dx+Q\,dy)=\iint_D\left(\frac{\partial Q}{\partial x}-\frac{\partial P}{\partial y}\right)dA.$$
+</Statement>
+
+<Statement kind="theorem" title="ストークスの定理（空間内の曲面）">
+曲面 $S$ とその縁 $\partial S$ について
+$$\oint_{\partial S}\mathbf F\cdot d\mathbf r=\iint_S(\operatorname{rot}\mathbf F)\cdot d\mathbf S.$$
+</Statement>
+
+<Statement kind="theorem" title="ガウスの発散定理（空間の立体）">
+立体 $V$ とその表面 $\partial V$ について
+$$\iint_{\partial V}\mathbf F\cdot d\mathbf S=\iiint_V(\operatorname{div}\mathbf F)\,dV.$$
+</Statement>
+
+見比べてください。**左辺は境界（$\partial D,\partial S,\partial V$）上の積分、右辺は内部で微分した量の積分**。
+グリーンは平面、ストークスは曲面、ガウスは立体——舞台の次元が違うだけで、言っていることは同じです。
+グリーンはストークスの平面版であり、すべては次のたった一つの式に統一されます。
+
+<Statement kind="theorem" title="一般ストークスの定理（統一形）">
+$$\int_{\partial\Omega}\omega=\int_\Omega d\omega.$$
+微分形式 $\omega$ の外微分 $d\omega$ を内部で積分すると、境界での $\omega$ の積分に等しい。
+微積分学の基本定理・グリーン・ストークス・ガウスは、**すべてこの一行の特別な場合**。
+</Statement>
+
+この統一形は多様体論（第14章）で本格的に扱いますが、ここで「3定理は本質的に一つ」と
+見えていれば、その先の幾何学がぐっと近づきます。微積分学は、この一行に向かって登ってきたのです。
+
+## 直感でつかむ発散定理
+
+<Statement kind="example" title="発散定理の気持ち">
+立体を細かい立方体に刻む。各小立方体で「流れ出した量」を足すと、隣り合う面での流出入は
+向かい合って打ち消し合い、**外側の表面だけが残る**。一方で各小立方体の流出量は $\operatorname{div}\mathbf F$。
+だから「内部の div の総和 ＝ 表面からの流束」。基本定理で中間項が消えて端点だけ残ったのと、
+まったく同じ打ち消しの構造です。
+</Statement>
+
+## つまずきポイント
+
+<Statement kind="remark" title="よくある誤解">
+- **向き（orientation）を落とす。** 境界の向き・曲面の法線の向きが定理の符号を決める。反時計回り・外向き法線を確認。
+- **$\operatorname{rot}\mathbf F=\mathbf 0$ ならいつでも保存場、は誤り。** 領域が**単連結**でないと反例がある（穴のあいた領域の渦なし場）。
+- グリーン・ストークス・ガウスを別々の公式として暗記しない。「境界の積分＝内部の微分の積分」の一族と捉える。
+</Statement>
+
+## この章のまとめ
+
+- ベクトル場に対し**勾配・発散・回転**の3つの微分がある。線積分は仕事、面積分は流束。
+- **保存場**（$\mathbf F=\nabla f$）の線積分は端点だけで決まる＝基本定理の多次元版。判定は「回転が $0$＋単連結」。
+- **グリーン・ストークス・ガウス**はすべて「内部の微分の積分＝境界の積分」。統一形 $\int_{\partial\Omega}\omega=\int_\Omega d\omega$ が微積分学の到達点。
+
+これで微分積分学は一区切りです。ここで培った $\varepsilon$-$\delta$ の型・完備性・線形近似・
+「内部と境界」の視点は、[集合と位相](/set-topology)・[線形代数学](/linear-algebra)・[多様体論](/manifolds)へと
+そのまま受け継がれていきます。おつかれさまでした。

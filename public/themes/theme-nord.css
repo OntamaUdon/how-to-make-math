@@ -1,0 +1,18 @@
+/* theme-nord — Nord（北欧の氷青。スレート地＋フロストブルー） */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Noto+Sans+JP:wght@400;500;700&family=Noto+Serif+JP:wght@600;700&display=swap');
+@import "./_base.css";
+
+:root {
+  --paper: #2e3440; --paper-sunk: #272b35; --card: #353c4a;
+  --ink: #eceff4; --ink-soft: #d8dee9; --ink-faint: #919db4; --line: #3b4252;
+  --ai: #88c0d0; --ai-soft: #a3d2de; --ai-wash: rgba(136, 192, 208, 0.14);
+  --shu: #d08770; --shu-wash: rgba(208, 135, 112, 0.14);
+
+  --serif: "Noto Serif JP", serif;
+  --sans:  "Inter", "Noto Sans JP", system-ui, sans-serif;
+  --latin: "Inter", sans-serif;
+  --mono:  ui-monospace, Consolas, monospace;
+
+  --topbar-h: 60px; --rail-w: 300px; --content-max: 740px; --layout-max: 1440px; --gap: 36px;
+  --radius: 8px; --body-size: 16.5px; --body-leading: 1.8;
+}

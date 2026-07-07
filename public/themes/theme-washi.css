@@ -1,0 +1,19 @@
+/* theme-washi — 和紙・藍朱・明朝（あたたかい伝統系） */
+@import url('https://fonts.googleapis.com/css2?family=Shippori+Mincho:wght@600;700;800&family=Zen+Kaku+Gothic+New:wght@400;500;700;900&family=Fraunces:ital,opsz,wght@0,9..144,500;1,9..144,400&display=swap');
+@import "./_base.css";
+
+:root {
+  --paper: #fcf8ee; --paper-sunk: #f1ead8; --card: #fffdf6;
+  --ink: #23201a; --ink-soft: #4f4a40; --ink-faint: #8a8170; --line: #e4ddca;
+  --ai: #27486a; --ai-soft: #3a6188; --ai-wash: #eef2f7;
+  --shu: #c2452d; --shu-wash: #fbede9;
+
+  --serif: "Shippori Mincho", serif;
+  --sans:  "Zen Kaku Gothic New", system-ui, sans-serif;
+  --latin: "Fraunces", serif;
+  --mono:  ui-monospace, Consolas, monospace;
+
+  --topbar-h: 60px; --rail-w: 300px; --content-max: 760px; --layout-max: 1440px; --gap: 34px;
+  --radius: 8px; --body-size: 17px; --body-leading: 1.95;
+  --grain-opacity: 0.5;
+}

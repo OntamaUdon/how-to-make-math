@@ -1,0 +1,171 @@
+---
+import type { MarkdownHeading } from "astro";
+
+import SiteHead from "../components/layout/SiteHead.astro";
+import TopBar from "../components/layout/TopBar.astro";
+import Breadcrumbs from "../components/layout/Breadcrumbs.astro";
+import Pager from "../components/layout/Pager.astro";
+import RootLink from "../components/layout/RootLink.astro";
+import TableOfContents from "../components/layout/TableOfContents.astro";
+import SiteNav from "../components/layout/SiteNav.astro";
+import { findLocation, getAdjacentPages } from "../config/navigation";
+
+const SITE_TITLE = "数学の作り方";
+
+interface Props {
+  title?: string;
+  description?: string;
+  headings?: MarkdownHeading[];
+  frontmatter?: { title?: string; description?: string };
+}
+
+const { title, description, headings = [], frontmatter } = Astro.props;
+const pageTitle = title ?? frontmatter?.title ?? SITE_TITLE;
+const pageDesc = description ?? frontmatter?.description ?? "";
+const fullTitle = pageTitle === SITE_TITLE ? pageTitle : `${pageTitle} - ${SITE_TITLE}`;
+
+const pathname = Astro.url.pathname;
+const { section, page } = findLocation(pathname);
+const { prev, next } = getAdjacentPages(pathname);
+---
+
+<!doctype html>
+<html lang="ja">
+  <head>
+    <SiteHead title={fullTitle} description={pageDesc} />
+  </head>
+
+  <body>
+    <TopBar />
+
+    <div class="layout">
+      <aside class="toc-rail">
+        <RootLink />
+        <TableOfContents headings={headings} />
+      </aside>
+
+      <main class="main">
+        <Breadcrumbs section={section} page={page} />
+
+        <article class="prose">
+          <slot />
+        </article>
+
+        <Pager prev={prev} next={next} />
+      </main>
+
+      <aside class="ad-rail" aria-label="広告">
+        <div class="ad-slot">広告スペース</div>
+      </aside>
+    </div>
+
+    <footer class="site-footer">
+      <SiteNav />
+      <p class="copyright">© {new Date().getFullYear()} 数学の作り方</p>
+    </footer>
+
+    <style>
+      .layout {
+        position: relative;
+        z-index: 1;
+        display: grid;
+        grid-template-areas: "toc main ad";
+        grid-template-columns: var(--rail-w) minmax(0, 1fr) var(--rail-w);
+        gap: 0 var(--gap);
+        max-width: var(--layout-max);
+        margin: 0 auto;
+        align-items: start;
+      }
+
+      .main {
+        grid-area: main;
+        min-width: 0;
+        padding: 30px 24px 64px;
+      }
+
+      .toc-rail {
+        grid-area: toc;
+        position: sticky;
+        top: calc(var(--topbar-h) + 24px);
+        align-self: start;
+        padding: 32px 8px 40px 22px;
+      }
+
+      .ad-rail {
+        grid-area: ad;
+        position: sticky;
+        top: calc(var(--topbar-h) + 24px);
+        align-self: start;
+        padding: 32px 22px 40px 8px;
+      }
+
+      .ad-slot {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        min-height: 600px;
+        border: 1px dashed var(--line);
+        border-radius: 10px;
+        color: var(--ink-faint);
+        font-size: 12px;
+        letter-spacing: 0.12em;
+        background: color-mix(in srgb, var(--paper-sunk) 40%, var(--paper));
+      }
+
+      .prose {
+        max-width: var(--content-max);
+        margin-inline: auto;
+      }
+
+      .site-footer {
+        position: relative;
+        z-index: 1;
+        margin-top: 40px;
+        padding: 32px 0 48px;
+        border-top: 1px solid var(--line);
+        background: color-mix(in srgb, var(--paper-sunk) 55%, var(--paper));
+      }
+
+      .copyright {
+        max-width: var(--layout-max);
+        margin: 28px auto 0;
+        padding: 0 24px;
+        font-size: 12px;
+        color: var(--ink-faint);
+      }
+
+      @media (max-width: 1180px) {
+        .layout {
+          grid-template-areas:
+            "toc"
+            "main"
+            "ad";
+          grid-template-columns: minmax(0, 1fr);
+        }
+
+        .toc-rail,
+        .ad-rail {
+          position: static;
+          padding: 24px 24px 0;
+        }
+
+        .ad-slot {
+          min-height: 250px;
+          max-width: var(--content-max);
+          margin: 0 auto;
+        }
+      }
+
+      @media (max-width: 880px) {
+        .main {
+          padding: 22px 20px 56px;
+        }
+
+        .toc-rail,
+        .ad-rail {
+          padding: 18px 20px 0;
+        }
+      }
+    </style>
+  </body>
+</html>

@@ -1,0 +1,18 @@
+/* theme-terminal — ターミナル（黒地に緑のモノスペース。CRT風） */
+@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Noto+Sans+JP:wght@400;500;700&display=swap');
+@import "./_base.css";
+
+:root {
+  --paper: #0a0e0a; --paper-sunk: #060906; --card: #0f150f;
+  --ink: #9ef09e; --ink-soft: #6fc46f; --ink-faint: #4a8a4a; --line: #1d2c1d;
+  --ai: #39d353; --ai-soft: #57e06f; --ai-wash: rgba(57, 211, 83, 0.12);
+  --shu: #f0c000; --shu-wash: rgba(240, 192, 0, 0.12);
+
+  --serif: "JetBrains Mono", "Noto Sans JP", monospace;
+  --sans:  "JetBrains Mono", "Noto Sans JP", monospace;
+  --latin: "JetBrains Mono", monospace;
+  --mono:  "JetBrains Mono", ui-monospace, monospace;
+
+  --topbar-h: 58px; --rail-w: 290px; --content-max: 740px; --layout-max: 1400px; --gap: 34px;
+  --radius: 2px; --body-size: 16px; --body-leading: 1.8; --tracking: 0.01em;
+}

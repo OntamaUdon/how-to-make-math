@@ -1,0 +1,98 @@
+---
+/* TopBar.astro — 上部の固定バー（サイト名 + 配色テーマ切替）。
+   テーマ切替に必要なもの（メニュー・反映スクリプト・見た目）をここに集約する。
+   切替は <head> の #site-theme-css の href を差し替え、localStorage に記憶する。 */
+import { themes, defaultTheme, themeStorageKey } from "../../config/themes";
+
+const lightThemes = themes.filter((t) => t.group === "light");
+const darkThemes = themes.filter((t) => t.group === "dark");
+const funThemes = themes.filter((t) => t.group === "fun");
+---
+<header class="topbar">
+  <a href="/" class="brand">
+    <span class="brand-mark">⟐</span>
+    <span class="brand-text">
+      <span class="brand-name">数学の作り方</span>
+      <span class="brand-sub">How to make Mathematics</span>
+    </span>
+  </a>
+
+  <!-- 配色テーマの切替（選ぶと即反映され、次回も記憶される） -->
+  <div class="theme-switch">
+    <label class="theme-switch-label" for="theme-select">テーマ</label>
+    <select id="theme-select" class="theme-switch-select" aria-label="配色テーマを選ぶ">
+      <optgroup label="ライト">
+        {lightThemes.map((t) => <option value={t.id}>{t.label}</option>)}
+      </optgroup>
+      <optgroup label="ダーク">
+        {darkThemes.map((t) => <option value={t.id}>{t.label}</option>)}
+      </optgroup>
+      <optgroup label="あえてダサい">
+        {funThemes.map((t) => <option value={t.id}>{t.label}</option>)}
+      </optgroup>
+    </select>
+  </div>
+</header>
+
+<script>
+  import { themeStorageKey, defaultTheme } from "../../config/themes";
+
+  const select = document.getElementById("theme-select") as HTMLSelectElement | null;
+  const link = document.getElementById("site-theme-css") as HTMLLinkElement | null;
+
+  if (select && link) {
+    // 現在のテーマをメニューに反映
+    select.value = localStorage.getItem(themeStorageKey) ?? defaultTheme;
+
+    select.addEventListener("change", () => {
+      const id = select.value;
+      link.href = `/themes/theme-${id}.css`;
+      try { localStorage.setItem(themeStorageKey, id); } catch (e) { /* 保存できなくても切替は効く */ }
+    });
+  }
+</script>
+
+<style>
+  .topbar {
+    position: sticky;
+    top: 0;
+    z-index: 40;
+    height: var(--topbar-h);
+    display: flex;
+    align-items: center;
+    padding: 0 20px;
+    background: color-mix(in srgb, var(--paper) 86%, transparent);
+    backdrop-filter: saturate(180%) blur(10px);
+    border-bottom: 1px solid var(--line);
+  }
+  .brand { display: flex; align-items: center; gap: 11px; color: var(--ink); }
+  .brand:hover { text-decoration: none; }
+  .brand-mark { font-size: 26px; color: var(--shu); line-height: 1; }
+  .brand-text { display: flex; flex-direction: column; line-height: 1.15; }
+  .brand-name {
+    font-family: var(--latin);
+    font-weight: 500;
+    font-size: 20px;
+    letter-spacing: 0.04em;
+    color: var(--ai);
+  }
+  .brand-sub { font-size: 10.5px; letter-spacing: 0.14em; color: var(--ink-faint); }
+
+  .theme-switch { display: flex; align-items: center; gap: 8px; margin-left: auto; }
+  .theme-switch-label { font-size: 11px; letter-spacing: 0.12em; color: var(--ink-faint); }
+  .theme-switch-select {
+    font-family: var(--sans);
+    font-size: 13px;
+    color: var(--ink);
+    background: var(--card);
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    padding: 5px 10px;
+    cursor: pointer;
+  }
+  .theme-switch-select:hover { border-color: var(--ai); }
+  .theme-switch-select:focus-visible { outline: 2px solid var(--ai); outline-offset: 1px; }
+  @media (max-width: 560px) {
+    .theme-switch-label { display: none; } /* 狭い画面はラベルを省く */
+  }
+</style>

@@ -1,0 +1,110 @@
+---
+layout: ../../layouts/BaseLayout.astro
+title: 第11章 重積分
+description: 多変数の積分。累次積分とフビニの定理、ヤコビアンによる変数変換、極座標・ガウス積分、ガンマ・ベータ関数。
+---
+
+import Term from "../../components/assets/Term.astro";
+import Statement from "../../components/assets/Statement.astro";
+
+# 第11章 重積分
+
+## 「体積」を、細かい柱で足し上げる
+
+一変数の積分は「曲線の下の面積」でした。多変数——$z=f(x,y)$ の下の**体積**も、
+発想はまったく同じです。平面を細かいマス目に刻み、各マスの上に高さ $f$ の**細い四角柱**を立て、
+その体積を全部足す。刻みを細かくした極限が重積分です。
+
+$$\iint_D f(x,y)\,dA=\lim_{\text{刻み}\to0}\sum_{i,j} f(x_i,y_j)\,\Delta x\,\Delta y.$$
+
+定義は素直ですが、実際にこの二重の和の極限を直接計算するのは無理。
+そこで「**一方向ずつ積分する**」という現実的な計算法（累次積分）と、
+「**座標を取り替えて簡単にする**」という強力な武器（変数変換）を手に入れます。
+
+## 累次積分とフビニの定理
+
+<Statement kind="theorem" title="フビニの定理">
+$f$ が長方形 $[a,b]\times[c,d]$ で連続なら、重積分は積分の順序によらず累次積分で計算できる：
+$$\iint_D f\,dA=\int_a^b\!\left(\int_c^d f(x,y)\,dy\right)dx=\int_c^d\!\left(\int_a^b f(x,y)\,dx\right)dy.$$
+</Statement>
+
+心は「立体を、$x$ 一定の断面積を集めて作る」（$\int(\text{断面積})dx$）。
+まず内側で $y$ について積分すると $x$ での断面積が出て、それを $x$ で積分すれば体積。
+一般の領域 $D$ でも、$D$ を $a\le x\le b,\ g_1(x)\le y\le g_2(x)$ のように挟めば同様に累次化できます。
+
+<Statement kind="remark" title="順序交換には条件が要る">
+フビニは連続（や絶対可積分）で成り立つが、**絶対収束しない**と順序交換で値が変わりうる。
+これは第3章「級数の再配列」の重積分版。安全なのは $\iint|f|<\infty$ のとき（トネリの定理）で、
+厳密な扱いは第20章の測度論に委ねられます。順序交換はタダではない、と覚えておく。
+</Statement>
+
+## 変数変換：ヤコビアンという「拡大率」
+
+一変数の置換積分 $\int f(g(u))g'(u)\,du$ で、$g'(u)$ は「$u$ が動くとき $x$ がどれだけ伸びるか」の
+倍率でした。多変数では、面積・体積の**拡大率**が行列式で表れます。
+
+<Statement kind="theorem" title="変数変換公式">
+$\mathbf x=\Phi(\mathbf u)$ を $C^1$ の全単射とすると
+$$\iint_D f(\mathbf x)\,dx\,dy=\iint_{\Phi^{-1}(D)} f(\Phi(\mathbf u))\,\bigl|\det D\Phi(\mathbf u)\bigr|\,du\,dv.$$
+$\bigl|\det D\Phi\bigr|$ を<Term>ヤコビアン</Term>という。
+</Statement>
+
+なぜ行列式か。線形代数で「行列 $A$ は面積を $|\det A|$ 倍する」を学びます。変数変換を局所的に見ると、
+微小な四角形はヤコビ行列 $D\Phi$ という線形写像で送られ、その面積が $|\det D\Phi|$ 倍になる。
+だから面積要素 $dx\,dy$ を $|\det D\Phi|\,du\,dv$ に置き換える——一変数の $g'$ が、多変数では
+「面積の拡大率＝ヤコビ行列式」に育ったわけです。ここでも線形代数が微積分を支えています。
+
+<Statement kind="example" title="極座標変換">
+$x=r\cos\theta,\ y=r\sin\theta$ のヤコビアンは
+$\left|\det\begin{pmatrix}\cos\theta&-r\sin\theta\\ \sin\theta&r\cos\theta\end{pmatrix}\right|=r$。よって
+$$\iint f\,dx\,dy=\iint f(r\cos\theta,r\sin\theta)\,r\,dr\,d\theta.$$
+円や放射状に対称な問題が劇的に簡単になる。3次元では球座標でヤコビアン $r^2\sin\theta$。
+</Statement>
+
+## ガウス積分：極座標の名場面
+
+一変数では原始関数が初等関数で書けず手も足も出ない $\int_{-\infty}^\infty e^{-x^2}dx$ が、
+**2乗して2次元にする**と一気に解けます。
+
+<Statement kind="example" title="ガウス積分">
+$I=\int_{-\infty}^\infty e^{-x^2}dx$ とおくと
+$$I^2=\iint_{\mathbb R^2} e^{-(x^2+y^2)}dx\,dy=\int_0^{2\pi}\!\!\int_0^\infty e^{-r^2}r\,dr\,d\theta=2\pi\cdot\tfrac12=\pi.$$
+よって $I=\sqrt\pi$。極座標のヤコビアン $r$ が $e^{-r^2}$ の微分とかみ合って一発で積分できる、
+広義重積分の白眉です。
+</Statement>
+
+## 特殊関数：積分で定義される関数
+
+積分は新しい関数を生み出します。階乗を実数・複素数へ拡張したのがガンマ関数です。
+
+<Statement kind="definition" title="ガンマ関数・ベータ関数">
+$$\Gamma(s)=\int_0^\infty t^{s-1}e^{-t}\,dt\ (s>0),\qquad B(p,q)=\int_0^1 t^{p-1}(1-t)^{q-1}\,dt.$$
+$\Gamma(n)=(n-1)!$、$\Gamma(s+1)=s\,\Gamma(s)$、$\Gamma(\tfrac12)=\sqrt\pi$（ガウス積分から）。
+両者は $B(p,q)=\dfrac{\Gamma(p)\Gamma(q)}{\Gamma(p+q)}$ で結ばれる。
+</Statement>
+
+漸化式 $\Gamma(s+1)=s\Gamma(s)$ は部分積分で出ます。$\Gamma$ は $(n-1)!$ を「点」から「なめらかな曲線」へ
+補間したもの、と見ると親しみが湧きます。大きな階乗の近似も、この流れで得られます。
+
+<Statement kind="theorem" title="スターリングの公式">
+$$n!\sim\sqrt{2\pi n}\left(\frac n e\right)^n\qquad(n\to\infty).$$
+</Statement>
+
+$\Gamma(n+1)=\int t^n e^{-t}dt$ の被積分関数が $t=n$ に鋭いピークをもつことを使い、
+ピーク周りを $e^{-x^2}$ 型で近似する（ラプラスの方法）。確率論の中心極限定理などで多用されます。
+
+## つまずきポイント
+
+<Statement kind="remark" title="よくある誤解">
+- **変数変換で絶対値を忘れる。** つく倍率は $|\det D\Phi|$。符号を落とすと面積が負になる。
+- **積分順序はいつでも交換できるわけではない。** 非負や絶対可積分（トネリ・フビニ）が条件。
+- 極座標の面積要素は $dr\,d\theta$ ではなく $r\,dr\,d\theta$。ヤコビアン $r$ を落とすのは頻出ミス。
+</Statement>
+
+## この章のまとめ
+
+- 重積分は「細い柱の体積を足す」和の極限。計算は**フビニの定理で累次積分**に落とす（順序交換は絶対可積分が条件）。
+- **変数変換**の要はヤコビアン $|\det D\Phi|$＝面積の拡大率。極座標（$r$）・球座標（$r^2\sin\theta$）で対称な積分が激減する。線形代数の行列式が主役。
+- 極座標は**ガウス積分 $\sqrt\pi$** を解き、そこから**ガンマ・ベータ関数**やスターリングの公式が広がる。
+
+いよいよ最終章。曲線・曲面上の積分と、微積分学の総仕上げ**ベクトル解析の積分定理**へ。

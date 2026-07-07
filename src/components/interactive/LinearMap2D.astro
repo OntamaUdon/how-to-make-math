@@ -1,0 +1,135 @@
+---
+/* LinearMap2D.astro — 2×2 行列 A=[[a,b],[c,d]] が平面をどう変形するかの体験装置。
+   スライダーで成分を動かすと、格子・基底ベクトル・単位正方形の像（平行四辺形）が変わる。
+   ・平行四辺形の面積 = |det A|、向きの反転（det<0）も色で分かる。
+   ・固有値が実なら「向きの変わらない直線（固有方向）」を描く。
+   行列式＝面積の拡大率、固有ベクトル＝方向の変わらない軸、を目で確かめられる。
+   状態はメモリ内のみ（storage 不使用）。 */
+---
+
+<figure class="lm" role="group" aria-label="2×2 行列による平面の変形">
+  <div class="lm-controls">
+    <div class="lm-matrix" aria-hidden="true">
+      <span>A =</span>
+      <div class="lm-grid2">
+        <label>a<input id="lm-a" type="range" min="-2" max="2" step="0.1" value="1.5" /><output id="lm-a-v">1.5</output></label>
+        <label>b<input id="lm-b" type="range" min="-2" max="2" step="0.1" value="0.5" /><output id="lm-b-v">0.5</output></label>
+        <label>c<input id="lm-c" type="range" min="-2" max="2" step="0.1" value="0.5" /><output id="lm-c-v">0.5</output></label>
+        <label>d<input id="lm-d" type="range" min="-2" max="2" step="0.1" value="1.5" /><output id="lm-d-v">1.5</output></label>
+      </div>
+    </div>
+  </div>
+  <svg id="lm-svg" viewBox="0 0 400 400" class="lm-svg" role="img"
+       aria-label="行列によって変形された格子・基底ベクトル・単位正方形の像"></svg>
+  <figcaption id="lm-caption" class="lm-caption"></figcaption>
+</figure>
+
+<script>
+  const svg = document.getElementById("lm-svg");
+  const ids = ["a", "b", "c", "d"] as const;
+  const inputs = Object.fromEntries(ids.map((k) => [k, document.getElementById("lm-" + k) as HTMLInputElement | null]));
+  const outs = Object.fromEntries(ids.map((k) => [k, document.getElementById("lm-" + k + "-v")]));
+  const caption = document.getElementById("lm-caption");
+
+  if (svg && caption && ids.every((k) => inputs[k] && outs[k])) {
+    const NS = "http://www.w3.org/2000/svg";
+    const S = 36, CX = 200, CY = 200, R = 6;      // 1単位=36px, 中心(200,200), 描画範囲±R
+    const px = (x: number, y: number) => [CX + x * S, CY - y * S] as const;
+    const el = (name: string, attrs: Record<string, string | number>) => {
+      const e = document.createElementNS(NS, name);
+      for (const k in attrs) e.setAttribute(k, String(attrs[k]));
+      return e;
+    };
+    const line = (x1: number, y1: number, x2: number, y2: number, stroke: string, w = 1, opacity = 1) => {
+      const [X1, Y1] = px(x1, y1), [X2, Y2] = px(x2, y2);
+      return el("line", { x1: X1, y1: Y1, x2: X2, y2: Y2, stroke, "stroke-width": w, opacity });
+    };
+    const arrow = (vx: number, vy: number, color: string, label: string) => {
+      const g = el("g", {});
+      g.appendChild(line(0, 0, vx, vy, color, 3));
+      const [X, Y] = px(vx, vy);
+      g.appendChild(el("circle", { cx: X, cy: Y, r: 4, fill: color }));
+      const t = el("text", { x: X + 6, y: Y - 6, fill: color, "font-size": 13, "font-weight": 700 });
+      t.textContent = label;
+      g.appendChild(t);
+      return g;
+    };
+
+    function draw(a: number, b: number, c: number, d: number) {
+      svg.innerHTML = "";
+      const det = a * d - b * c;
+
+      // 元の格子（薄い）
+      for (let k = -R; k <= R; k++) {
+        svg.appendChild(line(k, -R, k, R, "var(--line)", 1, 0.5));
+        svg.appendChild(line(-R, k, R, k, "var(--line)", 1, 0.5));
+      }
+
+      // 変形後の格子（藍）: 縦線 x=k の像, 横線 y=k の像
+      for (let k = -R; k <= R; k++) {
+        // x=k: 点 k*(a,c) を通り 方向(b,d)
+        svg.appendChild(line(k * a - R * b, k * c - R * d, k * a + R * b, k * c + R * d, "var(--ai)", k === 0 ? 2 : 1, k === 0 ? 0.9 : 0.4));
+        // y=k: 点 k*(b,d) を通り 方向(a,c)
+        svg.appendChild(line(-R * a + k * b, -R * c + k * d, R * a + k * b, R * c + k * d, "var(--ai)", k === 0 ? 2 : 1, k === 0 ? 0.9 : 0.4));
+      }
+
+      // 単位正方形の像（平行四辺形）: 頂点 0, (a,c), (a+b,c+d), (b,d)
+      const [P0x, P0y] = px(0, 0), [P1x, P1y] = px(a, c), [P2x, P2y] = px(a + b, c + d), [P3x, P3y] = px(b, d);
+      svg.appendChild(el("polygon", {
+        points: `${P0x},${P0y} ${P1x},${P1y} ${P2x},${P2y} ${P3x},${P3y}`,
+        fill: det >= 0 ? "var(--ai-wash)" : "var(--shu-wash)",
+        stroke: det >= 0 ? "var(--ai)" : "var(--shu)", "stroke-width": 1.5, opacity: 0.8,
+      }));
+
+      // 固有方向（実固有値のとき）: 向きの変わらない直線
+      const tr = a + d, disc = tr * tr - 4 * det;
+      let eigInfo = "複素固有値（実の固有方向なし＝回転成分あり）";
+      if (disc >= -1e-9) {
+        const s = Math.sqrt(Math.max(0, disc));
+        const l1 = (tr + s) / 2, l2 = (tr - s) / 2;
+        const dir = (lam: number): [number, number] => {
+          if (Math.abs(b) > 1e-9) return [b, lam - a];
+          if (Math.abs(c) > 1e-9) return [lam - d, c];
+          return Math.abs(a - lam) < 1e-9 ? [1, 0] : [0, 1];
+        };
+        for (const lam of s < 1e-6 ? [l1] : [l1, l2]) {
+          let [vx, vy] = dir(lam);
+          const n = Math.hypot(vx, vy) || 1; vx /= n; vy /= n;
+          svg.appendChild(line(-R * vx, -R * vy, R * vx, R * vy, "var(--shu)", 2, 0.85));
+        }
+        eigInfo = `固有値 λ = ${l1.toFixed(2)}, ${l2.toFixed(2)}（朱の直線が固有方向：変形しても向きが変わらない）`;
+      }
+
+      // 基底ベクトルの像
+      svg.appendChild(arrow(a, c, "var(--ink)", "A e₁"));
+      svg.appendChild(arrow(b, d, "var(--ink-faint)", "A e₂"));
+
+      ids.forEach((k) => { outs[k]!.textContent = parseFloat(inputs[k]!.value).toFixed(1); });
+      caption.textContent =
+        `det A = ${det.toFixed(2)} ＝ 平行四辺形の面積${det < 0 ? "（向き反転：朱色）" : ""}。` +
+        ` ${eigInfo}`;
+    }
+
+    const update = () => draw(+inputs.a!.value, +inputs.b!.value, +inputs.c!.value, +inputs.d!.value);
+    ids.forEach((k) => inputs[k]!.addEventListener("input", update));
+    update();
+  }
+</script>
+
+<style>
+  .lm {
+    margin: 26px 0;
+    padding: 16px 18px 12px;
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    background: var(--card);
+  }
+  .lm-controls { margin-bottom: 12px; }
+  .lm-matrix { display: flex; align-items: center; gap: 12px; font-family: var(--serif); font-weight: 700; }
+  .lm-grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 4px 20px; }
+  .lm-grid2 label { display: flex; align-items: center; gap: 8px; font-size: 13px; font-family: var(--sans); font-weight: 600; color: var(--ink); }
+  .lm-grid2 input { width: 96px; accent-color: var(--shu); }
+  .lm-grid2 output { width: 30px; color: var(--ink-faint); font-variant-numeric: tabular-nums; }
+  .lm-svg { width: 100%; max-width: 420px; height: auto; display: block; margin: 0 auto; }
+  .lm-caption { margin-top: 10px; font-size: 13px; line-height: 1.7; color: var(--ink-faint); font-family: var(--sans); }
+</style>

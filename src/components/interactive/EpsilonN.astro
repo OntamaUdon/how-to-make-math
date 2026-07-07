@@ -1,0 +1,108 @@
+---
+/* EpsilonN.astro — ε-N 論法の体験装置。
+   数列 aₙ = (-1)ⁿ⁄n が 0 に収束する様子を点で描き、ε のスライダーを
+   動かすと帯 |x| < ε と「そこから先ずっと帯の中」に入る最小の N が光る。
+   「どんな ε にも N が返せる」という定義の気持ちを手で確かめられる。
+   状態はメモリ内のみ（storage 不使用）。 */
+---
+
+<figure class="en" role="group" aria-label="ε-N 論法の可視化">
+  <div class="en-controls">
+    <label class="en-label" for="en-eps">許容誤差 ε = <output id="en-eps-val">0.30</output></label>
+    <input id="en-eps" class="en-range" type="range" min="0.02" max="0.6" step="0.01" value="0.3" />
+  </div>
+  <svg id="en-svg" viewBox="0 0 640 300" class="en-svg" role="img"
+       aria-label="数列の点が 0 のまわりの帯へ収まっていく図"></svg>
+  <figcaption id="en-caption" class="en-caption"></figcaption>
+</figure>
+
+<script>
+  const svg = document.getElementById("en-svg");
+  const range = document.getElementById("en-eps") as HTMLInputElement | null;
+  const epsOut = document.getElementById("en-eps-val");
+  const caption = document.getElementById("en-caption");
+
+  if (svg && range && epsOut && caption) {
+    const NS = "http://www.w3.org/2000/svg";
+    const N = 40;                       // 表示する項数
+    const seq = (n: number) => (n % 2 === 0 ? 1 : -1) / n;  // aₙ = (-1)ⁿ / n
+    const W = 640, H = 300, padL = 44, padR = 16, padT = 24, padB = 34;
+    const x0 = padL, x1 = W - padR, y0 = padT, y1 = H - padB;
+    const yMid = (y0 + y1) / 2;
+    const yScale = 0.8;                 // |aₙ| ≤ 1 を帯にマップ
+    const xOf = (n: number) => x0 + ((n - 1) / (N - 1)) * (x1 - x0);
+    const yOf = (v: number) => yMid - v * (y1 - y0) / 2 * yScale;
+
+    const el = (name: string, attrs: Record<string, string | number>) => {
+      const e = document.createElementNS(NS, name);
+      for (const k in attrs) e.setAttribute(k, String(attrs[k]));
+      return e;
+    };
+
+    function draw(eps: number) {
+      svg.innerHTML = "";
+      // 帯 |x| < ε
+      svg.appendChild(el("rect", {
+        x: x0, y: yOf(eps), width: x1 - x0, height: yOf(-eps) - yOf(eps),
+        fill: "var(--ai-wash)", stroke: "var(--ai)", "stroke-width": 1, "stroke-dasharray": "4 4", opacity: 0.85,
+      }));
+      // 中心線 x = 0（極限）
+      svg.appendChild(el("line", { x1: x0, y1: yMid, x2: x1, y2: yMid, stroke: "var(--ai)", "stroke-width": 1.5 }));
+      const lbl = el("text", { x: x0 - 8, y: yMid + 4, "text-anchor": "end", fill: "var(--ai)", "font-size": 12 });
+      lbl.textContent = "0";
+      svg.appendChild(lbl);
+
+      // 「そこから先ずっと帯の中」に入る最小の N を求める
+      let firstStable = -1;
+      for (let n = 1; n <= N; n++) {
+        let ok = true;
+        for (let m = n; m <= N; m++) if (Math.abs(seq(m)) >= eps) { ok = false; break; }
+        if (ok) { firstStable = n; break; }
+      }
+
+      // N の縦線
+      if (firstStable > 0) {
+        const xN = xOf(firstStable);
+        svg.appendChild(el("line", { x1: xN, y1: y0, x2: xN, y2: y1, stroke: "var(--shu)", "stroke-width": 1.5, "stroke-dasharray": "3 3" }));
+        const t = el("text", { x: xN + 4, y: y0 + 12, fill: "var(--shu)", "font-size": 12 });
+        t.textContent = "N = " + firstStable;
+        svg.appendChild(t);
+      }
+
+      // 点
+      for (let n = 1; n <= N; n++) {
+        const v = seq(n);
+        const inside = Math.abs(v) < eps;
+        const settled = firstStable > 0 && n >= firstStable;
+        svg.appendChild(el("circle", {
+          cx: xOf(n), cy: yOf(v), r: 3.4,
+          fill: settled ? "var(--shu)" : (inside ? "var(--ai)" : "var(--ink-faint)"),
+        }));
+      }
+
+      epsOut.textContent = eps.toFixed(2);
+      caption.textContent = firstStable > 0
+        ? `ε = ${eps.toFixed(2)} を選ぶと、N = ${firstStable} 以降の点（朱色）はすべて帯 |aₙ| < ε の中。つまり「n ≥ ${firstStable} なら誤差は ε 未満」。ε を小さくすると N は大きくなりますが、必ず見つかります——これが「収束」です。`
+        : `ε = ${eps.toFixed(2)} は表示範囲では収まりきりません。項数を増やせば必ず N が見つかります。`;
+    }
+
+    const update = () => draw(parseFloat(range.value));
+    range.addEventListener("input", update);
+    update();
+  }
+</script>
+
+<style>
+  .en {
+    margin: 26px 0;
+    padding: 16px 18px 12px;
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    background: var(--card);
+  }
+  .en-controls { display: flex; flex-direction: column; gap: 6px; margin-bottom: 10px; }
+  .en-label { font-size: 14px; font-weight: 600; color: var(--ink); font-family: var(--sans); }
+  .en-range { width: 100%; accent-color: var(--shu); }
+  .en-svg { width: 100%; height: auto; display: block; }
+  .en-caption { margin-top: 10px; font-size: 13px; line-height: 1.7; color: var(--ink-faint); font-family: var(--sans); }
+</style>

@@ -1,0 +1,13 @@
+---
+/* Ax.astro — 証明木の葉（仮定・公理など）。props.f に数式（KaTeX 記法、$ 不要）。 */
+import katex from "katex";
+
+interface Props { f?: string; }
+const { f = "" } = Astro.props;
+const html = f ? katex.renderToString(f, { throwOnError: false }) : "";
+---
+<div class="ax" set:html={html} />
+
+<style>
+  .ax { text-align: center; white-space: nowrap; padding: 0 0.2em; }
+</style>

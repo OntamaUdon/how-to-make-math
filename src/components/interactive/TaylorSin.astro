@@ -1,0 +1,95 @@
+---
+/* TaylorSin.astro — テイラー展開の体験装置。
+   sin x（黒）と、0 のまわりのテイラー多項式（朱）を重ねて描く。
+   スライダーで項数を増やすと、多項式が原点から外へ向かって
+   だんだん sin x に「吸い付いて」いく様子が見える。
+   「原点での一致を高次まで強要すると、遠くまで似てくる」を体感する。
+   状態はメモリ内のみ（storage 不使用）。 */
+---
+
+<figure class="ts" role="group" aria-label="テイラー展開の可視化">
+  <div class="ts-controls">
+    <label class="ts-label" for="ts-terms">使う項数 = <output id="ts-terms-val">1</output>（次数 <output id="ts-deg-val">1</output> まで）</label>
+    <input id="ts-terms" class="ts-range" type="range" min="1" max="8" step="1" value="1" />
+  </div>
+  <svg id="ts-svg" viewBox="0 0 640 320" class="ts-svg" role="img"
+       aria-label="sin x とそのテイラー多項式のグラフ"></svg>
+  <figcaption id="ts-caption" class="ts-caption"></figcaption>
+</figure>
+
+<script>
+  const svg = document.getElementById("ts-svg");
+  const range = document.getElementById("ts-terms") as HTMLInputElement | null;
+  const termsOut = document.getElementById("ts-terms-val");
+  const degOut = document.getElementById("ts-deg-val");
+  const caption = document.getElementById("ts-caption");
+
+  if (svg && range && termsOut && degOut && caption) {
+    const NS = "http://www.w3.org/2000/svg";
+    const W = 640, H = 320, padX = 30, padY = 20;
+    const xMin = -8, xMax = 8, yMin = -3, yMax = 3;
+    const sx = (x: number) => padX + (x - xMin) / (xMax - xMin) * (W - 2 * padX);
+    const sy = (y: number) => H - padY - (y - yMin) / (yMax - yMin) * (H - 2 * padY);
+
+    const el = (name: string, attrs: Record<string, string | number>) => {
+      const e = document.createElementNS(NS, name);
+      for (const k in attrs) e.setAttribute(k, String(attrs[k]));
+      return e;
+    };
+
+    // 項数 k のテイラー部分和：Σ_{j=0}^{k-1} (-1)^j x^(2j+1) / (2j+1)!
+    const taylor = (x: number, k: number) => {
+      let sum = 0, term = x;                 // j=0 の項
+      for (let j = 0; j < k; j++) {
+        sum += term;
+        term *= -x * x / ((2 * j + 2) * (2 * j + 3)); // 次の項へ
+      }
+      return sum;
+    };
+
+    const path = (f: (x: number) => number, clampY: boolean) => {
+      let d = "";
+      for (let i = 0; i <= 400; i++) {
+        const x = xMin + (i / 400) * (xMax - xMin);
+        let y = f(x);
+        if (clampY && (y < yMin - 1 || y > yMax + 1)) { d += " M"; continue; } // 画面外は途切れさせる
+        d += (d.endsWith("M") || d === "" ? "M" : "L") + sx(x).toFixed(1) + " " + sy(Math.max(yMin - 1, Math.min(yMax + 1, y))).toFixed(1) + " ";
+      }
+      return d.trim();
+    };
+
+    function draw(k: number) {
+      svg.innerHTML = "";
+      // 軸
+      svg.appendChild(el("line", { x1: padX, y1: sy(0), x2: W - padX, y2: sy(0), stroke: "var(--line)", "stroke-width": 1 }));
+      svg.appendChild(el("line", { x1: sx(0), y1: padY, x2: sx(0), y2: H - padY, stroke: "var(--line)", "stroke-width": 1 }));
+      // sin x
+      svg.appendChild(el("path", { d: path(Math.sin, false), fill: "none", stroke: "var(--ink)", "stroke-width": 2 }));
+      // テイラー多項式
+      svg.appendChild(el("path", { d: path((x) => taylor(x, k), true), fill: "none", stroke: "var(--shu)", "stroke-width": 2.2 }));
+
+      termsOut.textContent = String(k);
+      degOut.textContent = String(2 * k - 1);
+      caption.textContent = `${k} 項（${2 * k - 1} 次）まで足すと、朱色の多項式は原点の近くから外側へと sin x に吸い付いていきます。次数を上げるほど「似ている区間」が広がるのが、テイラー展開の気持ちです。`;
+    }
+
+    const update = () => draw(parseInt(range.value, 10));
+    range.addEventListener("input", update);
+    update();
+  }
+</script>
+
+<style>
+  .ts {
+    margin: 26px 0;
+    padding: 16px 18px 12px;
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    background: var(--card);
+  }
+  .ts-controls { display: flex; flex-direction: column; gap: 6px; margin-bottom: 10px; }
+  .ts-label { font-size: 14px; font-weight: 600; color: var(--ink); font-family: var(--sans); }
+  .ts-range { width: 100%; accent-color: var(--shu); }
+  .ts-svg { width: 100%; height: auto; display: block; }
+  .ts-caption { margin-top: 10px; font-size: 13px; line-height: 1.7; color: var(--ink-faint); font-family: var(--sans); }
+</style>

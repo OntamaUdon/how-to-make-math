@@ -1,0 +1,58 @@
+---
+/* Pager.astro — 前後ページ送り。prev / next は無ければ空欄になる。
+   どちらも無いときは何も描画しない。 */
+import type { NavLink } from "../../config/navigation";
+
+interface Props {
+  prev?: NavLink;
+  next?: NavLink;
+}
+const { prev, next } = Astro.props;
+---
+{(prev || next) && (
+  <nav class="pager" aria-label="前後のページ">
+    {prev
+      ? (
+        <a class="pager-link prev" href={prev.href}>
+          <span class="pager-dir">← 前のページ</span>
+          <span class="pager-title">{prev.title}</span>
+        </a>
+      )
+      : <span />}
+    {next
+      ? (
+        <a class="pager-link next" href={next.href}>
+          <span class="pager-dir">次のページ →</span>
+          <span class="pager-title">{next.title}</span>
+        </a>
+      )
+      : <span />}
+  </nav>
+)}
+
+<style>
+  .pager {
+    max-width: var(--content-max);
+    margin: 54px auto 0;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 14px;
+  }
+  .pager-link {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    padding: 12px 16px;
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    background: var(--card);
+  }
+  .pager-link:hover { border-color: var(--ai); text-decoration: none; }
+  .pager-link.next { text-align: right; }
+  .pager-dir { font-size: 12px; color: var(--ink-faint); }
+  .pager-title { font-weight: 700; color: var(--ai); }
+
+  @media (max-width: 880px) {
+    .pager { grid-template-columns: 1fr; }
+  }
+</style>

@@ -1,0 +1,142 @@
+---
+layout: ../../layouts/BaseLayout.astro
+title: 第1章 極限を厳密にする（ε-N・ε-δ）
+description: 「限りなく近づく」を、誰が読んでも同じ意味に取れる言葉に翻訳する。ε-N と ε-δ、そして否定の作り方まで。
+---
+
+import Term from "../../components/assets/Term.astro";
+import Statement from "../../components/assets/Statement.astro";
+import EpsilonN from "../../components/interactive/EpsilonN.astro";
+
+# 第1章 極限を厳密にする
+
+## 「限りなく近づく」の何が困るのか
+
+数列 $1, \frac12, \frac13, \frac14, \dots$ は $0$ に近づく。これは誰でも納得します。
+では聞きます。**「近づく」って、正確にはどういう意味ですか？**
+
+「どんどん $0$ に寄っていく」と言いたくなりますが、たとえば $2, 2, 2, \dots$ という
+ずっと $2$ のままの数列も、見方によっては「$2$ にどんどん寄っている」と言えてしまう。
+「小さくなっていく」だと $1, \frac12, \frac14, \dots$ は説明できても、
+$-1, \frac12, -\frac13, \frac14, \dots$ のように**符号が揺れながら $0$ に近づく**やつを
+うまく言えません。
+
+つまり素朴な言い方は、**人によって別の意味に取れてしまう**。
+数学は「誰が読んでも同じ結論になる」ことが命なので、これは致命的です。
+そこで先人がひねり出したのが、次の発想の転換でした。
+
+> 「近づく」を**動きの言葉**（寄っていく、小さくなる）でなく、
+> **距離の言葉**（誤差がどれだけ小さくできるか）に翻訳する。
+
+## 直感：文句係とのゲーム
+
+こう考えてみてください。あなたは「$a_n$ は $0$ に近づく」と主張したい。
+そこへ**文句係**が現れて、こう言います。
+
+> 「近づくって言うなら、誤差 $0.1$ 以内にしてみせろ」
+
+あなたは「$n$ が十分大きければ、ほら $0.1$ 以内です」と返す。
+すると文句係は「じゃあ $0.001$ 以内は？」と、どんどん厳しくしてくる。
+
+**どんなに小さい誤差を要求されても、『ある番号から先はずっとその誤差以内』と
+返せる**——そのとき初めて「$a_n$ は $0$ に近づく」と認めよう、というわけです。
+
+ここで「誤差の要求」を $\varepsilon$（イプシロン）、「ある番号」を $N$ と名づけます。
+下のスライダーで $\varepsilon$（文句係の要求）を動かしてみてください。
+どんなに小さくしても、それに応じた $N$（朱色の線）から先は、点がすべて帯の中に
+収まります。これが「近づく」の正体です。
+
+<EpsilonN />
+
+## 形式：ε-N 論法
+
+さっきのゲームを、そのまま記号にします。
+
+<Statement kind="definition" title="数列の極限（ε-N 論法）">
+数列 $(a_n)$ が値 $\alpha$ に<Term>収束</Term>するとは、次が成り立つこと：
+
+$$\forall \varepsilon > 0,\ \exists N \in \mathbb{N},\ \forall n \ge N,\ |a_n - \alpha| < \varepsilon.$$
+
+このとき $\displaystyle\lim_{n\to\infty} a_n = \alpha$ と書く。
+</Statement>
+
+記号を日本語に戻すと、**「どんな $\varepsilon>0$ に対しても（文句係がどんな要求をしても）、
+ある番号 $N$ が存在して、それ以降のすべての $n$ で誤差 $|a_n-\alpha|$ が $\varepsilon$ 未満」**。
+さっきのゲームの一字一句の翻訳になっています。
+
+$|a_n - \alpha|$ は $a_n$ と $\alpha$ の**距離**です。符号が揺れても絶対値で測るから、
+「揺れながら近づく」もちゃんと扱えます。素朴な言い方の弱点が、これで全部消えました。
+
+<Statement kind="example" title="1/n → 0 を定義通りに示す">
+$\varepsilon>0$ を任意にとる。$N > \frac{1}{\varepsilon}$ となる自然数 $N$ をとれば
+（アルキメデスの原理でとれる）、$n \ge N$ のとき
+
+$$\left|\tfrac{1}{n} - 0\right| = \tfrac{1}{n} \le \tfrac{1}{N} < \varepsilon.$$
+
+$\varepsilon$ は任意だったから、定義より $\lim_{n\to\infty}\frac1n = 0$。
+</Statement>
+
+証明の**型**に注目してください。「$\varepsilon$ を任意にとる → それに合わせて $N$ を作る →
+$n\ge N$ で誤差 $<\varepsilon$ を確かめる」。$\varepsilon$-$\delta$ 系の証明はすべてこの三段構えです。
+
+## 関数の極限：ε-δ 論法
+
+数列は「$n$ を大きくする」でしたが、関数 $f(x)$ で「$x$ を $a$ に近づける」ときも
+発想は同じ。ただし今度は「$n\ge N$」の代わりに「$x$ が $a$ に十分近い」を
+$\delta$（デルタ）で測ります。
+
+<Statement kind="definition" title="関数の極限（ε-δ 論法）">
+$\displaystyle\lim_{x\to a} f(x) = L$ とは、
+
+$$\forall \varepsilon>0,\ \exists \delta>0,\ \forall x,\ 0 < |x-a| < \delta \implies |f(x)-L| < \varepsilon.$$
+</Statement>
+
+読み方は「出力の誤差 $\varepsilon$ をどんなに小さく要求されても、
+**入力側の許容範囲 $\delta$** をうまくとれば、$a$ から $\delta$ 以内の $x$ で
+出力が $L$ の $\varepsilon$ 以内に収まる」。$0<|x-a|$ と書くのは、
+$x=a$ **ちょうど**の値は問わない（近づく途中の話をしている）ためです。
+
+<Statement kind="definition" title="連続性">
+$f$ が点 $a$ で<Term>連続</Term>とは $\displaystyle\lim_{x\to a}f(x)=f(a)$。
+展開すると、$\forall\varepsilon>0,\ \exists\delta>0,\ |x-a|<\delta \implies |f(x)-f(a)|<\varepsilon$。
+</Statement>
+
+連続とは要するに「**入力を少し動かせば、出力も少ししか動かない**」。
+極限の定義がそのまま連続の定義になっているのがポイントで、
+新しく覚えることはありません。
+
+## つまずきポイント：否定はどう作るか
+
+「収束する」の証明はできても、**「収束しない」ことを示せ**と言われると急に固まる人が
+多い。これは論理の $\forall$ と $\exists$ をひっくり返すだけの機械的作業です。
+
+<Statement kind="remark" title="量化子の否定は「入れ替えて中を否定」">
+$\neg(\forall x\, P) \equiv \exists x\, \neg P$、$\neg(\exists x\, P) \equiv \forall x\, \neg P$。
+外側から順にひっくり返していけばよい。
+</Statement>
+
+「$\alpha$ に収束する」＝ $\forall\varepsilon>0\ \exists N\ \forall n\ge N\ |a_n-\alpha|<\varepsilon$
+を否定すると、$\forall$ と $\exists$ が総入れ替えになり、最後の不等号だけ否定されて：
+
+$$\exists \varepsilon>0,\ \forall N,\ \exists n \ge N,\ |a_n - \alpha| \ge \varepsilon.$$
+
+日本語だと**「ある $\varepsilon$ が存在して、どんなに先に行っても、誤差が $\varepsilon$ 以上に
+なる $n$ がまた出てくる」**。文句係の側に立った言い方ですね。
+
+<Statement kind="example" title="(-1)ⁿ は収束しない">
+$a_n=(-1)^n$ が $\alpha$ に収束すると仮定する。$\varepsilon=1$ をとると、隣り合う項の差は
+$|a_{n+1}-a_n|=2$ なので、$|a_n-\alpha|<1$ かつ $|a_{n+1}-\alpha|<1$ は三角不等式
+$2=|a_{n+1}-a_n|\le |a_{n+1}-\alpha|+|a_n-\alpha|<2$ に反する。よってどんな $\alpha$ にも
+収束しない。
+</Statement>
+
+## この章のまとめ
+
+- 「限りなく近づく」の曖昧さは、**距離 $|a_n-\alpha|$ を任意の $\varepsilon$ より小さくできる**、
+  と言い換えることで消える。
+- 証明はいつも三段構え：**$\varepsilon$ を任意にとる → $N$（or $\delta$）を作る → 誤差 $<\varepsilon$**。
+- 連続とは「入力の小さな変化 → 出力の小さな変化」。極限の定義の言い換えにすぎない。
+- 否定は $\forall\leftrightarrow\exists$ を入れ替えて中身を否定するだけ。**文句係の側に回る**と覚える。
+
+次章は、そもそも**なぜ実数だと極限がちゃんと存在するのか**——
+$\sup$ や完備性という「実数の連続性」を掘り下げます。

@@ -1,0 +1,148 @@
+---
+/* MdxPlayground.astro — Markdown + 数式 のライブプレビュー（タブ切り替え式）。
+   「コード」「プレビュー」をボタンで切り替え、1枚を全幅・高めに表示する。
+   左に書いた内容を marked で HTML 化し、KaTeX で数式を描く。プレビュー枠は
+   class="prose" なので、本文と同じテーマの見た目で確認できる。
+   ※ Astro 部品（<Statement> 等）はビルド時に展開されるため、ここでは扱わない。 */
+const sample = `## 見出し（h2）
+
+**太字**、<span class="term">用語</span>、<span class="em">強調</span>。
+
+- 箇条書き その1
+- 箇条書き その2
+
+> 引用ブロックです。
+
+インライン数式 $e^{i\\pi} + 1 = 0$ と、別行立て：
+
+$$
+\\int_0^1 x^2 \\, dx = \\frac{1}{3}
+$$
+`;
+---
+
+<div class="playground" data-active="code">
+  <div class="pg-tabs" role="tablist" aria-label="表示の切り替え">
+    <button type="button" class="pg-tab" data-pane="code" role="tab" aria-selected="true">コード</button>
+    <button type="button" class="pg-tab" data-pane="preview" role="tab" aria-selected="false">プレビュー</button>
+  </div>
+
+  <div class="pg-body">
+    <textarea id="mdx-input" class="mdx-input pg-pane" data-pane="code" spellcheck="false">{sample}</textarea>
+    <div id="mdx-preview" class="prose mdx-preview pg-pane" data-pane="preview" hidden></div>
+  </div>
+</div>
+
+<script>
+  import { marked } from "marked";
+  import katex from "katex";
+
+  // $…$ / $$…$$ を「数式トークン」として先に取り出し、KaTeX で描画する。
+  // 先に取り出すことで、数式中の _ や * を強調と誤解釈されるのを防ぐ。
+  marked.use({
+    extensions: [
+      {
+        name: "blockMath",
+        level: "block",
+        start: (src: string) => src.indexOf("$$"),
+        tokenizer(src: string) {
+          const m = /^\$\$([\s\S]+?)\$\$/.exec(src);
+          if (m) return { type: "blockMath", raw: m[0], text: m[1].trim() };
+        },
+        renderer: (t: any) =>
+          `<div class="katex-display">${katex.renderToString(t.text, { displayMode: true, throwOnError: false })}</div>`,
+      },
+      {
+        name: "inlineMath",
+        level: "inline",
+        start: (src: string) => src.indexOf("$"),
+        tokenizer(src: string) {
+          const m = /^\$([^\n$]+?)\$/.exec(src);
+          if (m) return { type: "inlineMath", raw: m[0], text: m[1] };
+        },
+        renderer: (t: any) => katex.renderToString(t.text, { throwOnError: false }),
+      },
+    ],
+  });
+
+  const root = document.querySelector<HTMLElement>(".playground");
+  const input = document.getElementById("mdx-input") as HTMLTextAreaElement | null;
+  const preview = document.getElementById("mdx-preview") as HTMLElement | null;
+
+  if (root && input && preview) {
+    const render = () => { preview.innerHTML = marked.parse(input.value) as string; };
+    input.addEventListener("input", render);
+    render();
+
+    // タブ切り替え
+    const tabs = Array.from(root.querySelectorAll<HTMLButtonElement>(".pg-tab"));
+    const panes = Array.from(root.querySelectorAll<HTMLElement>(".pg-pane"));
+    const activate = (name: string) => {
+      root.dataset.active = name;
+      tabs.forEach((t) => t.setAttribute("aria-selected", String(t.dataset.pane === name)));
+      panes.forEach((p) => { p.hidden = p.dataset.pane !== name; });
+    };
+    tabs.forEach((t) => t.addEventListener("click", () => activate(t.dataset.pane!)));
+  }
+</script>
+
+<style>
+  .playground {
+    margin: 24px 0;
+    border: 1px solid var(--line);
+    border-radius: var(--radius, 10px);
+    overflow: hidden;
+    background: var(--card);
+  }
+
+  /* タブバー */
+  .pg-tabs {
+    display: flex;
+    gap: 2px;
+    padding: 6px 6px 0;
+    background: var(--paper-sunk);
+    border-bottom: 1px solid var(--line);
+  }
+  .pg-tab {
+    appearance: none;
+    border: none;
+    background: transparent;
+    font-family: var(--sans);
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--ink-faint);
+    padding: 8px 18px;
+    border-radius: 8px 8px 0 0;
+    cursor: pointer;
+  }
+  .pg-tab:hover { color: var(--ink); }
+  .pg-tab[aria-selected="true"] {
+    color: var(--ai);
+    background: var(--card);
+    box-shadow: inset 0 -2px 0 var(--ai);
+  }
+
+  /* 本体（1枚を全幅・高めに表示） */
+  .pg-body { display: block; }
+  .pg-pane { display: block; width: 100%; min-height: 460px; }
+  .pg-pane[hidden] { display: none; }
+
+  .mdx-input {
+    resize: vertical;
+    border: none;
+    font-family: var(--mono);
+    font-size: 14px;
+    line-height: 1.75;
+    color: var(--ink);
+    background: var(--card);
+    padding: 18px 20px;
+    tab-size: 2;
+  }
+  .mdx-input:focus-visible { outline: 2px solid var(--ai); outline-offset: -2px; }
+
+  .mdx-preview {
+    overflow: auto;
+    padding: 20px 22px;
+  }
+  .mdx-preview > :first-child { margin-top: 0; }
+</style>

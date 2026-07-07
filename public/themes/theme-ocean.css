@@ -1,0 +1,18 @@
+/* theme-ocean — 涼やかなクールブルー（やわらかく開放的） */
+@import url('https://fonts.googleapis.com/css2?family=Lexend:wght@400;500;600;700&family=Noto+Sans+JP:wght@400;500;700&family=Noto+Serif+JP:wght@600;700&display=swap');
+@import "./_base.css";
+
+:root {
+  --paper: #f3f7fb; --paper-sunk: #e6eef6; --card: #ffffff;
+  --ink: #1a2b3c; --ink-soft: #41566b; --ink-faint: #7990a4; --line: #dbe6f0;
+  --ai: #2b6cb0; --ai-soft: #3a7fc4; --ai-wash: #e4eef8;
+  --shu: #0e9aa7; --shu-wash: #e0f3f4;
+
+  --serif: "Noto Serif JP", serif;
+  --sans:  "Lexend", "Noto Sans JP", system-ui, sans-serif;
+  --latin: "Lexend", sans-serif;
+  --mono:  ui-monospace, Consolas, monospace;
+
+  --topbar-h: 60px; --rail-w: 300px; --content-max: 760px; --layout-max: 1440px; --gap: 36px;
+  --radius: 12px; --body-size: 17px; --body-leading: 1.85;
+}

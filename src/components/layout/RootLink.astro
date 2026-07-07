@@ -1,0 +1,97 @@
+---
+/* RootLink.astro — 「前のページに戻る」ボタン。
+   リンクで飛んでくる前のページへ、ブラウザ履歴（history.back()）で戻る。
+   サイト内の履歴が無い直接アクセス時は、押しても無意味なので自動で隠す。 */
+---
+<button type="button" class="rootlink" data-back hidden>
+  <span class="rootlink-chip" aria-hidden="true">
+    <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor"
+         stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M19 12H5M12 19l-7-7 7 7" />
+    </svg>
+  </span>
+  <span class="rootlink-body">
+    <span class="rootlink-title">前のページに戻る</span>
+  </span>
+</button>
+
+<script>
+  const btn = document.querySelector<HTMLButtonElement>("button[data-back]");
+  if (btn) {
+    // サイト内リンクから来た、または同タブに履歴があるときだけ表示する
+    let cameFromSite = false;
+    try {
+      cameFromSite = !!document.referrer &&
+        new URL(document.referrer).origin === location.origin;
+    } catch (e) { /* referrer が読めない環境では無視 */ }
+
+    if (cameFromSite || window.history.length > 1) btn.hidden = false;
+    btn.addEventListener("click", () => window.history.back());
+  }
+</script>
+
+<style>
+  .rootlink {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    gap: 11px;
+    margin-bottom: 18px;
+    padding: 10px 13px;
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    background: var(--card);
+    text-align: left;
+    cursor: pointer;
+    transition: border-color 0.15s, background 0.15s, transform 0.15s, box-shadow 0.15s;
+  }
+  .rootlink[hidden] { display: none; }
+  .rootlink:hover {
+    border-color: var(--ai);
+    background: color-mix(in srgb, var(--ai-wash) 55%, var(--card));
+    transform: translateY(-1px);
+    box-shadow: 0 5px 16px -10px var(--ai);
+  }
+  .rootlink:focus-visible {
+    outline: 2px solid var(--ai);
+    outline-offset: 2px;
+  }
+
+  /* 左のアイコンチップ：ホバーで差し色が満ちて矢印がふわっと左へ */
+  .rootlink-chip {
+    flex: none;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 31px;
+    height: 31px;
+    border-radius: 9px;
+    background: var(--ai-wash);
+    color: var(--ai);
+    transition: background 0.15s, color 0.15s, transform 0.15s;
+  }
+  .rootlink:hover .rootlink-chip {
+    background: var(--ai);
+    color: var(--paper);
+    transform: translateX(-2px);
+  }
+
+  .rootlink-body { min-width: 0; line-height: 1.25; }
+  .rootlink-title {
+    display: block;
+    font-family: var(--serif);
+    font-weight: 700;
+    font-size: 13.5px;
+    color: var(--ink);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    transition: color 0.15s;
+  }
+  .rootlink:hover .rootlink-title { color: var(--ai); }
+
+  /* 狭い画面では本文幅にそろえる（目次カードと同じ振る舞い） */
+  @media (max-width: 1180px) {
+    .rootlink { max-width: var(--content-max); margin: 0 auto 16px; }
+  }
+</style>

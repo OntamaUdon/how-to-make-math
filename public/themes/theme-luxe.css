@@ -1,0 +1,18 @@
+/* theme-luxe — 高級感（ダーク × シャンパンゴールド × 明朝） */
+@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&family=Noto+Sans+JP:wght@300;400;500;700&family=Zen+Old+Mincho:wght@600;700;900&display=swap');
+@import "./_base.css";
+
+:root {
+  --paper: #141318; --paper-sunk: #26242e; --card: #1c1b22;
+  --ink: #ece6da; --ink-soft: #b4ad9f; --ink-faint: #837c6d; --line: #2d2b34;
+  --ai: #c8a96a; --ai-soft: #e2cb97; --ai-wash: rgba(200, 169, 106, 0.12);
+  --shu: #b9895f; --shu-wash: rgba(185, 137, 95, 0.14);
+
+  --serif: "Zen Old Mincho", serif;
+  --sans:  "Noto Sans JP", system-ui, sans-serif;
+  --latin: "Cormorant Garamond", Georgia, serif;
+  --mono:  ui-monospace, Consolas, monospace;
+
+  --topbar-h: 62px; --rail-w: 300px; --content-max: 760px; --layout-max: 1440px; --gap: 40px;
+  --radius: 12px; --body-size: 17px; --body-leading: 1.9;
+}

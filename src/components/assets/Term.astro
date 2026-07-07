@@ -1,0 +1,14 @@
+---
+/* Term.astro — 新しく定義する用語を強調する（LaTeX の \highlight に相当）。
+   pages/terms/<語>.mdx に詳細ページがある語は、自動でその解説へのリンクになる。
+   見た目は _base.css の .term（差し色＋点線下線）を共有。
+   使い方: <Term>論理式</Term> */
+import { termHref } from "../../config/terms";
+
+// スロットの中身（用語名のテキスト）を取り出して、詳細ページの有無を調べる
+const text = (await Astro.slots.render("default")).trim();
+const href = termHref(text);
+---
+{href
+  ? <a class="term term-link" href={href} set:html={text} />
+  : <span class="term" set:html={text} />}

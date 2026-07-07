@@ -1,0 +1,18 @@
+/* theme-lavender — 藤（やさしい紫＋紅梅のさし色） */
+@import url('https://fonts.googleapis.com/css2?family=Noto+Serif+JP:wght@600;700&family=Zen+Kaku+Gothic+New:wght@400;500;700;900&family=Fraunces:ital,opsz,wght@0,9..144,500;1,9..144,400&display=swap');
+@import "./_base.css";
+
+:root {
+  --paper: #f6f4fb; --paper-sunk: #ebe7f6; --card: #fdfcff;
+  --ink: #2c2540; --ink-soft: #534a6b; --ink-faint: #877da3; --line: #e3ddf0;
+  --ai: #6d4fc0; --ai-soft: #815fd6; --ai-wash: #ece6f8;
+  --shu: #c0508f; --shu-wash: #f8e6f0;
+
+  --serif: "Noto Serif JP", serif;
+  --sans:  "Zen Kaku Gothic New", system-ui, sans-serif;
+  --latin: "Fraunces", Georgia, serif;
+  --mono:  ui-monospace, Consolas, monospace;
+
+  --topbar-h: 60px; --rail-w: 300px; --content-max: 760px; --layout-max: 1440px; --gap: 36px;
+  --radius: 12px; --body-size: 17px; --body-leading: 1.9;
+}

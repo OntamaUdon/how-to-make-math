@@ -1,0 +1,98 @@
+---
+layout: ../../layouts/BaseLayout.astro
+title: 第7章 固有値と固有ベクトル
+description: 変換しても向きの変わらない特別な方向。固有空間、特性多項式、代数的・幾何的重複度、トレースとの関係。
+---
+
+import Term from "../../components/assets/Term.astro";
+import Statement from "../../components/assets/Statement.astro";
+import LinearMap2D from "../../components/interactive/LinearMap2D.astro";
+
+# 第7章 固有値と固有ベクトル
+
+## 変換の中で「向きが変わらない」特別な方向
+
+第4章で見たように、行列は空間を伸ばし・回し・つぶします。ほとんどのベクトルは、
+変換されると向きが変わってしまう。ところが、**変換しても向きだけは変わらず、長さが定数倍される
+だけの特別な方向**が存在することがあります。それが固有ベクトル、その定数倍率が固有値です。
+
+下の装置の朱色の直線が、その固有方向です。行列を動かすと、多くのベクトルは向きを変えるのに、
+朱線の上のベクトルだけは朱線上に留まる（$\lambda$ 倍されるだけ）のが見えます。
+固有方向は、変換に振り回されない「変換の背骨」。ここを見つければ、複雑な変換が
+「各背骨方向に、ただ定数倍しているだけ」という単純な姿に分解できます。
+
+<LinearMap2D />
+
+> 固有ベクトル ＝ 変換で向きが変わらない方向、固有値 ＝ その方向での引き伸ばし率。変換の骨組み。
+
+## 定義と、求め方
+
+<Statement kind="definition" title="固有値・固有ベクトル・固有空間">
+線形変換 $A$ に対し、$\mathbf v\ne\mathbf 0$ が
+$$A\mathbf v=\lambda\mathbf v$$
+を満たすとき、$\lambda$ を<Term>固有値</Term>、$\mathbf v$ を<Term>固有ベクトル</Term>という。
+固有値 $\lambda$ に属する固有ベクトル全体（と $\mathbf 0$）は部分空間で、
+<Term>固有空間</Term> $E_\lambda=\ker(A-\lambda I)$ という。
+</Statement>
+
+$A\mathbf v=\lambda\mathbf v$ を移項すると $(A-\lambda I)\mathbf v=\mathbf 0$。これが $\mathbf v\ne\mathbf 0$ の解を持つ
+＝ $A-\lambda I$ が**つぶれる**＝ 前章の行列式で $\det(A-\lambda I)=0$。固有値探しが、
+行列式を $0$ にする $\lambda$ 探しに翻訳されました。
+
+<Statement kind="definition" title="特性多項式">
+$$\varphi_A(\lambda)=\det(A-\lambda I)$$
+を<Term>特性多項式</Term>という（$n$ 次多項式）。その根が $A$ の固有値。各固有値 $\lambda$ について
+$E_\lambda=\ker(A-\lambda I)$ を解けば固有ベクトルが求まる。
+</Statement>
+
+手順は明快：（1）$\det(A-\lambda I)=0$ を解いて固有値、（2）各固有値で連立方程式 $(A-\lambda I)\mathbf v=\mathbf 0$ を
+解いて固有ベクトル。特性多項式が相似不変（$\det(P^{-1}(A-\lambda I)P)=\det(A-\lambda I)$）なので、
+**固有値は基底に依らない、写像そのものの量**です。
+
+## 2種類の重複度
+
+固有値が重解になるとき、「代数的に何重か」と「実際に何次元の固有空間か」がズレることがあります。
+このズレが、次章の対角化できる/できないの分かれ目になります。
+
+<Statement kind="definition" title="代数的重複度・幾何的重複度">
+固有値 $\lambda$ が特性多項式の根として何重かを<Term>代数的重複度</Term>、
+$\dim E_\lambda$（固有空間の次元＝独立な固有ベクトルの本数）を<Term>幾何的重複度</Term>という。
+つねに $1\le(\text{幾何的})\le(\text{代数的})$。
+</Statement>
+
+<Statement kind="example" title="重複度がズレる例">
+$A=\begin{pmatrix}2&1\\0&2\end{pmatrix}$ の特性多項式は $(\lambda-2)^2$ で、固有値 $2$ の代数的重複度は $2$。
+だが $E_2=\ker(A-2I)=\ker\begin{pmatrix}0&1\\0&0\end{pmatrix}$ は $(1,0)$ 方向だけの $1$ 次元。
+幾何的重複度 $1<2$。**固有ベクトルが足りない**——このズレがジョルダン標準形（第9章）を生む。
+</Statement>
+
+## トレース・行列式との関係
+
+固有値は、行列から直接読める2つの量とつながっています。検算や見通しに便利です。
+
+<Statement kind="theorem" title="固有値の和と積">
+固有値を重複込みで $\lambda_1,\dots,\lambda_n$ とすると
+$$\operatorname{tr}A=\sum_i\lambda_i=\lambda_1+\cdots+\lambda_n,\qquad \det A=\prod_i\lambda_i=\lambda_1\cdots\lambda_n.$$
+（<Term>トレース</Term> $\operatorname{tr}A$ は対角成分の和。）
+</Statement>
+
+特性多項式 $\varphi_A(\lambda)=\prod(\lambda_i-\lambda)$ を展開し、係数を比較すれば出ます。
+**トレース＝固有値の和、行列式＝固有値の積**。どちらも相似不変だったことと辻褄が合います
+（相似で固有値が変わらないのだから、その和も積も不変）。$2\times2$ なら「和がトレース、積が行列式」で
+固有値が暗算できます。
+
+## つまずきポイント
+
+<Statement kind="remark" title="よくある誤解">
+- **固有ベクトルに $\mathbf 0$ は含めない。** $A\mathbf 0=\lambda\mathbf 0$ は常に成り立つので、$\mathbf 0$ を許すと無意味。固有空間には $\mathbf 0$ を含めるが、固有「ベクトル」は非ゼロ。
+- **実行列でも固有値は複素数になりうる。** 回転行列は実の固有方向を持たない（装置で回転させると朱線が消える＝複素固有値）。複素数まで許すと $n$ 個そろう。
+- 幾何的重複度 $\le$ 代数的重複度。等号が崩れると対角化できない（次章）。
+</Statement>
+
+## この章のまとめ
+
+- 固有ベクトルは「変換で向きの変わらない方向」、固有値はその引き伸ばし率。固有空間 $E_\lambda=\ker(A-\lambda I)$。
+- 固有値は**特性多項式 $\det(A-\lambda I)=0$** の根（相似不変＝写像そのものの量）。固有ベクトルは連立方程式で求める。
+- **代数的重複度 $\ge$ 幾何的重複度**。トレース＝固有値の和、行列式＝固有値の積。重複度のズレが次章の鍵。
+
+次章は、固有ベクトルを基底にとって行列を**対角化**し、変換を最も簡単な姿にします。

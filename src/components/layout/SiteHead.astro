@@ -1,0 +1,45 @@
+---
+/* SiteHead.astro — <head> の中身一式。
+   メタ情報・ファビコン・フォント・配色テーマ・KaTeX のCSSをまとめる。
+   配色テーマは保存済みがあれば描画前に <link> を差し替える（ちらつき防止）。 */
+import { defaultTheme, themeStorageKey } from "../../config/themes";
+
+interface Props {
+  /** <title> に入れる完成済みの文字列 */
+  title: string;
+  /** meta description（空なら出力しない） */
+  description?: string;
+}
+const { title, description = "" } = Astro.props;
+---
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<meta name="generator" content={Astro.generator} />
+{description && <meta name="description" content={description} />}
+<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+<link rel="icon" href="/favicon.ico" />
+<title>{title}</title>
+
+<!-- フォントは各テーマCSS（public/themes/theme-*.css）が @import で読み込む。
+     preconnect だけ置いて、どのテーマでも取得を速くする。 -->
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+
+<!-- 配色テーマ：既定を読み込み、保存済みがあれば描画前に差し替える -->
+<link id="site-theme-css" rel="stylesheet" href={`/themes/theme-${defaultTheme}.css`} />
+<script is:inline define:vars={{ defaultTheme, themeStorageKey }}>
+  try {
+    const saved = localStorage.getItem(themeStorageKey);
+    if (saved && saved !== defaultTheme) {
+      document.getElementById("site-theme-css").href = `/themes/theme-${saved}.css`;
+    }
+  } catch (e) { /* localStorage が使えない環境では既定のまま */ }
+</script>
+
+<!-- 数式（KaTeX）の表示に必要なスタイル -->
+<link
+  rel="stylesheet"
+  href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css"
+  integrity="sha384-nB0miv6/jRmo5UMMR1wu3Gz6NLsoTkbqJghGIsx//Rlm+ZU03BU6SQNC66uf4l5+"
+  crossorigin="anonymous"
+/>

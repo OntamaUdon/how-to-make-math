@@ -1,0 +1,19 @@
+/* theme-newspaper — 活版・新聞（新聞紙の白＋黒＋深紅。明朝/セリフ本文） */
+@import url('https://fonts.googleapis.com/css2?family=Spectral:ital,wght@0,400;0,600;0,700;1,400&family=Noto+Serif+JP:wght@500;600;700&display=swap');
+@import "./_base.css";
+
+:root {
+  --paper: #f6f4ef; --paper-sunk: #e9e6df; --card: #fbfaf7;
+  --ink: #1a1a1a; --ink-soft: #44423d; --ink-faint: #7a766c; --line: #d8d4c8;
+  --ai: #9b2226; --ai-soft: #b5363a; --ai-wash: #f3e4e2;
+  --shu: #2b2b2b; --shu-wash: #ececec;
+
+  --serif: "Spectral", "Noto Serif JP", Georgia, serif;
+  --sans:  "Spectral", "Noto Serif JP", Georgia, serif;
+  --latin: "Spectral", Georgia, serif;
+  --mono:  ui-monospace, Consolas, monospace;
+
+  --topbar-h: 60px; --rail-w: 300px; --content-max: 720px; --layout-max: 1380px; --gap: 34px;
+  --radius: 2px; --body-size: 17.5px; --body-leading: 1.85;
+  --grain-opacity: 0.25;
+}

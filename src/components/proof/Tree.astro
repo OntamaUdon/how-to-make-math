@@ -1,0 +1,78 @@
+---
+/* Tree.astro — 証明木（bussproofs 相当）の外枠。
+   中に <Inf>（推論）と <Ax>（葉）をネストして組む。横長になったら横スクロール。
+
+   例:
+     <Tree>
+       <Inf rule="MP" c="\\bot">
+         <Ax f="[P]_1" />
+         <Inf rule="≡" c="P \\to \\bot"><Ax f="[\\neg P]_2" /></Inf>
+       </Inf>
+     </Tree>
+*/
+---
+<div class="prooftree"><slot /></div>
+
+<style>
+  .prooftree {
+    overflow-x: auto;
+    margin: 16px 0;
+    padding: 10px 2px 16px;
+    font-size: 0.95em;
+    line-height: 1.35;
+  }
+  /* 木の根（一番外側の Inf）を中央寄せ */
+  .prooftree > :global(.inf) { display: flex; }
+</style>
+
+<script>
+  /* 横線（推論線）の幅を「適度」に整える。
+     既定（CSS）の align-self: stretch では、横線が前提部のサブツリー全幅に伸びる。
+     前提が複数なら正しいが、前提が 1 つの推論（≡ や 演繹定理 など。多くは木の根＝
+     最後の棒）では、もっと上の広い段まで線が伸びて長すぎて見える。
+     そこで各横線を「直上の前提の結論」と「自分の結論」に合わせた幅へ詰める。
+     ─ JS が無効でも CSS のフォールバック（全幅）で破綻はしない。 */
+  function layoutBars() {
+    document.querySelectorAll<HTMLElement>(".prooftree .inf").forEach((inf) => {
+      const prem = inf.querySelector<HTMLElement>(":scope > .inf-prem");
+      const bar = inf.querySelector<HTMLElement>(":scope > .inf-bar");
+      const concl = inf.querySelector<HTMLElement>(":scope > .inf-concl");
+      if (!bar || !concl) return;
+
+      const conclW = concl.getBoundingClientRect().width;
+      // 直上の前提（.inf なら自分の結論、.ax ならそれ自身）が線に接する要素
+      const kids = prem ? Array.from(prem.children) : [];
+      let left = Infinity;
+      let right = -Infinity;
+      for (const kid of kids) {
+        const conn =
+          kid.classList.contains("inf")
+            ? kid.querySelector<HTMLElement>(":scope > .inf-concl")
+            : (kid as HTMLElement);
+        if (!conn) continue;
+        const r = conn.getBoundingClientRect();
+        left = Math.min(left, r.left);
+        right = Math.max(right, r.right);
+      }
+      const premSpan = right > left ? right - left : 0;
+
+      // 前提の接点幅と結論幅の広い方に合わせる（少しだけ余白を足す）
+      bar.style.alignSelf = "center";
+      bar.style.width = `${Math.max(premSpan, conclW) + 4}px`;
+    });
+  }
+
+  function schedule() {
+    requestAnimationFrame(layoutBars);
+  }
+
+  // KaTeX のフォント確定後に測るとズレない。読み込み済みでも一応即時に走らせる。
+  schedule();
+  if (document.fonts?.ready) document.fonts.ready.then(schedule);
+  window.addEventListener("load", schedule);
+  let t: number | undefined;
+  window.addEventListener("resize", () => {
+    clearTimeout(t);
+    t = window.setTimeout(schedule, 150);
+  });
+</script>
