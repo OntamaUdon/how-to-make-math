@@ -1,0 +1,101 @@
+---
+layout: ../../layouts/BaseLayout.astro
+title: 第10章 コホモロジーとカップ積
+description: ホモロジーの双対、さらに積をもつ不変量。特異コホモロジー、普遍係数定理、カップ積と環構造。
+---
+
+import Term from "../../components/assets/Term.astro";
+import Statement from "../../components/assets/Statement.astro";
+
+# 第10章 コホモロジーとカップ積
+
+## ホモロジーに「掛け算」を入れる
+
+ホモロジー群 $H_n$ は各次元の穴を数えました。でも、群としては「足し算」しかありません。空間の情報をさらに
+豊かに捉えるには、**掛け算（積構造）**が欲しい。それを可能にするのが**コホモロジー**です。
+
+コホモロジー $H^n$ は、ホモロジーの**双対**——鎖に整数を対応させる「余鎖」から作ります。加法群としては
+ホモロジーとほぼ同じ情報（普遍係数定理）ですが、決定的な違いは**カップ積** $\smile:H^p\times H^q\to H^{p+q}$ という
+掛け算をもつこと。これでコホモロジー全体 $H^*(X)$ が**環**になります。この環構造は、加法的ホモロジーが同じでも
+空間を区別できる強力な不変量です（例：トーラス $T^2$ と $S^1\vee S^1\vee S^2$ は同じホモロジーだが環構造が違う）。
+コホモロジーは[微分幾何のド・ラーム理論](/manifolds)（微分形式）、[数論](/algebraic-number-theory)、物理（ゲージ理論）で
+中心的な役割を果たします。ホモロジーに積を加えた、より鋭い道具です。
+
+> **コホモロジー** $H^n$ はホモロジーの双対。**カップ積** $\smile$ で環 $H^*(X)$ になり、加法的に同じ空間も区別できる。
+
+## 特異コホモロジー
+
+ホモロジーの鎖複体を「双対化」します。鎖 $C_n$ から整数への準同型を余鎖とします。
+
+<Statement kind="definition" title="余鎖・コホモロジー">
+$C^n(X)=\operatorname{Hom}(C_n(X),\mathbb Z)$（$n$ 鎖に整数を対応させる準同型＝<Term>余鎖</Term>）。<Term>余境界作用素</Term>
+$\delta:C^n\to C^{n+1}$ を境界作用素の双対 $(\delta\varphi)(\sigma)=\varphi(\partial\sigma)$ で定める。$\delta^2=0$（$\partial^2=0$ の双対）。
+<Term>コホモロジー群</Term> $H^n(X)=\ker\delta_n/\operatorname{im}\delta_{n-1}$。
+</Statement>
+
+ホモロジーの矢印 $\partial:C_n\to C_{n-1}$（次元を下げる）に対し、余境界 $\delta:C^n\to C^{n+1}$ は**次元を上げる**（双対だから
+向きが逆）。それ以外はホモロジーと平行です。加法群としては、両者は次の定理でほぼ決まります。
+
+## 普遍係数定理
+
+<Statement kind="theorem" title="普遍係数定理（コホモロジー）">
+$$H^n(X)\cong\operatorname{Hom}(H_n(X),\mathbb Z)\ \oplus\ \operatorname{Ext}(H_{n-1}(X),\mathbb Z).$$
+自由部分（ベッチ数）は $H_n$ と同じ、ねじれ（有限部分）は**一次元ずれて**現れる（$\operatorname{Ext}$ 項）。
+</Statement>
+
+$\operatorname{Hom},\operatorname{Ext}$ は[加群論・ホモロジー代数](/commutative-homological)の関手です。要点は「コホモロジーの自由部分（ベッチ数
+$b_n$）はホモロジーと一致し、ねじれは次数がひとつずれる」。だから**ベッチ数だけならコホモロジーとホモロジーは同じ
+情報**。ではなぜコホモロジーを使うのか——**積（カップ積）があるから**です。
+
+## カップ積と環構造
+
+コホモロジーには、次元を足し合わせる自然な積が入ります。これがホモロジーには無い決定的な構造です。
+
+<Statement kind="definition" title="カップ積">
+$\varphi\in C^p(X),\ \psi\in C^q(X)$ に対し、<Term>カップ積</Term> $\varphi\smile\psi\in C^{p+q}(X)$ を、$(p+q)$ 単体 $\sigma$ に対し
+$$(\varphi\smile\psi)(\sigma)=\varphi(\sigma|_{[v_0,\dots,v_p]})\cdot\psi(\sigma|_{[v_p,\dots,v_{p+q}]})$$
+（単体を前半 $p$ 面・後半 $q$ 面に分けて評価）で定める。$\delta$ とライプニッツ則で両立し、コホモロジー上の積を誘導する。
+</Statement>
+
+<Statement kind="theorem" title="コホモロジー環">
+カップ積により $H^*(X)=\bigoplus_n H^n(X)$ は**次数つき環**（<Term>コホモロジー環</Term>）になる。次数つき可換：
+$\alpha\smile\beta=(-1)^{pq}\beta\smile\alpha$（$\alpha\in H^p,\beta\in H^q$）。
+</Statement>
+
+「$p$ 次と $q$ 次のコホモロジー類を掛けると $(p+q)$ 次になる」——次元を足し合わせる積。これが空間に**環という
+豊かな代数構造**を与えます。その威力は、加法的に区別できない空間を区別できる点にあります。
+
+<Statement kind="example" title="環構造が空間を区別する">
+トーラス $T^2$ と $X=S^1\vee S^1\vee S^2$（2つの円周と1つの球面の花束）は、**加法的ホモロジーが全く同じ**：
+$H_0=\mathbb Z,H_1=\mathbb Z^2,H_2=\mathbb Z$。だが**カップ積が違う**：$T^2$ では $2$ つの $1$ 次類 $\alpha,\beta$ の積が $\alpha\smile\beta=$（$2$ 次の
+生成元）$\ne0$（経線と緯線が交わって面を張る）。一方 $X$ では $1$ 次類どうしの積が $0$（円周どうしは交わらない）。
+ゆえ $T^2\not\simeq X$——**環構造が、ホモロジーだけでは見えない違いを暴く**。
+</Statement>
+
+カップ積の幾何的な意味は「サイクルの**交わり**」です（[ポアンカレ双対](/algebraic-topology/11)を通じて、交差積と対応する）。
+トーラスの経線と緯線は $1$ 点で交わり、その交点が $2$ 次の類を生む——だから積が非零。この「交わりを代数で捉える」
+のがカップ積で、[代数幾何の交差理論](/algebraic-geometry)や物理につながります。
+
+<Statement kind="remark" title="ド・ラームコホモロジーとの一致">
+なめらかな多様体では、実係数の特異コホモロジー $H^n(X;\mathbb R)$ が、[微分形式のド・ラームコホモロジー](/manifolds)
+（$d\omega=0$ の閉形式 ÷ $d\eta$ の完全形式）と**同型**（ド・ラームの定理）。カップ積は微分形式の**ウェッジ積** $\wedge$ に対応。
+$\delta^2=0$ は $d^2=0$（外微分の[$\operatorname{rot}\operatorname{grad}=0$](/calculus/12)）と同じもの。トポロジー（コホモロジー）と
+微分幾何（微分形式）が、ここで完全に一致する。積分 $\int_C\omega$ がサイクルと余サイクルのペアリングになる。
+</Statement>
+
+## つまずきポイント
+
+<Statement kind="remark" title="よくある誤解">
+- **コホモロジーは双対、$\delta$ は次元を上げる。** $\delta:C^n\to C^{n+1}$（$\partial$ の逆向き）。$\delta^2=0$。
+- **ベッチ数はホモロジーと同じ、ねじれはずれる（普遍係数定理）。** 加法的にはほぼ同じ情報。差はカップ積（積構造）。
+- **カップ積がコホモロジーの主役。** ホモロジーには無い環構造。加法的に同じ空間（$T^2$ と $S^1\vee S^1\vee S^2$）を区別できる。
+- **実係数コホモロジー ＝ [ド・ラーム](/manifolds)。** 微分形式・ウェッジ積・外微分と対応。トポロジーと微分幾何の橋。
+</Statement>
+
+## この章のまとめ
+
+- **コホモロジー** $H^n=\ker\delta/\operatorname{im}\delta$（余鎖 $\operatorname{Hom}(C_n,\mathbb Z)$、余境界 $\delta$ は次元を上げる）。**普遍係数定理**：ベッチ数はホモロジーと同じ、ねじれは $\operatorname{Ext}$ で一次ずれる。
+- **カップ積** $\smile:H^p\times H^q\to H^{p+q}$ で $H^*(X)$ は**次数つき環**。加法的に同じ空間（$T^2$ と $S^1\vee S^1\vee S^2$）を環構造で区別できる。積はサイクルの交わりを捉える。
+- 実係数コホモロジーは[ド・ラーム理論](/manifolds)（微分形式・ウェッジ積）と一致。$\delta^2=0$ ↔ $d^2=0$。トポロジーと微分幾何の橋。
+
+次章は、多様体で成り立つ美しい対称性——**普遍係数定理の帰結とポアンカレ双対性**を扱います。

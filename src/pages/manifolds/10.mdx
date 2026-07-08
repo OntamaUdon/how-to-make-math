@@ -1,0 +1,94 @@
+---
+layout: ../../layouts/BaseLayout.astro
+title: 第10章 ストークスの定理
+description: 微分幾何の到達点。一般ストークスの定理 ∫dω=∫ω が、微積分の基本定理・グリーン・ストークス・ガウスをすべて統一する。
+---
+
+import Term from "../../components/assets/Term.astro";
+import Statement from "../../components/assets/Statement.astro";
+
+# 第10章 ストークスの定理
+
+## すべての積分定理が、この一行に集約される
+
+[微積分のベクトル解析](/calculus/12)で、$3$ つの積分定理——グリーン・ストークス・ガウス——を学びました。そして
+それらが「内部の微分の積分 ＝ 境界の積分」という同じ形をしていること、統一形 $\int_{\partial\Omega}\omega=\int_\Omega d\omega$ が
+存在することも予告しました。多様体論を登ってきた今、その統一形を証明できます。
+
+$$\boxed{\ \int_M d\omega=\int_{\partial M}\omega\ }$$
+
+これが**一般ストークスの定理**。左辺は多様体 $M$ の内部で $\omega$ を[外微分](/manifolds/8)して積分、右辺は境界 $\partial M$ の上で
+$\omega$ を積分。[微積分の基本定理 $\int_a^b f'=f(b)-f(a)$](/calculus/7)、[グリーン・ストークス・ガウスの定理](/calculus/12)は、
+すべてこのたった一つの式の特別な場合です。$1$ 次元の $\int_a^b$ から $n$ 次元の積分定理まで、次元も対象も超えて
+一つに統一される——微分幾何、いや解析学全体の到達点の一つです。「内部と境界の双対性」が、$d$ と $\partial$ の間の
+美しい対応として結晶します。
+
+> **一般ストークスの定理** $\int_M d\omega=\int_{\partial M}\omega$。微積分の基本定理・グリーン・ストークス・ガウスをすべて統一する。
+
+## 一般ストークスの定理
+
+<Statement kind="theorem" title="ストークスの定理">
+$M$ を向きづけ可能なコンパクトな $n$ 次元境界付き多様体、$\omega$ を $M$ 上の $(n-1)$ 形式（$C^1$）とする。$\partial M$ に
+[誘導される向き](/manifolds/9)を入れると
+$$\int_M d\omega=\int_{\partial M}\omega.$$
+（$\partial M=\emptyset$ なら右辺は $0$：閉多様体上では $\int_M d\omega=0$。）
+</Statement>
+
+<Statement kind="proof">
+（要点。）[$1$ の分割](/manifolds/9)で、$\omega$ が $1$ つのチャート（半空間 $\mathbb H^n=\{x^1\ge0\}$）に台をもつ場合に帰着する。
+$\omega=\sum_i f_i\,dx^1\wedge\cdots\widehat{dx^i}\cdots\wedge dx^n$ に対し、$d\omega$ を計算して[重積分](/calculus/11)し、各項に
+**[微積分の基本定理](/calculus/7)**（$1$ 変数で $\int\partial_if_i\,dx^i$ を積分）を適用する。台がコンパクトなので、境界 $x^1=0$ からの
+寄与だけが残り、内部の項は消える（境界の外で $f_i=0$）。残った境界項が $\int_{\partial M}\omega$。∎
+</Statement>
+
+証明の核心は「**各チャートで[微積分の基本定理](/calculus/7)を使う**」こと。$n$ 次元の壮大な定理が、本質的には
+$1$ 変数の $\int_a^b f'=f(b)-f(a)$ の繰り返し。$d$ が「内部の微分」、$\partial M$ が「境界」で、両者の積分が等しい——
+[外微分 $d$ と境界 $\partial$ が“双対（随伴）”](/algebraic-topology/6)であることの積分版です。この一式から、ベクトル解析の
+全定理が特別な場合として出ます。
+
+## すべての積分定理の統一
+
+<Statement kind="theorem" title="古典的積分定理の統一">
+一般ストークスの定理は、次元と形式の次数に応じて[ベクトル解析の各定理](/calculus/12)になる：
+- **$n=1$**（区間 $[a,b]$、$\omega=f$ は $0$ 形式）：$\int_{[a,b]}df=\int_{\{b\}-\{a\}}f$、すなわち
+  $\int_a^b f'\,dx=f(b)-f(a)$——**[微積分学の基本定理](/calculus/7)**。
+- **$n=2$**（平面領域、$\omega=P\,dx+Q\,dy$）：$\int_D(\partial_xQ-\partial_yP)\,dx\,dy=\oint_{\partial D}P\,dx+Q\,dy$——**[グリーンの定理](/calculus/12)**。
+- **$n=2$**（空間内の曲面 $S$、$\omega=$ $1$ 形式）：$\int_S\operatorname{rot}\mathbf F\cdot d\mathbf S=\oint_{\partial S}\mathbf F\cdot d\mathbf r$——**[（古典）ストークスの定理](/calculus/12)**。
+- **$n=3$**（立体 $V$、$\omega=$ $2$ 形式）：$\int_V\operatorname{div}\mathbf F\,dV=\int_{\partial V}\mathbf F\cdot d\mathbf S$——**[ガウスの発散定理](/calculus/12)**。
+</Statement>
+
+[外微分 $d$ が $\operatorname{grad},\operatorname{rot},\operatorname{div}$ を統一した（第8章）](/manifolds/8)ように、ストークスの定理がそれらの積分定理を
+統一します。「$\omega$ の次数を変え、次元を変えると、$\int_M d\omega=\int_{\partial M}\omega$ が基本定理・グリーン・ストークス・
+ガウスに化ける」——[微積分第12章で予告した統一](/calculus/12)が、多様体論の言葉で完全に実現しました。$1$ 次元の
+$\int_a^b$ から $3$ 次元の発散定理まで、一つの式の姿です。
+
+## 系：閉形式の積分と境界
+
+<Statement kind="corollary" title="閉形式の積分と境界の消滅">
+- **閉形式の周期**：$\omega$ が[閉形式](/manifolds/8)（$d\omega=0$）で $C=\partial S$（境界）なら $\int_C\omega=\int_S d\omega=0$。閉形式の
+  「境界サイクル上の積分」は $0$。
+- **完全形式の閉曲線積分**：$\omega=d\eta$（完全）なら閉曲線 $C$（$\partial C=\emptyset$）上で $\int_C\omega=\int_C d\eta=\int_{\partial C}\eta=0$。
+</Statement>
+
+「閉形式を境界の上で積分すると $0$」「完全形式を閉曲線上で積分すると $0$」——これらが、[閉／完全のずれが穴を
+検出する](/manifolds/8)仕組みの積分的な裏づけです。閉だが完全でない形式は、「境界でない閉曲線」（穴を囲む
+ループ）の上で $0$ でない積分値をもつ——[複素解析の $\oint\frac{dz}z=2\pi i$](/complex-analysis/4)がその典型。この
+「閉形式とサイクルのペアリング」が、次章の[ド・ラームコホモロジー](/manifolds/11)と[ホモロジー](/algebraic-topology/6)を結ぶ
+橋になります。
+
+## つまずきポイント
+
+<Statement kind="remark" title="よくある誤解">
+- **ストークスは「内部の $d$ ＝ 境界」。** $\int_M d\omega=\int_{\partial M}\omega$。$\omega$ は $(n-1)$ 形式、$d\omega$ が $n$ 形式。次元と次数を合わせる。
+- **すべての積分定理が特別な場合。** $n=1$ で[基本定理](/calculus/7)、$n=2$ で[グリーン/ストークス](/calculus/12)、$n=3$ で[ガウス](/calculus/12)。統一形。
+- **向きづけ可能性が前提。** [積分が定義できる](/manifolds/9)向きづけ可能多様体で。境界の向きは誘導向き（符号が合う）。
+- **証明の核心は各チャートでの[基本定理](/calculus/7)。** $n$ 次元の定理が $1$ 変数の $\int f'=f(b)-f(a)$ の集積。
+</Statement>
+
+## この章のまとめ
+
+- **一般ストークスの定理** $\int_M d\omega=\int_{\partial M}\omega$。証明は[$1$ の分割](/manifolds/9)＋各チャートで[微積分の基本定理](/calculus/7)。$d$ と $\partial$（境界）の双対。
+- 次元・次数に応じて **[微積分の基本定理](/calculus/7)・[グリーン](/calculus/12)・[（古典）ストークス](/calculus/12)・[ガウスの発散定理](/calculus/12)**に化ける。[微積分第12章の統一](/calculus/12)が完全実現。
+- 系：**閉形式は境界サイクル上で積分 $0$**。閉だが完全でない形式は穴を囲むサイクルで非零（[複素解析](/complex-analysis/4)）——次章の[ド・ラーム](/manifolds/11)へ。
+
+最終部は、微分形式で穴を検出する——**ド・ラームコホモロジー**へ進みます。

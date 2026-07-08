@@ -1,0 +1,110 @@
+---
+layout: ../../layouts/BaseLayout.astro
+title: 第12章 計算とド・ラームの定理
+description: 解析と位相の一致。マイヤー–ヴィートリス、球面・トーラスの計算、ド・ラームの定理、そして分野の全景。
+---
+
+import Term from "../../components/assets/Term.astro";
+import Statement from "../../components/assets/Statement.astro";
+
+# 第12章 計算とド・ラームの定理
+
+## 微分形式のコホモロジーは、位相のコホモロジーと同じだった
+
+前章でド・ラームコホモロジー $H^k_{\mathrm{dR}}$——微分形式で作った不変量——を定義しました。それがホモトピー不変
+（位相だけで決まる）と分かった時点で、驚くべき予感が生まれます。この解析的な不変量は、[位相幾何で作った
+特異コホモロジー](/algebraic-topology/10)と、実は同じものではないか？
+
+その通りです。**ド・ラームの定理**——$H^k_{\mathrm{dR}}(M)\cong H^k(M;\mathbb R)$——が、両者の完全な一致を保証します。
+「微分方程式を解いて閉形式を調べる（解析）」ことと、「三角形を貼って穴を数える（位相）」ことが、同じ答えを出す。
+[微分幾何と位相幾何が一つになる](/algebraic-topology/10)、数学で最も美しい定理の一つです。この章では、具体的な
+計算（球面・トーラス）でド・ラームコホモロジーを求め、ド・ラームの定理を述べ、そして多様体論という分野が
+[微積分](/calculus)・[線形代数](/linear-algebra)・[位相幾何](/algebraic-topology)を統合して何を成し遂げたかを俯瞰して、
+締めくくります。
+
+> **ド・ラームの定理** $H^k_{\mathrm{dR}}(M)\cong H^k(M;\mathbb R)$。微分形式（解析）と特異コホモロジー（位相）が一致する。
+
+## マイヤー–ヴィートリスと計算
+
+ド・ラームコホモロジーにも、[位相幾何と同じ計算道具](/algebraic-topology/8)があります。
+
+<Statement kind="theorem" title="ド・ラームのマイヤー–ヴィートリス系列">
+$M=U\cup V$（開集合）に対し、長完全系列
+$$\cdots\to H^k_{\mathrm{dR}}(M)\to H^k_{\mathrm{dR}}(U)\oplus H^k_{\mathrm{dR}}(V)\to H^k_{\mathrm{dR}}(U\cap V)\xrightarrow{d^*}H^{k+1}_{\mathrm{dR}}(M)\to\cdots$$
+が存在する（形式を $U,V$ に制限し差をとる、[$1$ の分割](/manifolds/9)で連結準同型を作る）。
+</Statement>
+
+[位相幾何のマイヤー–ヴィートリス](/algebraic-topology/8)とまったく同じ形（$\pi_1$ の[ファン・カンペン](/algebraic-topology/4)にも
+対応）。これで球面のコホモロジーが計算できます。
+
+<Statement kind="example" title="球面とトーラスのド・ラームコホモロジー">
+- **球面 $S^n$**（$n\ge1$）：$U,V$ を上下半球（可縮、[ポアンカレの補題](/manifolds/11)で $H^k=0$、$k\ge1$）、$U\cap V\simeq S^{n-1}$ で
+  マイヤー–ヴィートリス帰納法（[位相幾何の球面計算](/algebraic-topology/8)と同じ）：
+  $$H^k_{\mathrm{dR}}(S^n)=\begin{cases}\mathbb R&(k=0,n)\\0&(\text{その他})\end{cases}.$$
+  $H^n(S^n)=\mathbb R$ の生成元は「体積形式」（積分すると $0$ でない、閉だが完全でない）。
+- **トーラス $T^2$**：$H^0=\mathbb R,\ H^1=\mathbb R^2,\ H^2=\mathbb R$。$H^1$ の生成元は $d\theta_1,d\theta_2$（$2$ つの角度形式、閉だが完全でない
+  ＝経線・緯線方向の穴）。$H^2$ は体積形式 $d\theta_1\wedge d\theta_2$。
+</Statement>
+
+計算結果は、[位相幾何のホモロジー・コホモロジー](/algebraic-topology/8)と（実係数で）ぴったり一致します。$S^n$ は
+$k=0,n$ で $\mathbb R$、$T^2$ は $1,2,1$——[ベッチ数](/algebraic-topology/11)そのもの。これが偶然でないことを保証するのが
+ド・ラームの定理です。
+
+## ド・ラームの定理
+
+<Statement kind="theorem" title="ド・ラームの定理">
+なめらかな多様体 $M$ について、[積分によるペアリング](/manifolds/10) $([\omega],[c])\mapsto\int_c\omega$ が、自然な**環同型**
+$$H^k_{\mathrm{dR}}(M)\ \cong\ H^k(M;\mathbb R)$$
+を与える（左辺は微分形式のコホモロジー、右辺は[実係数特異コホモロジー](/algebraic-topology/10)）。[ウェッジ積](/manifolds/7) $\wedge$ が
+[カップ積](/algebraic-topology/10) $\smile$ に対応する。
+</Statement>
+
+同型を与えるのは**積分** $\int_c\omega$——閉形式 $\omega$ を[サイクル](/algebraic-topology/6) $c$ の上で積分した値。[ストークスの
+定理](/manifolds/10)より、この値は $\omega$ を完全形式ずらしても、$c$ を境界ずらしても変わらない（$\int_{\partial S}\omega=\int_S d\omega=0$）。
+だから「閉形式の類」と「サイクルの類」のペアリングが well-defined で、それが同型を与える。**「微分形式を
+サイクルの上で積分する」という解析の操作が、位相のコホモロジーと微分幾何のコホモロジーを結ぶ橋**なのです。
+
+<Statement kind="remark" title="ド・ラームの定理が意味すること">
+$H^k_{\mathrm{dR}}$ は微分方程式 $d\omega=0$（解析）で定義され、$H^k(M;\mathbb R)$ は三角形分割（位相）で定義される。全く違う
+出発点なのに同じ答え——**「多様体の穴は、微分形式で調べても三角形で調べても同じ」**。$H^1\ne0$ は「閉だが完全でない
+$1$ 形式がある」（解析）＝「縮まないループがある」（位相）。$H^n(S^n)=\mathbb R$ の生成元＝体積形式の積分が[写像度](/manifolds/3)を
+与える。解析・幾何・位相が、この定理で一つに縫い合わされる。
+</Statement>
+
+## 分野の全景：多様体論が統合したもの
+
+多様体論は、これまでの分野を統合する“交差点”でした。締めくくりに、その全景を俯瞰します。
+
+<Statement kind="remark" title="多様体論が結んだ糸">
+- **[微積分](/calculus)**：[偏微分・全微分](/calculus/9)が[接空間・微分 $df$](/manifolds/4) へ、[ベクトル解析の $\operatorname{grad}/\operatorname{rot}/\operatorname{div}$ と積分定理](/calculus/12)が[外微分 $d$ とストークスの定理](/manifolds/10) へ。
+- **[線形代数](/linear-algebra)**：[双対空間・多重線形・行列式](/linear-algebra/5)が[テンソル・微分形式](/manifolds/7)へ。[階数](/linear-algebra/3)が[はめ込み・沈め込み](/manifolds/2)へ。
+- **[集合と位相](/set-topology)**：位相空間に微分構造を載せた。[ウリゾーンの補題](/set-topology/10)が[$1$ の分割](/manifolds/9)へ。
+- **[微分方程式](/differential-equations)**：[ベクトル場の流れ](/manifolds/5)＝ODEの解。[フロベニウス](/manifolds/6)が可積分条件。
+- **[位相幾何](/algebraic-topology)**：[ド・ラームコホモロジー＝特異コホモロジー](/manifolds/12)。[ポアンカレ–ホップ](/manifolds/5)＝毛玉の定理。
+- **先へ**：[リーマン幾何](/riemannian-geometry)（計量・曲率）、[微分幾何](/differential-geometry)（[ガウス–ボンネ：曲率の積分＝χ](/differential-geometry)）、[リー群](/lie-groups)、[複素幾何](/complex-geometry)、[シンプレクティック幾何](/symplectic-geometry)、一般相対論。
+</Statement>
+
+「曲がった空間の上で微積分をやり直す」という素朴な出発点から、$d^2=0$（[$\operatorname{rot}\operatorname{grad}=0$ の抽象化](/calculus/12)）を
+核に、接空間・微分形式・ストークスの定理・ド・ラームコホモロジーという壮大な体系が育ちました。そして
+ストークスの定理 $\int_M d\omega=\int_{\partial M}\omega$ が、$1$ 次元の[微積分の基本定理](/calculus/7)から高次元の全積分定理までを
+一つに束ね、ド・ラームの定理が解析と位相を縫い合わせる。**多様体は、現代幾何のすべてが出会う舞台**なのです。
+
+## つまずきポイント
+
+<Statement kind="remark" title="よくある誤解">
+- **ド・ラームの定理は実係数。** $H^k_{\mathrm{dR}}\cong H^k(M;\mathbb R)$。ねじれ（[$\mathbb Z/2$ 等](/algebraic-topology/9)）は微分形式では見えない（実ベクトル空間だから）。整数の情報は特異コホモロジーが必要。
+- **同型を与えるのは積分 $\int_c\omega$。** [ストークス](/manifolds/10)で well-defined。ウェッジ積 ↔ カップ積。
+- **ド・ラームコホモロジーは微分構造で作るが、答えは位相不変。** 「解析で調べても位相で調べても穴は同じ」。
+- **マイヤー–ヴィートリスで計算。** [位相幾何](/algebraic-topology/8)と同じ道具。球面・トーラスのベッチ数を再現。
+</Statement>
+
+## この章のまとめ
+
+- **マイヤー–ヴィートリス系列**（[位相幾何と同じ](/algebraic-topology/8)）で計算：$H^k_{\mathrm{dR}}(S^n)=\mathbb R$（$k=0,n$）、$T^2$ は $1,2,1$。生成元は体積形式・角度形式（閉だが完全でない）。
+- **ド・ラームの定理** $H^k_{\mathrm{dR}}(M)\cong H^k(M;\mathbb R)$（積分 $\int_c\omega$ が同型、[ストークス](/manifolds/10)で well-defined、ウェッジ ↔ カップ）。微分形式（解析）と特異コホモロジー（位相）の一致。
+- 多様体論は[微積分](/calculus)・[線形代数](/linear-algebra)・[位相幾何](/algebraic-topology)・[微分方程式](/differential-equations)を統合し、[リーマン幾何](/riemannian-geometry)・[微分幾何](/differential-geometry)・[リー群](/lie-groups)へ続く現代幾何の舞台。
+
+これで多様体論は一区切りです。チャートとアトラスから始め、接空間・ベクトル場・微分形式・ストークスの定理・
+ド・ラームコホモロジーと辿り、「曲がった空間の上で微積分をやり直す」壮大な体系を組み上げました。ここで培った
+接空間・微分形式・コホモロジーの視点は、[リーマン幾何学](/riemannian-geometry)・[微分幾何学](/differential-geometry)・[リー群](/lie-groups)・
+[複素幾何](/complex-geometry)へと受け継がれていきます。おつかれさまでした。

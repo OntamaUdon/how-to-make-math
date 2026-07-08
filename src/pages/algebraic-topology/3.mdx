@@ -1,0 +1,130 @@
+---
+layout: ../../layouts/BaseLayout.astro
+title: 第3章 円周の基本群と応用
+description: π₁(S¹)≅ℤ を巻き数で捉える。普遍被覆への持ち上げによる証明、そしてブラウワーの不動点定理・代数学の基本定理への応用。
+---
+
+import Term from "../../components/assets/Term.astro";
+import Statement from "../../components/assets/Statement.astro";
+import WindingNumber from "../../components/interactive/WindingNumber.astro";
+
+# 第3章 円周の基本群と応用
+
+## 円周のループは、巻き数で数えられる
+
+前章で基本群という機械を作りました。いよいよ最初の非自明な計算です——**円周 $S^1$ の基本群は、整数の加法群
+$\mathbb Z$ に同型**。$\pi_1(S^1)\cong\mathbb Z$。
+
+直感的には明らかです。円周のループは「何周するか」で本質的に決まる。時計回りに $1$ 周、反時計回りに $2$ 周、
+一周もしない（縮む）…。この**巻き数**（何周したか）が整数で、ループをつなぐ（積）と巻き数が足される——だから群 $\mathbb Z$。
+これを厳密にするのが**普遍被覆への持ち上げ**：円周の上に無限に伸びる螺旋（実直線 $\mathbb R$）を用意し、ループを
+その螺旋上の道に持ち上げると、終点の高さがちょうど巻き数になる。
+
+この一つの計算 $\pi_1(S^1)=\mathbb Z$ から、驚くほど深い結果が流れ出します——**ブラウワーの不動点定理**、そして
+[代数学の基本定理](/complex-analysis/5)の位相的な証明。「円周のループは整数で数えられる」という素朴な事実が、
+数学の大定理を生むのです。
+
+> $\pi_1(S^1)\cong\mathbb Z$（巻き数）。証明は普遍被覆 $\mathbb R\to S^1$ への持ち上げ。ここから不動点定理・代数学の基本定理が出る。
+
+## 巻き数を体感する
+
+下で、原点（穴）のまわりのループを選び、スライダーで点を動かしてください。右のバーが**持ち上げ** $\theta(t)/2\pi$——
+ループを実直線 $\mathbb R$（普遍被覆）へ持ち上げた高さ——を示します。一周し終えたときの高さが**巻き数**（整数）で、
+これがループのホモトピー類＝ $\pi_1(S^1)$ の元です。「巻いて戻る」ループは巻き数 $0$（縮められる＝可縮）になる一方、
+「$2$ 周」は持ち上げが $2$ 段上がる。**穴の外へどう変形しても整数の巻き数は変わらない**——これが $\mathbb Z$ です。
+
+<WindingNumber />
+
+## π₁(S¹) ≅ ℤ の証明
+
+証明の道具は**被覆写像**（[第5章](/algebraic-topology/5)で一般論）です。円周を無限に巻きつく螺旋の“影”とみなします。
+
+<Statement kind="definition" title="円周の普遍被覆">
+写像 $p:\mathbb R\to S^1,\ p(t)=(\cos2\pi t,\sin2\pi t)$ を考える（実直線を円周に無限回巻きつける）。$p$ は<Term>被覆写像</Term>：
+各点の近傍の逆像が、$\mathbb R$ 上の“ばらばらの区間の列”になる。$\mathbb R$ は可縮（単連結）ゆえ<Term>普遍被覆</Term>という。
+</Statement>
+
+証明の心臓は、円周上の道を螺旋 $\mathbb R$ 上の道へ**一意に持ち上げる**ことです。
+
+<Statement kind="lemma" title="道の持ち上げ">
+$S^1$ の道 $\gamma:[0,1]\to S^1$ と、$\gamma(0)$ の逆像の一点 $\tilde x_0\in\mathbb R$ に対し、$\tilde\gamma(0)=\tilde x_0$ かつ
+$p\circ\tilde\gamma=\gamma$ となる道 $\tilde\gamma:[0,1]\to\mathbb R$ が**一意に存在**する（<Term>持ち上げ</Term>）。ホモトピーも同様に一意に持ち上がる。
+</Statement>
+
+<Statement kind="theorem" title="円周の基本群">
+$$\pi_1(S^1,1)\cong\mathbb Z,\qquad [\gamma]\longmapsto \tilde\gamma(1)-\tilde\gamma(0)\ (\text{巻き数}).$$
+</Statement>
+
+<Statement kind="proof">
+基点 $1=(1,0)$、$\tilde x_0=0$ とする。ループ $\gamma$ を持ち上げた $\tilde\gamma$ は、$p(\tilde\gamma(1))=\gamma(1)=1$ ゆえ
+$\tilde\gamma(1)\in\mathbb Z$（$p^{-1}(1)=\mathbb Z$）。この整数 $\deg\gamma=\tilde\gamma(1)$ が**巻き数**。
+- **well-defined**：ホモトピックなループは、ホモトピーを持ち上げると同じ終点（$\mathbb Z$ は離散なので終点は動けない）。
+- **準同型**：$\gamma\cdot\delta$ の持ち上げは、$\tilde\gamma$ の後に $\delta$ の持ち上げを $\tilde\gamma(1)$ ずらして繋いだもの。終点は $\deg\gamma+\deg\delta$。
+- **全射**：$\gamma_n(s)=(\cos2\pi ns,\sin2\pi ns)$ は巻き数 $n$。
+- **単射**：$\deg\gamma=0$ なら $\tilde\gamma$ は $\mathbb R$ 内の $0$ から $0$ へのループ。$\mathbb R$ は可縮ゆえ $\tilde\gamma\simeq$ 定値、$p$ で降ろすと $\gamma\simeq$ 定値。
+ゆえ同型。∎
+</Statement>
+
+証明の要は「$\mathbb R$（可縮）に持ち上げると、巻き数 $0$ のループが縮む」こと。**穴のある $S^1$ の複雑さを、穴のない
+$\mathbb R$ の単純さに持ち上げて解く**——被覆空間の威力です。この $\pi_1(S^1)=\mathbb Z$ が、以下の応用を生みます。
+
+## 応用1：レトラクトの不在とブラウワーの不動点定理
+
+<Statement kind="theorem" title="レトラクトの不在">
+円板 $D^2$ を境界円周 $S^1$ へ押し込む<Term>レトラクション</Term>（$r:D^2\to S^1$ で $r|_{S^1}=\mathrm{id}$）は**存在しない**。
+</Statement>
+
+<Statement kind="proof">
+あると仮定する。包含 $i:S^1\hookrightarrow D^2$ と $r$ の合成 $r\circ i=\mathrm{id}_{S^1}$。$\pi_1$ を施すと（関手性、[第2章](/algebraic-topology/2)）
+$r_*\circ i_*=\mathrm{id}:\pi_1(S^1)\to\pi_1(S^1)$、すなわち $\mathbb Z\xrightarrow{i_*}\pi_1(D^2)\xrightarrow{r_*}\mathbb Z$ が恒等写像。だが $D^2$ は可縮ゆえ
+$\pi_1(D^2)=\{e\}$（[第2章](/algebraic-topology/2)）。$\mathbb Z\to\{e\}\to\mathbb Z$ が恒等になるのは不可能（$\mathbb Z\ne\{e\}$）。矛盾。∎
+</Statement>
+
+「境界を縮めて内部だけにできない」——穴のない円板から、穴（$\mathbb Z$）のある円周へは、恒等を保って写せない。
+$\pi_1$ の $\mathbb Z$ と $\{e\}$ の違いが、これを証明します。そしてこのレトラクト不在から、有名な不動点定理が出ます。
+
+<Statement kind="theorem" title="ブラウワーの不動点定理（2 次元）">
+連続写像 $f:D^2\to D^2$ は必ず不動点をもつ（$f(x)=x$ となる $x$ がある）。
+</Statement>
+
+<Statement kind="proof">
+不動点が無いと仮定する。各 $x$ で $f(x)\ne x$ なので、$f(x)$ から $x$ へ向かう半直線が境界 $S^1$ と交わる点を $r(x)$ とすると、
+$r:D^2\to S^1$ は連続で $r|_{S^1}=\mathrm{id}$（境界点はそのまま）——レトラクション。これは上の定理に反する。ゆえ不動点をもつ。∎
+</Statement>
+
+「コーヒーをかき混ぜても、どこか一点は元の位置に戻る」という不動点定理が、$\pi_1(S^1)=\mathbb Z$ から出る。
+[微分方程式のピカール](/differential-equations/3)がバナッハの不動点だったのに対し、これは**位相的な**不動点定理です。
+
+## 応用2：代数学の基本定理
+
+<Statement kind="theorem" title="代数学の基本定理（位相的証明）">
+次数 $n\ge1$ の複素係数多項式 $p(z)$ は $\mathbb C$ に根をもつ。
+</Statement>
+
+<Statement kind="proof">
+$p(z)=z^n+\cdots$ が根をもたないと仮定する。半径 $R$ の円 $|z|=R$ 上のループ $z=Re^{2\pi is}$ を $p$ で写した
+$s\mapsto p(Re^{2\pi is})/|p(Re^{2\pi is})|$（$S^1$ 値、根が無いので定義できる）を考える。$R$ 大では $p\approx z^n$ ゆえ巻き数 $n$、
+$R=0$ では定値（巻き数 $0$）。$R$ を $0$ から大へ連続に動かすと、このループは連続変形されるので巻き数は不変——だが
+$n\ne0$ と $0$ が両立せず矛盾。ゆえ根をもつ。∎
+</Statement>
+
+[複素解析ではリウヴィルの定理から](/complex-analysis/5)証明した代数学の基本定理が、ここでは**巻き数**から出ます。
+「大円では $z^n$ が原点を $n$ 周、小円では $0$ 周、連続変形で巻き数は変わらないから矛盾」——[複素解析の偏角の原理](/complex-analysis/10)と
+同じ回転数の議論の、位相的な姿です。一つの定理が、解析・代数・位相の3つの視点で証明される好例です。
+
+## つまずきポイント
+
+<Statement kind="remark" title="よくある誤解">
+- **$\pi_1(S^1)=\mathbb Z$ は巻き数。** ループの積で巻き数が足される＝加法群 $\mathbb Z$。可縮な $\mathbb R$ への持ち上げが証明の鍵。
+- **持ち上げは一意。** 始点を決めれば、道もホモトピーも普遍被覆へ一意に持ち上がる。$\mathbb Z$ が離散だから終点が動けない。
+- **ブラウワーは連続写像の不動点。** 縮小写像を要する[バナッハ](/differential-equations/3)と違い、連続だけでよい（位相的）。証明はレトラクト不在＝ $\pi_1$ の違い。
+- **$S^n$（$n\ge2$）は単連結。** $\pi_1(S^n)=\{e\}$。$S^1$ だけが $\mathbb Z$。高次元球面のループは縮む（[次章](/algebraic-topology/4)）。
+</Statement>
+
+## この章のまとめ
+
+- **$\pi_1(S^1)\cong\mathbb Z$**（巻き数）。証明は普遍被覆 $p:\mathbb R\to S^1$ への**道の持ち上げ**——穴のある $S^1$ を穴のない $\mathbb R$ に持ち上げ、巻き数 $0$ が縮むことを使う。
+- 応用1：**レトラクト $D^2\to S^1$ の不在**（$\pi_1$ が $\mathbb Z$ と $\{e\}$）→ **ブラウワーの不動点定理**（連続写像 $D^2\to D^2$ は不動点をもつ）。
+- 応用2：**代数学の基本定理**の位相的証明（大円で巻き数 $n$、連続変形で不変）。[複素解析](/complex-analysis/5)・[偏角の原理](/complex-analysis/10)と同根。
+
+次章は、複雑な空間の基本群を計算する道具——**ファン・カンペンの定理**を扱います。

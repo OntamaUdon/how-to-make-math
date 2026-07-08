@@ -1,0 +1,116 @@
+---
+layout: ../../layouts/BaseLayout.astro
+title: 第9章 CWホモロジーとオイラー標数
+description: 手で計算できるホモロジー。胞体（CW）複体、胞体鎖複体、そしてオイラー標数とオイラー–ポアンカレの定理。
+---
+
+import Term from "../../components/assets/Term.astro";
+import Statement from "../../components/assets/Statement.astro";
+import EulerChar from "../../components/interactive/EulerChar.astro";
+
+# 第9章 CWホモロジーとオイラー標数
+
+## 特異単体は多すぎる——胞体で数え直す
+
+特異ホモロジー（[第6章](/algebraic-topology/6)）は理論的には美しいのですが、特異単体が非可算個あるため、定義から
+直接計算できません。前2章の完全系列も強力ですが、手数がかかります。もっと**手で計算できる**ホモロジーが欲しい。
+
+それが**CW（胞体）ホモロジー**です。空間を有限個の「胞体」（点・線分・円板・球…を貼り合わせた部品）で組み立てると、
+鎖複体が各次元**有限個の胞体**だけからなり、行列計算でホモロジーが求まる。多面体・曲面・射影空間など、たいていの
+空間はこの形で扱えます。そして胞体の個数から、この分野で最も古く有名な不変量——**オイラー標数** $\chi=V-E+F$——が
+出ます。多面体の $V-E+F=2$（オイラーの多面体定理）が、ホモロジーの言葉で「$\chi=\sum(-1)^nb_n$」（オイラー–ポアンカレ）
+として一般化される。$2000$ 年前から知られた数が、$20$ 世紀のホモロジー論で真の意味を得るのです。
+
+> **CWホモロジー**は有限個の胞体で計算できる。胞体数の交代和が**オイラー標数** $\chi=\sum(-1)^n c_n=\sum(-1)^n b_n$。
+
+## CW複体
+
+<Statement kind="definition" title="CW複体">
+<Term>CW複体</Term>とは、次元の低い胞体から順に貼って作る空間：$0$ 胞体（点）の集合から始め、各 $n$ <Term>胞体</Term>
+（$n$ 次元円板 $D^n$）を、その境界 $\partial D^n=S^{n-1}$ を既に作った $(n-1)$ 骨格へ連続写像で**貼り付けて**加える。
+</Statement>
+
+<Statement kind="example" title="CW構造の例">
+- **円周 $S^1$**：$0$ 胞体 $1$ つ（点 $v$）＋ $1$ 胞体 $1$ つ（両端を $v$ に貼った弧）。
+- **球面 $S^2$**：$0$ 胞体 $1$ つ＋ $2$ 胞体 $1$ つ（円板の境界を一点に潰す）。または多面体（頂点・辺・面）。
+- **トーラス $T^2$**：$0$ 胞体 $1$ つ、$1$ 胞体 $2$ つ（$a,b$）、$2$ 胞体 $1$ つ（正方形、境界が $aba^{-1}b^{-1}$）。
+- **実射影平面 $\mathbb{RP}^2$**：$0,1,2$ 胞体各 $1$ つ（$2$ 胞体の境界が $1$ 胞体を $2$ 回巻いて貼る）。
+</Statement>
+
+CW構造は「最小限の部品で空間を組む設計図」。トーラスなら胞体4つ（$1+2+1$）で済みます。この胞体たちが鎖複体をなします。
+
+## 胞体鎖複体
+
+<Statement kind="theorem" title="胞体鎖複体とCWホモロジー">
+CW複体 $X$ の $n$ 胞体を基底とする自由アーベル群 $C_n^{\mathrm{CW}}(X)$（階数 ＝ $n$ 胞体の個数）に、境界写像
+（胞体を貼る写像の「次数」で定まる整数係数）を入れた鎖複体のホモロジーは、特異ホモロジーに一致する：
+$$H_n^{\mathrm{CW}}(X)\cong H_n(X).$$
+</Statement>
+
+各次元が**有限次元**（胞体の個数）なので、境界写像は整数行列になり、ホモロジーは[線形代数](/linear-algebra)（というより
+[加群論の単因子](/module-theory)）で計算できます。手計算が可能になる決定的な単純化です。
+
+<Statement kind="example" title="トーラスのホモロジー（胞体計算）">
+$T^2$ の胞体鎖複体は $0\to C_2=\mathbb Z\xrightarrow{\partial_2}C_1=\mathbb Z^2\xrightarrow{\partial_1}C_0=\mathbb Z\to0$。$2$ 胞体の境界は
+$aba^{-1}b^{-1}$ で、これはアーベル化すると $a+b-a-b=0$、ゆえ $\partial_2=0$。$1$ 胞体の両端は同じ点ゆえ $\partial_1=0$。したがって
+$$H_0=\mathbb Z,\quad H_1=\ker\partial_1/\operatorname{im}\partial_2=\mathbb Z^2/0=\mathbb Z^2,\quad H_2=\ker\partial_2=\mathbb Z.$$
+[第6章の $T^2$ のホモロジー](/algebraic-topology/6)が、胞体4つの行列計算で再現される。
+</Statement>
+
+<Statement kind="example" title="実射影平面：ねじれ">
+$\mathbb{RP}^2$ は $\partial_2=2$（$2$ 胞体が $1$ 胞体を $2$ 回巻く）。ゆえ $H_1=\mathbb Z/2\mathbb Z$（**ねじれ**！）、$H_2=\ker(\times2)=0$。
+$H_0=\mathbb Z,\ H_1=\mathbb Z/2,\ H_2=0$。ホモロジーに有限群（ねじれ）が現れる——$\mathbb{RP}^2$ の「向きづけ不可能性」の反映で、
+ベッチ数だけでは見えない情報を持つ。
+</Statement>
+
+## オイラー標数
+
+胞体の個数の交代和が、由緒あるオイラー標数です。
+
+<Statement kind="definition" title="オイラー標数">
+有限CW複体 $X$ の<Term>オイラー標数</Term>を、$n$ 胞体の個数 $c_n$ の交代和
+$$\chi(X)=\sum_{n}(-1)^n c_n=c_0-c_1+c_2-\cdots$$
+で定める。$2$ 次元多面体なら $\chi=V-E+F$（頂点−辺+面）。
+</Statement>
+
+驚くべきは、この胞体の個数から決まる数が、**胞体の取り方によらない位相不変量**であることです。その理由が、
+ホモロジーとの関係——オイラー–ポアンカレの定理です。
+
+<Statement kind="theorem" title="オイラー–ポアンカレの定理">
+$$\chi(X)=\sum_n(-1)^n c_n=\sum_n(-1)^n b_n,\qquad b_n=\operatorname{rank}H_n(X)\ (\text{ベッチ数}).$$
+右辺は胞体の取り方によらないので、$\chi$ は**位相不変量**（ホモトピー不変）。
+</Statement>
+
+<Statement kind="proof">
+鎖複体 $C_n$ について、$\operatorname{rank}C_n=\operatorname{rank}Z_n+\operatorname{rank}B_{n-1}$（$\partial_n:C_n\to B_{n-1}$ の階数、[次元定理](/linear-algebra/3)）、
+$\operatorname{rank}H_n=\operatorname{rank}Z_n-\operatorname{rank}B_n$。交代和 $\sum(-1)^n\operatorname{rank}C_n$ で $B$ の項が隣どうし打ち消し合い、
+$\sum(-1)^n\operatorname{rank}H_n=\sum(-1)^n b_n$ が残る。∎
+</Statement>
+
+「$\chi=V-E+F$ が、実は**ベッチ数の交代和**だった」。だから多面体をどう三角形分割しても、同じ曲面なら $\chi$ は同じ
+（[線形代数の次元定理](/linear-algebra/3)による相殺）。下で確かめてください。球面に同相な多面体はどれも $\chi=2$
+（$b_0-b_1+b_2=1-0+1$）、トーラスは $\chi=0$（$1-2+1$）、種数 $g$ は $\chi=2-2g$。**$V,E,F$ を変えても $\chi$ は形（穴の数）だけで
+決まる**——胞体の交代和とベッチ数の交代和が一致するからです。
+
+<EulerChar />
+
+<Statement kind="corollary" title="オイラーの多面体定理">
+球面に同相な凸多面体は $V-E+F=2$（$\chi(S^2)=2$）。これがオイラーの多面体定理の、ホモロジーによる説明。
+</Statement>
+
+## つまずきポイント
+
+<Statement kind="remark" title="よくある誤解">
+- **CWホモロジー ＝ 特異ホモロジー（有限個の胞体で計算）。** 各次元が有限次元なので整数行列で計算できる。特異は理論、CWは計算。
+- **ねじれ（$\mathbb Z/2$ 等）が現れる。** $\mathbb{RP}^2$ の $H_1=\mathbb Z/2$。ベッチ数（自由部分の階数）だけでなく[有限アーベル群](/group-theory/10)の情報を持つ。
+- **$\chi=\sum(-1)^n c_n=\sum(-1)^n b_n$（位相不変）。** 胞体の個数の交代和が、ベッチ数の交代和に等しい。だから胞体分割によらない。
+- **$\chi(S^2)=2,\ \chi(T^2)=0,\ \chi(\Sigma_g)=2-2g$。** 種数（穴の数）で決まる。$V-E+F$ の由来。
+</Statement>
+
+## この章のまとめ
+
+- **CW複体**は胞体（$D^n$）を境界で貼って組む空間。**胞体鎖複体**は各次元有限個の胞体を基底とし、整数行列でホモロジーが計算できる（特異ホモロジーに一致）。トーラス（胞体4つ）、$\mathbb{RP}^2$（$H_1=\mathbb Z/2$ のねじれ）。
+- **オイラー標数** $\chi=\sum(-1)^n c_n=V-E+F$。**オイラー–ポアンカレ**：$\chi=\sum(-1)^n b_n$（ベッチ数の交代和、[次元定理](/linear-algebra/3)で相殺）。ゆえ位相不変量。
+- $\chi(S^2)=2$（**オイラーの多面体定理**）、$\chi(T^2)=0$、$\chi(\Sigma_g)=2-2g$。$2000$ 年前の数がホモロジーで真の意味を得る。
+
+ホモロジー論を終え、次章から**コホモロジー**——ホモロジーの双対で、さらに積構造（環）をもつ不変量へ進みます。

@@ -1,0 +1,81 @@
+---
+/* Stereographic.astro — 立体射影による「チャート（座標近傍）」の体験装置。
+   円（球面の断面 = S¹）上の点 P を北極 N から平面（ℝ）へ射影する。
+   ・P を動かすと射影点 P′ と座標値 cot(φ/2) が変わる。
+   ・P→N で座標が ±∞ へ飛ぶ＝1 枚のチャートは北極を覆えない。
+   「多様体は局所的に ℝⁿ。チャートは（極を除いた）球面から ℝⁿ への座標」を体感する。
+   （図は円で描くが、球面の立体射影も 1 次元上で全く同じ。）状態はメモリ内のみ。 */
+---
+
+<figure class="st" role="group" aria-label="立体射影とチャート">
+  <div class="st-controls">
+    <label class="st-label">点 P の位置（北極からの角 φ）
+      <input id="st-phi" type="range" min="0.12" max="6.16" step="0.02" value="2.0" /></label>
+  </div>
+  <svg id="st-svg" viewBox="0 0 380 240" class="st-svg" role="img" aria-label="立体射影の図"></svg>
+  <figcaption id="st-cap" class="st-cap"></figcaption>
+</figure>
+
+<script>
+  const phiIn = document.getElementById("st-phi") as HTMLInputElement | null;
+  const svg = document.getElementById("st-svg");
+  const capEl = document.getElementById("st-cap");
+
+  if (phiIn && svg && capEl) {
+    const NS = "http://www.w3.org/2000/svg";
+    const cx = 190, cy = 130, Rr = 78;      // 円の中心・半径（画面座標）
+    const css = (v: string) => getComputedStyle(document.documentElement).getPropertyValue(v).trim() || "#888";
+    // 数学座標 (X,Y)（単位円, N=(0,1)）→ 画面
+    const sx = (X: number) => cx + X * Rr;
+    const sy = (Y: number) => cy - Y * Rr;
+    const el = (n: string, a: Record<string, string | number>) => { const e = document.createElementNS(NS, n); for (const k in a) e.setAttribute(k, String(a[k])); return e; };
+
+    const render = () => {
+      const phi = parseFloat(phiIn.value);              // 北極からの角
+      const P: [number, number] = [Math.sin(phi), Math.cos(phi)];  // 単位円上
+      const coord = 1 / Math.tan(phi / 2);              // 立体射影座標 cot(φ/2)
+      svg.innerHTML = "";
+
+      // 射影平面 ℝ（赤道を通る水平線）
+      svg.appendChild(el("line", { x1: 8, y1: cy, x2: 372, y2: cy, stroke: "var(--ink-faint)", "stroke-width": 1.5 }));
+      const lbl = el("text", { x: 330, y: cy - 6, fill: "var(--ink-faint)", "font-size": 11 }); lbl.textContent = "ℝ（座標）"; svg.appendChild(lbl);
+      // 円（球面の断面）
+      svg.appendChild(el("circle", { cx: sx(0), cy: sy(0), r: Rr, fill: "none", stroke: "var(--ai)", "stroke-width": 1.6 }));
+      // 北極 N（チャートが覆えない除外点）
+      svg.appendChild(el("circle", { cx: sx(0), cy: sy(1), r: 4, fill: "var(--shu)" }));
+      const nl = el("text", { x: sx(0) + 8, y: sy(1) - 4, fill: "var(--shu)", "font-size": 12, "font-weight": 700 }); nl.textContent = "N（除外）"; svg.appendChild(nl);
+
+      // 射影線 N→P→P′（水平線との交点）
+      const Xp = coord; // 交点の数学 X 座標（Y=0）
+      // 画面上で線を引く（N から P′ まで、P を通る）
+      const Xpix = sx(Xp);
+      const inside = Xpix > 8 && Xpix < 372;
+      svg.appendChild(el("line", { x1: sx(0), y1: sy(1), x2: inside ? Xpix : (Xp > 0 ? 372 : 8), y2: inside ? cy : cy, stroke: "var(--ink-faint)", "stroke-width": 1, "stroke-dasharray": "3 3" }));
+      // 点 P（円上）
+      svg.appendChild(el("circle", { cx: sx(P[0]), cy: sy(P[1]), r: 5, fill: "var(--ai)" }));
+      const pl = el("text", { x: sx(P[0]) + 8, y: sy(P[1]), fill: "var(--ai)", "font-size": 12, "font-weight": 700 }); pl.textContent = "P"; svg.appendChild(pl);
+      // 射影点 P′（平面上）
+      if (inside) {
+        svg.appendChild(el("circle", { cx: Xpix, cy: cy, r: 5, fill: "var(--shu)" }));
+        const p2 = el("text", { x: Xpix + 6, y: cy + 16, fill: "var(--shu)", "font-size": 12, "font-weight": 700 }); p2.textContent = "P′"; svg.appendChild(p2);
+      }
+
+      capEl.innerHTML =
+        `点 P の座標（立体射影）＝ cot(φ/2) ＝ <b>${Math.abs(coord) > 40 ? (coord > 0 ? "+∞ 近く" : "−∞ 近く") : coord.toFixed(2)}</b>。` +
+        " P を北極 N に近づけると座標が ±∞ へ飛ぶ——<b>1 枚のチャートは N を覆えない</b>。" +
+        " N を除いた球面は ℝⁿ と同一視でき、これが<b>チャート（座標近傍）</b>。北極側のもう1枚と合わせて球面全体を覆う（アトラス）。";
+    };
+    phiIn.addEventListener("input", render);
+    render();
+  }
+</script>
+
+<style>
+  .st { margin: 26px 0; padding: 16px 18px 14px; border: 1px solid var(--line); border-radius: 10px; background: var(--card); }
+  .st-controls { margin-bottom: 8px; }
+  .st-label { font-size: 13px; font-weight: 600; color: var(--ink); font-family: var(--sans); display: flex; flex-direction: column; gap: 6px; }
+  .st-label input { width: 100%; accent-color: var(--shu); }
+  .st-svg { width: 100%; max-width: 380px; height: auto; display: block; margin: 0 auto; }
+  .st-cap { margin-top: 12px; font-size: 13px; line-height: 1.8; color: var(--ink-faint); font-family: var(--sans); }
+  .st-cap b { color: var(--ink); font-weight: 700; }
+</style>

@@ -1,0 +1,111 @@
+---
+layout: ../../layouts/BaseLayout.astro
+title: 第8章 外微分
+description: 勾配・回転・発散を一つにする。外微分 d、d²=0、閉形式と完全形式、引き戻し、そしてベクトル解析の統一。
+---
+
+import Term from "../../components/assets/Term.astro";
+import Statement from "../../components/assets/Statement.astro";
+
+# 第8章 外微分
+
+## 勾配・回転・発散を、一つの操作に
+
+[ベクトル解析](/calculus/12)には勾配 $\operatorname{grad}$、回転 $\operatorname{rot}$、発散 $\operatorname{div}$ という $3$ つの微分がありました。そして
+$\operatorname{rot}\operatorname{grad}=0$、$\operatorname{div}\operatorname{rot}=0$ という不思議な恒等式も。これらは実は、**外微分**というたった一つの操作 $d$ の
+$3$ つの顔なのです。
+
+外微分 $d:\Omega^k\to\Omega^{k+1}$ は、微分形式の階数を $1$ 上げる微分。$0$ 形式（関数）に施すと勾配、$1$ 形式に施すと回転、
+$2$ 形式に施すと発散——次元によって $\operatorname{grad},\operatorname{rot},\operatorname{div}$ に化けます。そして $\operatorname{rot}\operatorname{grad}=0$ 等は、すべて
+**$d^2=0$**（$d$ を $2$ 回施すと $0$）という一つの等式。[ホモロジーの $\partial^2=0$](/algebraic-topology/6)と鏡映をなす、
+微分幾何の核心です。この $d$ と $d^2=0$ が、次章の積分・[ストークスの定理](/manifolds/10)、そして
+[ド・ラームコホモロジー](/manifolds/11)（穴を微分形式で検出する）の土台になります。
+
+> **外微分** $d:\Omega^k\to\Omega^{k+1}$ は階数を上げる微分。$\operatorname{grad},\operatorname{rot},\operatorname{div}$ を統一。**$d^2=0$** が $\operatorname{rot}\operatorname{grad}=0$ 等の正体。
+
+## 外微分
+
+<Statement kind="definition" title="外微分">
+$d:\Omega^k(M)\to\Omega^{k+1}(M)$ を、次を満たす唯一の線形作用素として定める：
+1. $0$ 形式（関数）$f$ には $df=\sum_i\dfrac{\partial f}{\partial x^i}dx^i$（[第4章の微分](/manifolds/4)）。
+2. <Term>次数つきライプニッツ則</Term>：$d(\alpha\wedge\beta)=d\alpha\wedge\beta+(-1)^p\alpha\wedge d\beta$（$\alpha$ は $p$ 形式）。
+3. $d\circ d=0$。
+
+座標では $\omega=\sum a_I\,dx^I$（$dx^I=dx^{i_1}\wedge\cdots$）に対し $d\omega=\sum da_I\wedge dx^I$。
+</Statement>
+
+外微分は「係数関数を微分して $dx$ を一つ増やす」操作。チャートに依らず定まり（座標変換で不変）、多様体上の
+自然な微分です。決定的な性質が $d^2=0$ です。
+
+<Statement kind="theorem" title="d² = 0">
+$d(d\omega)=0$（すべての形式 $\omega$）。
+</Statement>
+
+<Statement kind="proof">
+$0$ 形式 $f$ について、$d(df)=d\big(\sum_i\partial_if\,dx^i\big)=\sum_{i,j}\partial_j\partial_if\,dx^j\wedge dx^i$。$\partial_j\partial_if=\partial_i\partial_jf$
+（[シュワルツの定理](/calculus/9)、偏微分の順序交換）で対称、$dx^j\wedge dx^i=-dx^i\wedge dx^j$ で反対称ゆえ、和が**打ち消し合って $0$**。
+一般の形式へはライプニッツ則で拡張。∎
+</Statement>
+
+$d^2=0$ の証明の心は「**偏微分は対称（[シュワルツ](/calculus/9)）、ウェッジは反対称、掛けると消える**」。この一行が、
+ベクトル解析の $2$ つの恒等式を統一します。
+
+<Statement kind="example" title="ℝ³ で grad・rot・div を統一">
+$\mathbb R^3$ で、[第7章の対応](/manifolds/7)（関数 ↔ $0$ 形式、ベクトル場 ↔ $1$ 形式や $2$ 形式）のもとで：
+- $df$（$0$ 形式 → $1$ 形式）＝ $\operatorname{grad}f$。
+- $d(1\text{形式})$（→ $2$ 形式）＝ $\operatorname{rot}$。
+- $d(2\text{形式})$（→ $3$ 形式）＝ $\operatorname{div}$。
+
+そして $d^2=0$ は：$d(df)=0$ ＝ **$\operatorname{rot}\operatorname{grad}=0$**、$d(d(1\text{形式}))=0$ ＝ **$\operatorname{div}\operatorname{rot}=0$**。
+[ベクトル解析の $3$ つの微分と $2$ つの恒等式](/calculus/12)が、$d$ と $d^2=0$ に完全に統一される。
+</Statement>
+
+## 閉形式と完全形式
+
+$d^2=0$ から、$2$ 種類の重要な形式が生まれます。次章以降の主役です。
+
+<Statement kind="definition" title="閉形式・完全形式">
+$d\omega=0$ を満たす形式 $\omega$ を<Term>閉形式</Term>、$\omega=d\eta$ と書ける形式を<Term>完全形式</Term>という。
+$d^2=0$ より、**完全形式は必ず閉形式**（$d(d\eta)=0$）。逆（閉 ⇒ 完全）は一般には成り立たない——その差が
+[ド・ラームコホモロジー](/manifolds/11)で、多様体の穴を検出する。
+</Statement>
+
+「完全 ⇒ 閉」は常に真（$d^2=0$）ですが、逆「閉 ⇒ 完全」は空間に穴があると崩れます。この**閉だが完全でない形式**が
+穴の存在を教える——[ベクトル解析で「$\operatorname{rot}=0$ だが保存場でない」（穴あき領域）](/calculus/12)と同じ現象です。この
+「閉／完全のずれ」を測るのがド・ラームコホモロジー（[第11章](/manifolds/11)）。まさに[ホモロジーの「サイクル／
+境界のずれ」](/algebraic-topology/6)の双対です。
+
+## 引き戻し
+
+写像で微分形式を「引き戻す」操作を定めます。積分の変数変換の一般化で、$d$ と可換なのが重要です。
+
+<Statement kind="definition" title="引き戻し">
+なめらかな写像 $f:M\to N$ と $N$ 上の $k$ 形式 $\omega$ に対し、<Term>引き戻し</Term> $f^*\omega$（$M$ 上の $k$ 形式）を、
+接ベクトルを[微分 $df$ で押し出して](/manifolds/4) $\omega$ に渡すことで定める：$(f^*\omega)(v_1,\dots,v_k)=\omega(df\,v_1,\dots,df\,v_k)$。
+</Statement>
+
+<Statement kind="theorem" title="引き戻しの性質">
+$f^*(\alpha\wedge\beta)=f^*\alpha\wedge f^*\beta$、そして**$f^*$ は外微分と可換**：$d(f^*\omega)=f^*(d\omega)$。
+</Statement>
+
+「$f^*$ が $d$ と可換」は、外微分が座標・写像に依らない自然な操作であることの現れです。この可換性が、[積分の
+変数変換](/calculus/11)（引き戻して積分）と、[ド・ラームコホモロジーの関手性](/manifolds/11)（写像がコホモロジーの
+準同型を誘導）を支えます。ベクトル場の押し出し（[第4章](/manifolds/4)）と違い、微分形式は**引き戻し**（向きが逆）が
+自然——余接的な量だからです。
+
+## つまずきポイント
+
+<Statement kind="remark" title="よくある誤解">
+- **$d$ は階数を $1$ 上げる（$\Omega^k\to\Omega^{k+1}$）。** [ホモロジーの $\partial$（下げる）](/algebraic-topology/6)と逆向き、[コホモロジーの $\delta$](/algebraic-topology/10)と同じ。
+- **$d^2=0$ は[シュワルツの定理](/calculus/9)（偏微分の対称）＋ウェッジの反対称。** $\operatorname{rot}\operatorname{grad}=0$、$\operatorname{div}\operatorname{rot}=0$ の統一。
+- **完全 ⇒ 閉は常に真、逆は穴があると偽。** そのずれが[穴を検出](/manifolds/11)。「$\operatorname{rot}=0$ だが保存場でない」の一般化。
+- **微分形式は引き戻し（$f^*$、共変・向き逆）が自然。** ベクトル場は押し出し（$f_*$、反変）。$f^*$ は $d$ と可換。
+</Statement>
+
+## この章のまとめ
+
+- **外微分** $d:\Omega^k\to\Omega^{k+1}$（階数を上げる、$df=\sum\partial_if\,dx^i$、ライプニッツ則）は $\mathbb R^3$ で $\operatorname{grad},\operatorname{rot},\operatorname{div}$ を統一。
+- **$d^2=0$**（[シュワルツの対称](/calculus/9)＋ウェッジの反対称）＝ $\operatorname{rot}\operatorname{grad}=0,\operatorname{div}\operatorname{rot}=0$ の正体。[ホモロジーの $\partial^2=0$](/algebraic-topology/6)の双対。
+- **完全 ⇒ 閉**（常に真）、逆は穴があると偽（[ド・ラーム](/manifolds/11)で検出）。**引き戻し** $f^*$ は $d$ と可換で、変数変換・関手性を支える。
+
+次章は、微分形式を実際に積分するための準備——**向き付けと多様体上の積分**を扱います。

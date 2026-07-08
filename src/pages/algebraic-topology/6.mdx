@@ -1,0 +1,124 @@
+---
+layout: ../../layouts/BaseLayout.astro
+title: 第6章 特異ホモロジー
+description: 各次元の穴を数える。特異単体と鎖複体、境界作用素と ∂²=0、ホモロジー群、H₀ と連結成分、H₁ と基本群の関係。
+---
+
+import Term from "../../components/assets/Term.astro";
+import Statement from "../../components/assets/Statement.astro";
+
+# 第6章 特異ホモロジー
+
+## 基本群の弱点を、ホモロジーが補う
+
+基本群 $\pi_1$ は強力でしたが、弱点があります。第一に、**$1$ 次元の穴しか見えない**（ループは $1$ 次元）。$2$ 次元の穴
+（球面の空洞）や高次元の穴を捉えられません。第二に、**非可換で計算が難しい**（[自由群・融合積](/algebraic-topology/4)）。
+
+これらを補うのが**ホモロジー群** $H_n$ です。各次元 $n$ の穴を捉え（$H_0$ は連結成分、$H_1$ は $1$ 次元の穴、$H_2$ は空洞…）、
+しかも**アーベル群**なので計算しやすい。アイデアは「境界のない $n$ 次元の輪（サイクル）のうち、何かの境界になって
+いないもの＝穴を囲む輪」を数えること。「境界の境界は無い」（$\partial^2=0$）という一つの等式が、この理論全体を貫きます。
+ホモロジーは[ホモロジー代数](/commutative-homological)・[微分幾何のド・ラーム理論](/manifolds)の原型でもあり、$\partial^2=0$ は
+[ベクトル解析の $\operatorname{rot}\operatorname{grad}=0$](/calculus/12) の抽象化です。この章で、その機械を組み立てます。
+
+> **ホモロジー群** $H_n$ ＝「境界のない $n$ 次元サイクル」÷「境界になっているもの」＝ $n$ 次元の穴。$\partial^2=0$ が核心。アーベルで計算しやすい。
+
+## 特異単体と鎖
+
+空間を「三角形（単体）を貼って測る」道具を用意します。連続写像で標準単体を空間に写したものが特異単体です。
+
+<Statement kind="definition" title="特異単体・特異鎖">
+標準 $n$ <Term>単体</Term> $\Delta^n=\{(t_0,\dots,t_n):t_i\ge0,\sum t_i=1\}$（$0$ 単体＝点、$1$ 単体＝線分、$2$ 単体＝三角形…）。
+連続写像 $\sigma:\Delta^n\to X$ を<Term>特異 $n$ 単体</Term>という。特異 $n$ 単体を基底とする自由アーベル群 $C_n(X)$ を
+<Term>$n$ 次特異鎖群</Term>、その元 $\sum n_i\sigma_i$（$n_i\in\mathbb Z$）を<Term>特異 $n$ 鎖</Term>という。
+</Statement>
+
+「単体を空間に連続に描き込んだもの」の形式的な整数結合が鎖。次に、単体の**境界**（$n$ 単体の $(n-1)$ 次元の縁）を
+とる作用素を定めます。
+
+<Statement kind="definition" title="境界作用素">
+特異 $n$ 単体 $\sigma$ の<Term>境界</Term>を、各面（第 $i$ 頂点を除いた $(n-1)$ 単体 $\sigma|_{[\dots\hat i\dots]}$）の**符号つき和**
+$$\partial_n\sigma=\sum_{i=0}^n(-1)^i\,\sigma|_{[v_0,\dots,\hat v_i,\dots,v_n]}$$
+で定め、線形に $\partial_n:C_n(X)\to C_{n-1}(X)$ へ拡張する。
+</Statement>
+
+三角形（$2$ 単体）の境界は、$3$ 本の辺を向きを合わせて足したもの（$\partial=[v_1v_2]-[v_0v_2]+[v_0v_1]$）。符号 $(-1)^i$ が
+「向き」を管理します。この境界作用素の決定的な性質が、次の一行です。
+
+<Statement kind="theorem" title="∂² = 0（境界の境界は無い）">
+$\partial_{n-1}\circ\partial_n=0$（各 $n$）。すなわち $\operatorname{im}\partial_{n+1}\subseteq\ker\partial_n$。
+</Statement>
+
+<Statement kind="proof">
+$\partial\partial\sigma$ は、$\sigma$ の各「面の面」（$2$ つの頂点を除いた $(n-2)$ 単体）の和。各 $(n-2)$ 面は、除く $2$ 頂点の順序を
+入れ替えた $2$ 通りで現れ、符号 $(-1)^i(-1)^j$ と $(-1)^j(-1)^{i-1}$（順序の差）がちょうど逆符号になり、**打ち消し合う**。
+ゆえ $\partial^2=0$。∎
+</Statement>
+
+「三角形の境界（$3$ 辺の輪）の境界は $0$」——辺の端点が符号つきで打ち消す。この $\partial^2=0$ は、[ベクトル解析の
+$\operatorname{rot}(\operatorname{grad}f)=0,\ \operatorname{div}(\operatorname{rot}\mathbf F)=0$](/calculus/12)（「境界の境界は無い」の微分版）の代数的な核心です。
+これでホモロジーが定義できます。
+
+## ホモロジー群
+
+<Statement kind="definition" title="サイクル・境界・ホモロジー群">
+$Z_n=\ker\partial_n$（境界が $0$ の鎖＝<Term>サイクル</Term>）、$B_n=\operatorname{im}\partial_{n+1}$（何かの境界＝<Term>境界輪</Term>）。$\partial^2=0$ より $B_n\subseteq Z_n$。
+$$H_n(X)=Z_n/B_n=\frac{\ker\partial_n}{\operatorname{im}\partial_{n+1}}$$
+を<Term>$n$ 次ホモロジー群</Term>という（アーベル群）。
+</Statement>
+
+意味は明快です。サイクル（境界のない輪）のうち、「何かを塗りつぶした境界」になっているものは自明（穴を囲んで
+いない）。それで割った残り $H_n$ が、**本当に穴を囲む輪＝ $n$ 次元の穴**。$1$ サイクルなら「ループ」、それが $2$ 鎖の
+境界（円板の境界）なら縮む（穴なし）、境界でなければ穴を囲む。前章の基本群と同じ「縮むループは自明」の発想が、
+アーベルな形で実現されます。連鎖 $\cdots\to C_{n+1}\xrightarrow{\partial}C_n\xrightarrow{\partial}C_{n-1}\to\cdots$ を<Term>鎖複体</Term>といい、
+ホモロジーは「$\partial^2=0$ で $\operatorname{im}\subseteq\ker$ となる、そのズレ」を測ります（[ホモロジー代数](/commutative-homological)の原型）。
+
+## H₀ と連結成分
+
+最も低次のホモロジーは、[連結成分](/set-topology/12)を数えます。
+
+<Statement kind="theorem" title="H₀ は連結成分">
+$X$ の弧状連結成分が $k$ 個なら $H_0(X)\cong\mathbb Z^k$（連結成分ごとに $\mathbb Z$ の直和）。特に連結なら $H_0(X)=\mathbb Z$。
+</Statement>
+
+<Statement kind="proof">
+$C_0=$ 点の自由アーベル群、$\partial_0=0$ ゆえ $Z_0=C_0$。$B_0=\operatorname{im}\partial_1$ は「同じ弧状連結成分内の $2$ 点の差
+$q-p=\partial[\text{道}]$」で生成される。ゆえ $H_0=C_0/B_0$ は、各成分の点を同一視した自由アーベル群 $\mathbb Z^k$。∎
+</Statement>
+
+「$H_0$ ＝ 連結成分の数を測る」——[第1章の $\pi_0$](/algebraic-topology/1) のアーベル版です。そして $H_1$ は基本群と結びつきます。
+
+## H₁ と基本群
+
+<Statement kind="theorem" title="フレヴィッツの定理（1 次元）">
+$X$ が弧状連結なら、$H_1(X)$ は基本群 $\pi_1(X)$ の<Term>アーベル化</Term>：
+$$H_1(X)\cong\pi_1(X)^{\mathrm{ab}}=\pi_1(X)/[\pi_1(X),\pi_1(X)].$$
+</Statement>
+
+「$H_1$ ＝ 基本群を可換にしたもの」。ホモロジーはループの**順序を無視**（アーベル）するので、$\pi_1$ の非可換性
+（[交換子](/group-theory/11)）を潰した分だけ情報が少ない代わりに、計算しやすい。例：8の字は $\pi_1=F_2$（非可換自由群）だが
+$H_1=\mathbb Z^2$（アーベル化）。トーラスは $\pi_1=\mathbb Z^2$（既に可換）で $H_1=\mathbb Z^2$。**$H_1$ は「向きを無視した $1$ 次元の穴の数」**を
+自由アーベル群の階数（ベッチ数）で数えます。
+
+<Statement kind="example" title="基本的なホモロジー">
+- 一点・可縮空間：$H_0=\mathbb Z$、$H_n=0$（$n\ge1$）。
+- 円周 $S^1$：$H_0=\mathbb Z$、$H_1=\mathbb Z$（$1$ 次元の穴 $1$ つ）、$H_n=0$（$n\ge2$）。
+- トーラス $T^2$：$H_0=\mathbb Z$、$H_1=\mathbb Z^2$、$H_2=\mathbb Z$（$2$ 次元の空洞 $1$ つ）。
+（球面など一般の計算は[第8章のマイヤー–ヴィートリス](/algebraic-topology/8)で。）
+</Statement>
+
+## つまずきポイント
+
+<Statement kind="remark" title="よくある誤解">
+- **$H_n$ ＝ サイクル ÷ 境界。** 「境界のない輪」から「何かの境界（縮む輪）」を割る。残りが $n$ 次元の穴。$\partial^2=0$ が $B_n\subseteq Z_n$ を保証。
+- **ホモロジーはアーベル、$\pi_1$ は一般に非可換。** $H_1=\pi_1$ のアーベル化。情報は減るが計算しやすく、全次元を捉える。
+- **$H_0=\mathbb Z^{(\text{連結成分数})}$、$H_n(\text{点})=0\ (n\ge1)$。** 低次の直感を押さえる。
+- **$\partial^2=0$ は[ベクトル解析](/calculus/12)の $\operatorname{rot}\operatorname{grad}=0$ の抽象化。** 「境界の境界は無い」。[ド・ラーム理論](/manifolds)と双対。
+</Statement>
+
+## この章のまとめ
+
+- **特異単体**（$\Delta^n\to X$）の整数結合が**鎖** $C_n$。**境界作用素** $\partial$ は面の符号つき和で、**$\partial^2=0$**（境界の境界は無い、[ベクトル解析](/calculus/12)の抽象化）。
+- **ホモロジー群** $H_n=\ker\partial_n/\operatorname{im}\partial_{n+1}$ ＝「穴を囲むサイクル」。アーベルで全次元を捉える。**$H_0$ ＝ 連結成分**、**$H_1$ ＝ $\pi_1$ のアーベル化**（フレヴィッツ）。
+- $S^1$ は $H_1=\mathbb Z$、$T^2$ は $H_1=\mathbb Z^2,H_2=\mathbb Z$。鎖複体とホモロジーは[ホモロジー代数](/commutative-homological)の原型。
+
+次章は、ホモロジーの計算を可能にする基本性質——**ホモトピー不変性と対の長完全系列**を扱います。

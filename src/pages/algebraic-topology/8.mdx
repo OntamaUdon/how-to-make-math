@@ -1,0 +1,118 @@
+---
+layout: ../../layouts/BaseLayout.astro
+title: 第8章 切除とマイヤー–ヴィートリス系列
+description: ホモロジー計算の主力。切除定理、マイヤー–ヴィートリス系列、そして球面のホモロジーの計算。
+---
+
+import Term from "../../components/assets/Term.astro";
+import Statement from "../../components/assets/Statement.astro";
+
+# 第8章 切除とマイヤー–ヴィートリス系列
+
+## 空間を貼り合わせて、ホモロジーを計算する
+
+前章の長完全系列に続く、ホモロジー計算のもう一つの主力がこの章です。$\pi_1$ に[ファン・カンペンの定理](/algebraic-topology/4)が
+あったように、ホモロジーには**マイヤー–ヴィートリス系列**があります——空間 $X$ を2つの部分 $A,B$ に分けると、
+$H_n(X)$ が $H_n(A),H_n(B),H_n(A\cap B)$ の完全系列で結ばれる。「部分のホモロジーから全体を組み立てる」定理です。
+
+その土台が**切除定理**——「共通部分を切り取っても相対ホモロジーは変わらない」という、一見地味だが強力な性質。
+これらを使うと、いよいよ**球面のホモロジー** $H_n(S^k)$ が計算できます。$S^k$ は「$k$ 次元の空洞が1つ」で、
+$H_k(S^k)=\mathbb Z$、他は $0$（$n\ne0,k$）。この計算が、次元を区別する決定的な不変量を与え、「$\mathbb R^m\cong\mathbb R^n\Rightarrow m=n$」
+（次元の位相不変性）という基本事実まで導きます。ファン・カンペンとマイヤー–ヴィートリスは、$\pi_1$ とホモロジーの
+「部分から全体へ」という並行した計算原理です。
+
+> **マイヤー–ヴィートリス**：$X=A\cup B$ なら $H_n(X)$ が $H_n(A),H_n(B),H_n(A\cap B)$ の完全系列で結ばれる。球面のホモロジーが計算できる。
+
+## 切除定理
+
+<Statement kind="theorem" title="切除定理">
+$Z\subseteq A\subseteq X$ で $\overline Z\subseteq\operatorname{int}A$（$Z$ の閉包が $A$ の内部に収まる）なら、包含は同型
+$$H_n(X\setminus Z,\ A\setminus Z)\ \cong\ H_n(X,A)$$
+を誘導する。すなわち「$A$ の内部にある $Z$ を**切除**しても相対ホモロジーは変わらない」。
+</Statement>
+
+「$A$ の奥にある部分 $Z$ を切り取っても、$(X,A)$ の相対ホモロジーは同じ」——相対ホモロジーが $A$ の外側の情報
+だけで決まる、という直感です。証明は「大きい単体を細分して、$A$ の内部か $X\setminus Z$ の内部に収まるようにする」
+（重心細分）で、ホモロジーが小さい単体だけで計算できることを使います。切除は、次のマイヤー–ヴィートリスを生みます。
+
+## マイヤー–ヴィートリス系列
+
+<Statement kind="theorem" title="マイヤー–ヴィートリス系列">
+$X=\operatorname{int}A\cup\operatorname{int}B$（$A,B$ で内部が $X$ を覆う）とすると、次の長完全系列が存在する：
+$$\cdots\to H_n(A\cap B)\xrightarrow{(i_*,j_*)}H_n(A)\oplus H_n(B)\xrightarrow{k_*-l_*}H_n(X)\xrightarrow{\partial_*}H_{n-1}(A\cap B)\to\cdots$$
+（$i,j,k,l$ は包含。$A\cap B$ の類を $A,B$ 両方へ送り、差をとって $X$ で消える、というのが完全性の心。）
+</Statement>
+
+<Statement kind="proof">
+（要点。）鎖複体の短完全系列 $0\to C_*(A\cap B)\to C_*(A)\oplus C_*(B)\to C_*(A+B)\to0$（$C_*(A+B)$ は $A$ または $B$ に
+入る鎖の和）に[蛇の補題](/module-theory)を適用。切除（重心細分）より $C_*(A+B)$ のホモロジーは $H_*(X)$ に一致する。∎
+</Statement>
+
+[ファン・カンペン](/algebraic-topology/4)（$\pi_1$ を融合積で）とまったく同じ精神——「$X=A\cup B$ を、部分と共通部分の
+情報で組み立てる」。ただしホモロジーはアーベルなので、融合積の代わりに**完全系列**という直線的な道具になり、
+はるかに計算しやすい。実際に球面で使ってみます。
+
+## 球面のホモロジー
+
+<Statement kind="theorem" title="球面のホモロジー">
+$k\ge1$ について
+$$H_n(S^k)=\begin{cases}\mathbb Z&(n=0\ \text{または}\ n=k)\\ 0&(\text{その他})\end{cases}$$
+（連結成分 $1$ つと、$k$ 次元の空洞 $1$ つ）。
+</Statement>
+
+<Statement kind="proof">
+$k$ に関する帰納法。$S^k$ を $A=$「北極を除く」、$B=$「南極を除く」で覆う。$A,B$ はともに可縮（$\simeq\mathbb R^k$、$H_n=0\ (n\ge1)$）、
+$A\cap B\simeq S^{k-1}$（赤道の近傍）。マイヤー–ヴィートリス系列で、$n\ge2$ の部分は
+$$0=H_n(A)\oplus H_n(B)\to H_n(S^k)\xrightarrow{\partial_*}H_{n-1}(S^{k-1})\to H_{n-1}(A)\oplus H_{n-1}(B)=0$$
+（$A,B$ 可縮）より $H_n(S^k)\cong H_{n-1}(S^{k-1})$（$n\ge2$）。帰納法の仮定（$S^{k-1}$ のホモロジー）を代入すると、
+$H_k(S^k)\cong H_{k-1}(S^{k-1})\cong\cdots\cong H_1(S^1)=\mathbb Z$、他は $0$。基点 $S^0$（$2$ 点）から始めて確認できる。∎
+</Statement>
+
+「$S^k$ を上半球と下半球に分け、赤道 $S^{k-1}$ で貼り合わせる」——次元が $1$ 下がった球面のホモロジーに帰着し、
+帰納法で $H_k(S^k)=\mathbb Z$ が出る。**各次元の球面が、その次元に1つだけ穴（空洞）をもつ**。これで次元を区別できます。
+
+<Statement kind="corollary" title="次元の位相不変性">
+$m\ne n$ なら $S^m\not\simeq S^n$（ホモロジーが違う）、$\mathbb R^m\not\cong\mathbb R^n$、そして一般の**次元は位相不変量**：
+$\mathbb R^m\cong\mathbb R^n\Rightarrow m=n$。
+</Statement>
+
+<Statement kind="proof">
+$H_m(S^m)=\mathbb Z\ne0=H_m(S^n)$（$m\ne n$）ゆえ $S^m\not\simeq S^n$。$\mathbb R^m\cong\mathbb R^n$ なら一点を除いて
+$\mathbb R^m\setminus\{0\}\simeq S^{m-1}$、$\mathbb R^n\setminus\{0\}\simeq S^{n-1}$ が同相ゆえ $S^{m-1}\simeq S^{n-1}$、上より $m=n$。∎
+</Statement>
+
+「$\mathbb R^2$ と $\mathbb R^3$ は同相でない」——直感的には当たり前ですが、[集合と位相の連続写像](/set-topology/8)だけでは証明できません
+（$\pi_1$ でも $\mathbb R^2$ と $\mathbb R^3$ は区別できない、両方可縮）。**球面のホモロジーが、次元という最も基本的な不変量を
+捉える**。ホモロジーの威力が、ここに集約されます。
+
+## 応用：ブラウワーの不動点定理（一般次元）
+
+<Statement kind="theorem" title="ブラウワーの不動点定理（n 次元）">
+連続写像 $f:D^n\to D^n$ は不動点をもつ。
+</Statement>
+
+<Statement kind="proof">
+[第3章の $2$ 次元の証明](/algebraic-topology/3)と同じ。不動点が無ければレトラクション $r:D^n\to S^{n-1}$ ができるが、
+$\tilde H_{n-1}(S^{n-1})=\mathbb Z\ne0=\tilde H_{n-1}(D^n)$（$D^n$ 可縮）ゆえ、$\mathrm{id}_{S^{n-1}}$ が $\{e\}$ を経由して恒等になり矛盾。∎
+</Statement>
+
+$\pi_1$ で証明した $2$ 次元の不動点定理が、ホモロジー $H_{n-1}(S^{n-1})=\mathbb Z$ で任意次元へ一般化されます。$\pi_1$ が
+$1$ 次元の穴しか見えなかったのに対し、ホモロジーは全次元の穴を見るので、高次元の定理が証明できる——
+[第6章で述べた $\pi_1$ の弱点をホモロジーが補う](/algebraic-topology/6)、その好例です。
+
+## つまずきポイント
+
+<Statement kind="remark" title="よくある誤解">
+- **マイヤー–ヴィートリスは $\pi_1$ のファン・カンペンのホモロジー版。** アーベルなので融合積でなく完全系列。計算しやすい。
+- **切除は「$A$ の奥を切り取っても相対ホモロジー不変」。** 重心細分で小さい単体に落とすのが証明の核。
+- **$H_k(S^k)=\mathbb Z$、他は $0$。** 各次元の球面はその次元に1つの穴。これが次元を区別する。
+- **次元の位相不変性はホモロジーで初めて証明できる。** $\pi_1$ では $\mathbb R^m$（可縮）を区別できない。全次元を見るホモロジーが必要。
+</Statement>
+
+## この章のまとめ
+
+- **切除定理**（$A$ の奥の $Z$ を切除しても $H_n(X,A)$ 不変、重心細分）から、**マイヤー–ヴィートリス系列**（$X=A\cup B$ を部分と共通部分で組み立てる完全系列）が出る。[ファン・カンペン](/algebraic-topology/4)のホモロジー版。
+- **球面のホモロジー** $H_n(S^k)=\mathbb Z$（$n=0,k$）、他は $0$。証明は上下半球＋赤道での帰納法（マイヤー–ヴィートリス）。
+- 帰結：**次元の位相不変性**（$\mathbb R^m\cong\mathbb R^n\Rightarrow m=n$）、任意次元の**ブラウワーの不動点定理**。$\pi_1$ の弱点をホモロジーが補う。
+
+次章は、実際に手で計算できる小さな鎖複体——**CWホモロジー**と、オイラー標数を扱います。

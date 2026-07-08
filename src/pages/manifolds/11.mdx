@@ -1,0 +1,103 @@
+---
+layout: ../../layouts/BaseLayout.astro
+title: 第11章 ド・ラームコホモロジー
+description: 微分形式で穴を検出する。ド・ラームコホモロジー、ポアンカレの補題、ホモトピー不変性。
+---
+
+import Term from "../../components/assets/Term.astro";
+import Statement from "../../components/assets/Statement.astro";
+
+# 第11章 ド・ラームコホモロジー
+
+## 微分形式が、空間の穴を教える
+
+[第8章](/manifolds/8)で「完全形式は必ず閉形式だが、逆は空間に穴があると崩れる」と見ました。この**閉／完全のずれ**が、
+実は多様体の**穴の構造**を捉えている——それがド・ラームコホモロジーです。微分形式という解析的な対象が、
+[位相幾何の穴](/algebraic-topology/6)という位相的な情報を検出するのです。
+
+最も鮮やかな例は[複素解析](/complex-analysis/4)でした。穴あき平面 $\mathbb R^2\setminus\{0\}$ で、$1$ 形式 $\dfrac{-y\,dx+x\,dy}{x^2+y^2}$（$=d\theta$）は
+閉形式（$d\omega=0$）なのに完全でない（大域的な角度 $\theta$ が[多価](/complex-analysis/3)だから）。この「閉だが完全でない
+$1$ 形式が $1$ つある」ことが、「$\mathbb R^2\setminus\{0\}$ には穴が $1$ つある」を教える。ド・ラームコホモロジーは、この
+検出を全次元で系統化します。[ホモロジーがサイクル／境界のずれ](/algebraic-topology/6)で穴を数えたのと双対に、
+コホモロジーは閉形式／完全形式のずれで穴を数える。そして両者が一致する（次章のド・ラームの定理）——
+解析と位相が完全に出会う、この分野のクライマックスへの入口です。
+
+> **ド・ラームコホモロジー** $H^k_{\mathrm{dR}}=\ker d/\operatorname{im}d$（閉形式／完全形式）。微分形式が[位相の穴](/algebraic-topology/6)を検出する。
+
+## ド・ラームコホモロジー
+
+<Statement kind="definition" title="ド・ラームコホモロジー">
+$d^2=0$（[第8章](/manifolds/8)）より $\operatorname{im}(d:\Omega^{k-1}\to\Omega^k)\subseteq\ker(d:\Omega^k\to\Omega^{k+1})$。商
+$$H^k_{\mathrm{dR}}(M)=\frac{\ker(d:\Omega^k\to\Omega^{k+1})}{\operatorname{im}(d:\Omega^{k-1}\to\Omega^k)}=\frac{\text{閉 $k$ 形式}}{\text{完全 $k$ 形式}}$$
+を<Term>ド・ラームコホモロジー群</Term>という（実ベクトル空間）。
+</Statement>
+
+「閉形式を完全形式で割る」——$d^2=0$ が $\operatorname{im}\subseteq\ker$ を保証し（[外微分が鎖複体をなす](/algebraic-topology/6)）、
+その商が定義できる。$H^k_{\mathrm{dR}}$ の元は「閉だが完全でない形式」の同値類で、$k$ 次元の穴を表します。次数を
+上げる $d$ の[コホモロジー](/algebraic-topology/10)なので、これは**微分形式で作ったコホモロジー**です。基本的な計算は、
+$0$ 次から始まります。
+
+<Statement kind="proposition" title="H⁰ は連結成分">
+$H^0_{\mathrm{dR}}(M)=\ker(d:\Omega^0\to\Omega^1)=\{df=0\text{ の関数}\}=\{$局所定数関数$\}\cong\mathbb R^{(\text{連結成分数})}$。
+</Statement>
+
+$df=0$ の関数は各連結成分で定数——だから $H^0$ は[連結成分の数](/set-topology/12)を数えます（[ホモロジーの
+$H_0$](/algebraic-topology/6) と同じ）。高次の $H^k$ を計算する鍵が、次のポアンカレの補題です。
+
+## ポアンカレの補題
+
+「穴の無い（可縮な）空間では、閉形式は必ず完全」——これがポアンカレの補題です。[第8章の「逆は穴があると
+崩れる」](/manifolds/8)の、裏返しの正確な形。
+
+<Statement kind="theorem" title="ポアンカレの補題">
+可縮な多様体（例：$\mathbb R^n$、星型領域）では、$k\ge1$ の**閉形式はすべて完全**。すなわち
+$$H^k_{\mathrm{dR}}(\mathbb R^n)=\begin{cases}\mathbb R&(k=0)\\ 0&(k\ge1)\end{cases}.$$
+一般に閉形式は**局所的には完全**（各点の近傍で $\omega=d\eta$）。
+</Statement>
+
+<Statement kind="proof">
+（要点。）$\mathbb R^n$ 上で、$0$ へ縮めるホモトピーを使い、閉形式 $\omega$（$d\omega=0$）に対し $\omega=d(K\omega)$ となる作用素
+（<Term>ホモトピー作用素</Term> $K$）を明示的に構成する：$dK+Kd=\mathrm{id}$（コホモロジーレベルで恒等が $0$ に）。$d\omega=0$ なら
+$\omega=dK\omega$、完全。この $K$ は[径数 $t$ に沿った積分](/calculus/7)で書ける。∎
+</Statement>
+
+「可縮な空間には穴が無いから、閉形式は必ず完全（$H^k=0$、$k\ge1$）」。[ベクトル解析で「単連結領域では
+$\operatorname{rot}\mathbf F=0$ ⇒ 保存場（ポテンシャルが存在）」](/calculus/12)と言ったのは、まさにこのポアンカレの補題
+（$1$ 形式が閉ならポテンシャル $f$ で $\omega=df$）です。局所的にはいつでも完全——大域的な障害が穴を表します。
+そして、この $H^k_{\mathrm{dR}}$ が位相不変であることが、ホモトピー不変性から出ます。
+
+## ホモトピー不変性
+
+<Statement kind="theorem" title="ド・ラームコホモロジーのホモトピー不変性">
+なめらかな写像 $f:M\to N$ は[引き戻し](/manifolds/8) $f^*$ で線形写像 $f^*:H^k_{\mathrm{dR}}(N)\to H^k_{\mathrm{dR}}(M)$ を誘導し
+（$f^*$ が $d$ と可換だから）、$f\simeq g$（ホモトピック）なら $f^*=g^*$。ゆえ $M\simeq N$（[ホモトピー同値](/algebraic-topology/1)）なら
+$H^k_{\mathrm{dR}}(M)\cong H^k_{\mathrm{dR}}(N)$。
+</Statement>
+
+<Statement kind="proof">
+[引き戻しが $d$ と可換](/manifolds/8)ゆえ $f^*$ はコホモロジーを誘導。ホモトピー $H$ からホモトピー作用素 $K$（$dK+Kd=g^*-f^*$）を
+作ると、コホモロジーで $f^*=g^*$（[位相幾何のホモトピー不変性の証明](/algebraic-topology/7)と同型の議論）。∎
+</Statement>
+
+「微分形式で作ったコホモロジーが、ホモトピー同値で不変」——だから $H^k_{\mathrm{dR}}$ は**位相不変量**です。可縮なら
+$H^k=0$（$k\ge1$、ポアンカレの補題）、[変位レトラクト](/algebraic-topology/1)で単純化して計算できる。証明の構造は
+[位相幾何のホモロジーのホモトピー不変性](/algebraic-topology/7)（鎖ホモトピー $\partial P+P\partial$）と完全に平行——
+$\partial$ が $d$ に、鎖が形式に置き換わっただけ。解析（微分形式）と位相（ホモロジー）が同じ機械で動いていることが
+見えてきます。次章で、この平行が「同型」にまで高まります。
+
+## つまずきポイント
+
+<Statement kind="remark" title="よくある誤解">
+- **$H^k_{\mathrm{dR}}$ ＝ 閉形式／完全形式。** 「閉だが完全でない」形式が穴を検出。$d^2=0$ が商を可能にする。実ベクトル空間。
+- **ポアンカレの補題：可縮なら閉 ⇒ 完全。** 局所的には常に完全。大域的な障害（穴）が $H^k\ne0$。「$\operatorname{rot}=0$ ⇒ 保存場」の一般化。
+- **$H^0$ ＝ 連結成分の数**（[ホモロジー $H_0$](/algebraic-topology/6) と同じ）。局所定数関数。
+- **ホモトピー不変（位相不変量）。** 微分構造で作ったのに、位相（ホモトピー型）だけで決まる——次章のド・ラームの定理の伏線。
+</Statement>
+
+## この章のまとめ
+
+- **ド・ラームコホモロジー** $H^k_{\mathrm{dR}}=\ker d/\operatorname{im}d$（閉形式／完全形式、$d^2=0$ が保証）。微分形式が[位相の穴](/algebraic-topology/6)を検出する。$H^0$ ＝ 連結成分。
+- **ポアンカレの補題**：可縮な空間では閉形式は完全（$H^k=0$、$k\ge1$）。局所的には常に完全——「[$\operatorname{rot}=0$ ⇒ 保存場](/calculus/12)」の一般化。ホモトピー作用素 $dK+Kd=\mathrm{id}$。
+- **ホモトピー不変性**：$M\simeq N$ なら $H^k_{\mathrm{dR}}$ 同型。位相不変量。証明は[位相幾何のホモロジー](/algebraic-topology/7)と平行（$\partial\leftrightarrow d$）。
+
+最終章は、この平行が同型になる——**ド・ラームの定理**と具体的な計算で分野を締めくくります。

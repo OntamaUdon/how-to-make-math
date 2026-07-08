@@ -1,0 +1,115 @@
+---
+layout: ../../layouts/BaseLayout.astro
+title: 第2章 基本群
+description: ループを群にする。道のホモトピー、基本群の定義と群構造、基点、関手性、そしてホモトピー不変性。
+---
+
+import Term from "../../components/assets/Term.astro";
+import Statement from "../../components/assets/Statement.astro";
+
+# 第2章 基本群
+
+## 「穴」を、ループの引っかかりで捉える
+
+穴のある空間で、その穴の周りにゴムひもを一周させる。穴が無ければ、ひもは一点に縮められる。穴があれば、
+引っかかって縮められない。この**「ループが縮められるか」**を代数にしたものが、基本群です。
+
+アイデアはこうです。空間の中の**ループ**（出発点に戻る道）を集め、「連続変形（ホモトピー）で移り合うループは同じ」
+とみなす。そして「ループを2本つなぐ」という演算を入れると——驚くべきことに、これが[群](/group-theory)になります。
+単位元は「縮められるループ」、逆元は「逆向きに辿るループ」。空間の穴の構造が、群 $\pi_1$ という代数的対象に
+完全に翻訳される。しかもこの対応は**関手的**——空間の連続写像が群の準同型を誘導し、ホモトピー同値な空間は
+同型な基本群をもつ。幾何を代数に変換する、この分野の最初の本格的な機械です。
+
+> ループを「ホモトピーで移り合うもの」で割り、連結で群にしたのが**基本群** $\pi_1$。空間の穴を群で捉える。
+
+## 道とループのホモトピー
+
+<Statement kind="definition" title="道・ループ・道のホモトピー">
+$X$ の<Term>道</Term>とは連続写像 $\gamma:[0,1]\to X$。$\gamma(0)=\gamma(1)=x_0$ のとき $x_0$ を<Term>基点</Term>とする<Term>ループ</Term>という。
+2つの道 $\gamma_0,\gamma_1$（同じ端点）が<Term>道ホモトピック</Term>（$\gamma_0\simeq\gamma_1$）とは、端点を固定したまま連続変形する
+ホモトピー $H:[0,1]\times[0,1]\to X$（$H(s,0)=\gamma_0,\ H(s,1)=\gamma_1$、$H(0,t)=$ 始点・$H(1,t)=$ 終点で固定）が
+あること。
+</Statement>
+
+「端点を固定して連続変形」が道ホモトピー。穴を回るループは、端点を固定したままでは穴を越えられず、
+縮められない——ここに穴の情報が宿ります。ループの集合を、この同値関係で割ります。
+
+## ループの積と基本群
+
+<Statement kind="definition" title="ループの積">
+基点 $x_0$ のループ $\gamma,\delta$ の<Term>積（連結）</Term> $\gamma\cdot\delta$ を「前半で $\gamma$、後半で $\delta$ を辿る」ループ
+$$(\gamma\cdot\delta)(s)=\begin{cases}\gamma(2s)&(0\le s\le\tfrac12)\\ \delta(2s-1)&(\tfrac12\le s\le1)\end{cases}$$
+で定める。
+</Statement>
+
+この積は、ループそのものでは結合法則すら（速さの違いで）厳密には成り立ちません。ところが**ホモトピー類で割る**と、
+すべてが群の公理を満たします。
+
+<Statement kind="theorem" title="基本群">
+基点 $x_0$ のループのホモトピー類全体 $\pi_1(X,x_0)$ は、積 $[\gamma]\cdot[\delta]=[\gamma\cdot\delta]$ で<Term>群</Term>をなす
+（<Term>基本群</Term>）。単位元は定値ループ $[c_{x_0}]$、$[\gamma]$ の逆元は逆向きループ $[\bar\gamma]$（$\bar\gamma(s)=\gamma(1-s)$）。
+</Statement>
+
+<Statement kind="proof">
+（要点。）積がホモトピー類でwell-defined（$\gamma\simeq\gamma',\delta\simeq\delta'$ なら $\gamma\cdot\delta\simeq\gamma'\cdot\delta'$）。
+**結合法則**：$(\gamma\cdot\delta)\cdot\eta$ と $\gamma\cdot(\delta\cdot\eta)$ は「区切りの位置」が違うだけで、辿る速さを連続に付け替える
+ホモトピーで移り合う。**単位元**：$c_{x_0}\cdot\gamma\simeq\gamma$（前半の停止を縮める再パラメータ化）。**逆元**：$\gamma\cdot\bar\gamma\simeq c_{x_0}$
+（途中まで行って引き返すループは、折り返し点を始点へ縮めて定値に）。∎
+</Statement>
+
+「ループそのものでは崩れる群の公理が、ホモトピー類で割ると成り立つ」——[群論](/group-theory)で剰余群を作ったのと
+同じ精神で、変形の自由度が群構造を生みます。$[\gamma\cdot\bar\gamma]=[c_{x_0}]$（行って戻れば縮む）が逆元を与えるのが直感的です。
+
+## 基点と関手性
+
+<Statement kind="proposition" title="基点の取り替え">
+$X$ が[弧状連結](/set-topology/12)なら、基点 $x_0,x_1$ を結ぶ道 $\alpha$ が同型 $\pi_1(X,x_0)\cong\pi_1(X,x_1)$
+（$[\gamma]\mapsto[\bar\alpha\cdot\gamma\cdot\alpha]$）を与える。ゆえ基点によらず $\pi_1(X)$ と書ける。
+</Statement>
+
+基点は、弧状連結なら本質的でありません（道で運べば同型）。より重要なのが、**空間の写像が群の準同型を誘導する**という
+関手性です。これが「幾何 → 代数」の翻訳を機能させます。
+
+<Statement kind="theorem" title="誘導準同型と関手性">
+連続写像 $f:(X,x_0)\to(Y,y_0)$ は、準同型 $f_*:\pi_1(X,x_0)\to\pi_1(Y,y_0),\ [\gamma]\mapsto[f\circ\gamma]$ を誘導する。
+$(\mathrm{id}_X)_*=\mathrm{id}$、$(g\circ f)_*=g_*\circ f_*$（<Term>関手性</Term>）。
+</Statement>
+
+「連続写像 $f$ を、ループ $\gamma$ に施す（$f\circ\gamma$）」だけで群の準同型ができる。$\pi_1$ は**空間の圏から群の圏への
+[関手](/category-theory)**です。関手性の帰結として、基本群がホモトピー不変になります。
+
+<Statement kind="theorem" title="ホモトピー不変性">
+$X\simeq Y$（ホモトピー同値）ならば $\pi_1(X)\cong\pi_1(Y)$。特に可縮空間の基本群は自明 $\{e\}$。
+</Statement>
+
+<Statement kind="proof">
+ホモトピー同値写像 $f:X\to Y,\ g:Y\to X$（$g\circ f\simeq\mathrm{id}$）について、$f_*,g_*$ が互いに逆の同型を与える
+（ホモトピックな写像は同じ誘導準同型を与えることを使う）。可縮なら一点にホモトピー同値、$\pi_1(\text{点})=\{e\}$。∎
+</Statement>
+
+「ホモトピー同値なら基本群が同型」——だから[第1章](/algebraic-topology/1)の「不変量で区別する」戦略が機能します。
+基本群が違えば、空間はホモトピー同値ですらない。次章で、この威力を円周 $S^1$ で見ます。
+
+<Statement kind="definition" title="単連結">
+$\pi_1(X)=\{e\}$（すべてのループが縮められる）の弧状連結空間を<Term>単連結</Term>という。可縮空間・$\mathbb R^n$・$S^n$（$n\ge2$）は単連結。
+</Statement>
+
+「単連結」は[集合と位相](/set-topology/9)・[複素解析](/complex-analysis/4)で「穴が無い」として使ってきた概念の、正確な定義です
+（コーシーの積分定理が単連結で成り立ったのは、$\pi_1=0$ でループが縮むから）。分野をまたぐ伏線がここで回収されます。
+
+## つまずきポイント
+
+<Statement kind="remark" title="よくある誤解">
+- **基本群はループの「ホモトピー類」の群。** ループそのものでは結合法則すら崩れる。類で割って初めて群。
+- **積は「順につなぐ」、逆元は「逆向き」、単位元は「縮むループ」。** $\gamma\cdot\bar\gamma\simeq$ 定値（行って戻れば縮む）。
+- **弧状連結なら基点は無視できる。** 道で運んで同型。だが非連結だと成分ごとに別の基本群。
+- **$\pi_1$ は一般に非可換。** 8の字（2つの穴）の基本群は非可換な自由群（[次章](/algebraic-topology/4)）。可換とは限らない。
+</Statement>
+
+## この章のまとめ
+
+- 基点 $x_0$ のループを**道ホモトピー**で割り、連結（積）を入れると**基本群** $\pi_1(X,x_0)$（群）。単位元＝縮むループ、逆元＝逆向き。変形の自由度が群の公理を保証する。
+- 弧状連結なら基点によらず $\pi_1(X)$。連続写像 $f$ は準同型 $f_*$ を誘導し、$\pi_1$ は**関手**（幾何 → 代数）。
+- **ホモトピー不変性**：$X\simeq Y$ なら $\pi_1(X)\cong\pi_1(Y)$。可縮なら自明。$\pi_1=\{e\}$ が**単連結**（[複素解析](/complex-analysis/4)・[集合位相](/set-topology/9)の「穴なし」の正体）。
+
+次章は、最初の非自明な計算——**円周の基本群** $\pi_1(S^1)\cong\mathbb Z$ を巻き数で捉え、驚くべき応用を導きます。

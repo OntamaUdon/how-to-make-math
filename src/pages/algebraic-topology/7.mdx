@@ -1,0 +1,107 @@
+---
+layout: ../../layouts/BaseLayout.astro
+title: 第7章 ホモトピー不変性と長完全系列
+description: ホモロジーの計算を支える2本柱。ホモロジーのホモトピー不変性、相対ホモロジー、そして対の長完全系列。
+---
+
+import Term from "../../components/assets/Term.astro";
+import Statement from "../../components/assets/Statement.astro";
+
+# 第7章 ホモトピー不変性と長完全系列
+
+## ホモロジーを「計算する」ための道具
+
+前章でホモロジー群を定義しました。でも、定義（すべての特異単体を数える）から直接計算するのは不可能です
+（特異単体は非可算個！）。実際に計算するには、ホモロジーの**性質**を使います。この章では、その2本柱を整えます。
+
+第一の柱は**ホモトピー不変性**——ホモトピー同値な空間は同じホモロジーをもつ。だから空間を[変位レトラクト](/algebraic-topology/1)で
+単純化してから計算できます。第二の柱は**長完全系列**——空間 $X$ とその部分空間 $A$ のホモロジーを、$X$、$A$、そして
+「$A$ を潰した $X/A$」（相対ホモロジー）の間の**完全系列**で結びつける。完全系列は「隣り合う項が核と像でつながる鎖」で、
+[加群論](/module-theory)・[ホモロジー代数](/commutative-homological)の中心概念。これらを組み合わせると、次章で球面や複雑な空間の
+ホモロジーが芋づる式に計算できます。「一部が分かれば残りが決まる」——完全系列は、ホモロジー計算のエンジンです。
+
+> ホモロジーは**ホモトピー不変**（変位レトラクトで単純化できる）。**対の長完全系列**が $X,A,(X,A)$ のホモロジーを結び、計算を可能にする。
+
+## ホモトピー不変性
+
+<Statement kind="theorem" title="ホモロジーのホモトピー不変性">
+連続写像 $f:X\to Y$ は準同型 $f_*:H_n(X)\to H_n(Y)$ を誘導し（関手性）、$f\simeq g$（ホモトピック）なら $f_*=g_*$。
+ゆえ $X\simeq Y$（ホモトピー同値）なら $H_n(X)\cong H_n(Y)$（各 $n$）。特に可縮空間は $H_0=\mathbb Z$、$H_n=0\ (n\ge1)$。
+</Statement>
+
+<Statement kind="proof">
+（要点。）$f\simeq g$ のホモトピー $H:X\times[0,1]\to Y$ から、**鎖ホモトピー** $P:C_n(X)\to C_{n+1}(Y)$（各単体を
+「柱 $\Delta^n\times[0,1]$」に持ち上げて三角形分割）を作り、$\partial P+P\partial=g_\#-f_\#$ を示す。これは鎖レベルで $f_\#,g_\#$ が
+「境界を除いて等しい」ことを意味し、ホモロジーでは $f_*=g_*$。∎
+</Statement>
+
+鍵は**鎖ホモトピー** $\partial P+P\partial=g_\#-f_\#$。「単体を時間方向に柱状に引き伸ばして境界をとると、上面と下面の差になる」
+という代数的な等式です。ホモトピー（連続変形）が、鎖の間の代数的関係に翻訳される。この不変性のおかげで、
+[変位レトラクト](/algebraic-topology/1)（穴あき平面 → $S^1$ など）で空間を単純化してからホモロジーを計算できます。
+
+## 相対ホモロジー
+
+$X$ の部分空間 $A$ を「潰して」考えるホモロジーです。$A$ の中の話を無視して、$X$ の「$A$ を基準にした穴」を測ります。
+
+<Statement kind="definition" title="相対ホモロジー">
+部分空間 $A\subseteq X$ に対し、相対鎖群 $C_n(X,A)=C_n(X)/C_n(A)$（$A$ 内の鎖を $0$ とみなす）を作る。$\partial$ が誘導され、
+<Term>相対ホモロジー</Term> $H_n(X,A)=\ker\bar\partial_n/\operatorname{im}\bar\partial_{n+1}$ が定まる。直感的には $X/A$（$A$ を一点に潰した空間）の
+（簡約）ホモロジーに近い。
+</Statement>
+
+相対ホモロジー $H_n(X,A)$ は「$A$ を境界として許した $X$ のサイクル」——たとえば「両端が $A$ にある道」も相対サイクル
+（境界が $A$ 内なので $0$ とみなす）。$X$ と $A$ のホモロジーを橋渡しする中間的な量です。これら3つが完全系列で結ばれます。
+
+## 対の長完全系列
+
+<Statement kind="definition" title="完全系列">
+アーベル群と準同型の列 $\cdots\to A_{n+1}\xrightarrow{f_{n+1}}A_n\xrightarrow{f_n}A_{n-1}\to\cdots$ が<Term>完全</Term>とは、各所で
+$\operatorname{im}f_{n+1}=\ker f_n$（像と核が一致）。「隣の準同型の像が、次の核にぴったり」。
+</Statement>
+
+完全系列は情報が「漏れなく伝わる」鎖です。$0\to A\to B\to C\to0$（<Term>短完全系列</Term>）なら $A\hookrightarrow B\twoheadrightarrow C$ で
+$C\cong B/A$。この完全性が、未知の項を既知の項から決める道具になります。
+
+<Statement kind="theorem" title="対の長完全系列">
+部分空間 $A\subseteq X$ に対し、次の<Term>長完全系列</Term>が存在する：
+$$\cdots\to H_n(A)\xrightarrow{i_*}H_n(X)\xrightarrow{j_*}H_n(X,A)\xrightarrow{\partial_*}H_{n-1}(A)\xrightarrow{i_*}H_{n-1}(X)\to\cdots$$
+$i_*$ は包含、$j_*$ は $C_n(X)\to C_n(X,A)$ の誘導、$\partial_*$ は<Term>連結準同型</Term>（相対サイクルの境界を $A$ 内でとる）。
+</Statement>
+
+<Statement kind="proof">
+短完全系列の鎖複体 $0\to C_*(A)\to C_*(X)\to C_*(X,A)\to0$（相対鎖群の定義から完全）に、[蛇の補題](/module-theory)を
+適用する。連結準同型 $\partial_*$ は「相対サイクル $[z]$（$\partial z\in C_*(A)$）を、その境界 $\partial z\in H_{n-1}(A)$ へ送る」で定まり、
+系列の完全性が図式追跡（diagram chasing）で確かめられる。∎
+</Statement>
+
+証明の核心は[加群論・ホモロジー代数の蛇の補題](/module-theory)——「鎖複体の短完全系列から、ホモロジーの長完全系列が
+自動的に生じる」。トポロジーの幾何的な状況が、純代数的な機械（蛇の補題）に還元されます。長完全系列の使い方は
+「知っている項で挟んで、未知の項を絞り込む」です。
+
+<Statement kind="example" title="長完全系列でホモロジーを絞る">
+可縮な $A$（例：$X$ 内の一点）なら $H_n(A)=0\ (n\ge1)$ なので、長完全系列で $H_n(X)\cong H_n(X,A)\ (n\ge1)$。
+また $A$ が良い部分空間なら $H_n(X,A)\cong\tilde H_n(X/A)$（潰した空間の簡約ホモロジー）。ゆえ「$X$ から $A$ を潰した空間」の
+ホモロジーが計算できる。**未知の $H_n(X)$ を、既知の $H_n(A),H_n(X/A)$ で挟んで決める**のが完全系列の威力。
+</Statement>
+
+<Statement kind="remark" title="簡約ホモロジー">
+一点のホモロジーを $0$ にそろえるため、<Term>簡約ホモロジー</Term> $\tilde H_n$ を使う（$\tilde H_0(X)\oplus\mathbb Z=H_0(X)$、他は同じ）。
+一点で $\tilde H_n=0$（全 $n$）となり、完全系列がすっきりする。以後の計算で標準的に使う。
+</Statement>
+
+## つまずきポイント
+
+<Statement kind="remark" title="よくある誤解">
+- **ホモロジーはホモトピー不変（$\pi_1$ と同じく）。** 鎖ホモトピー $\partial P+P\partial=g_\#-f_\#$ が核心。変位レトラクトで単純化して計算。
+- **相対ホモロジー $H_n(X,A)$ は「$A$ を潰した」穴。** $C_n(X)/C_n(A)$。良い $A$ なら $\tilde H_n(X/A)$ に一致。
+- **完全系列は $\operatorname{im}=\ker$。** 隣の像が次の核。情報が漏れなく伝わり、未知の項を既知で決める。
+- **長完全系列は[蛇の補題](/module-theory)から。** 鎖複体の短完全系列 → ホモロジーの長完全系列。連結準同型 $\partial_*$ が次元を下げる橋。
+</Statement>
+
+## この章のまとめ
+
+- **ホモトピー不変性**：$X\simeq Y$ なら $H_n(X)\cong H_n(Y)$（鎖ホモトピー $\partial P+P\partial=g_\#-f_\#$）。[変位レトラクト](/algebraic-topology/1)で単純化して計算できる。
+- **相対ホモロジー** $H_n(X,A)=H_n(C_*(X)/C_*(A))$（$A$ を潰した穴、良い $A$ なら $\tilde H_n(X/A)$）。
+- **対の長完全系列** $\cdots\to H_n(A)\to H_n(X)\to H_n(X,A)\xrightarrow{\partial_*}H_{n-1}(A)\to\cdots$（[蛇の補題](/module-theory)から）。既知の項で未知を挟んで決める、計算のエンジン。
+
+次章は、もう一組の計算道具——**切除定理とマイヤー–ヴィートリス系列**で、球面のホモロジーを計算します。

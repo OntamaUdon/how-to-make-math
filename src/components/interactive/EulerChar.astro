@@ -1,0 +1,84 @@
+---
+/* EulerChar.astro — オイラー標数 χ=V−E+F の体験装置。
+   多面体・曲面を選ぶと、頂点 V・辺 E・面 F と χ=V−E+F を表示。
+   ・球面に同相な多面体（四面体・立方体・…）はどれも χ=2（V,E,F は違っても）。
+   ・トーラス χ=0、2 重トーラス χ=−2。χ は位相不変量で、χ=2−2g（種数 g）。
+   ・χ = b₀−b₁+b₂（ベッチ数の交代和、オイラー–ポアンカレ）も併記。
+   「V,E,F を変えても χ は形（穴の数）だけで決まる」を体感する。
+   状態はメモリ内のみ（storage 不使用）。 */
+---
+
+<figure class="ec" role="group" aria-label="オイラー標数">
+  <div class="ec-controls">
+    <label class="ec-label">多面体・曲面
+      <select id="ec-sel" class="ec-sel">
+        <option value="tetra">四面体（球面）</option>
+        <option value="cube">立方体（球面）</option>
+        <option value="octa">正八面体（球面）</option>
+        <option value="dodeca">正十二面体（球面）</option>
+        <option value="icosa">正二十面体（球面）</option>
+        <option value="torus">トーラス（チャーサール多面体）</option>
+        <option value="genus2">2 重トーラス（種数 2）</option>
+      </select>
+    </label>
+  </div>
+  <div id="ec-body" class="ec-body"></div>
+  <figcaption id="ec-cap" class="ec-cap"></figcaption>
+</figure>
+
+<script>
+  type P = { V: number; E: number; F: number; surf: string; g: number; betti: [number, number, number] };
+  const data: Record<string, P> = {
+    tetra:  { V: 4, E: 6, F: 4, surf: "球面 S²", g: 0, betti: [1, 0, 1] },
+    cube:   { V: 8, E: 12, F: 6, surf: "球面 S²", g: 0, betti: [1, 0, 1] },
+    octa:   { V: 6, E: 12, F: 8, surf: "球面 S²", g: 0, betti: [1, 0, 1] },
+    dodeca: { V: 20, E: 30, F: 12, surf: "球面 S²", g: 0, betti: [1, 0, 1] },
+    icosa:  { V: 12, E: 30, F: 20, surf: "球面 S²", g: 0, betti: [1, 0, 1] },
+    torus:  { V: 7, E: 21, F: 14, surf: "トーラス T²", g: 1, betti: [1, 2, 1] },
+    genus2: { V: 10, E: 36, F: 24, surf: "種数 2 曲面 Σ₂", g: 2, betti: [1, 4, 1] },
+  };
+
+  const sel = document.getElementById("ec-sel") as HTMLSelectElement | null;
+  const body = document.getElementById("ec-body");
+  const capEl = document.getElementById("ec-cap");
+
+  if (sel && body && capEl) {
+    const render = () => {
+      const p = data[sel.value];
+      const chi = p.V - p.E + p.F;
+      const chiB = p.betti[0] - p.betti[1] + p.betti[2];
+      body.innerHTML =
+        `<div class="ec-nums">
+          <div class="ec-box"><span class="ec-k">頂点 V</span><span class="ec-v">${p.V}</span></div>
+          <div class="ec-op">−</div>
+          <div class="ec-box"><span class="ec-k">辺 E</span><span class="ec-v">${p.E}</span></div>
+          <div class="ec-op">+</div>
+          <div class="ec-box"><span class="ec-k">面 F</span><span class="ec-v">${p.F}</span></div>
+          <div class="ec-op">=</div>
+          <div class="ec-box ec-chi"><span class="ec-k">χ</span><span class="ec-v">${chi}</span></div>
+        </div>`;
+      capEl.innerHTML =
+        `<b>${p.surf}</b>（種数 g=${p.g}）。χ = V−E+F = ${p.V}−${p.E}+${p.F} = <b>${chi}</b>。` +
+        ` V,E,F は多面体ごとに違っても、<b>同じ曲面なら χ は同じ</b>（位相不変量、χ=2−2g）。` +
+        ` またベッチ数の交代和 b₀−b₁+b₂ = ${p.betti[0]}−${p.betti[1]}+${p.betti[2]} = <b>${chiB}</b> と一致（オイラー–ポアンカレの定理）。`;
+    };
+    sel.addEventListener("change", render);
+    render();
+  }
+</script>
+
+<style>
+  .ec { margin: 26px 0; padding: 16px 18px 14px; border: 1px solid var(--line); border-radius: 10px; background: var(--card); }
+  .ec-controls { margin-bottom: 14px; }
+  .ec-label { font-size: 13px; font-weight: 600; color: var(--ink); font-family: var(--sans); }
+  .ec-sel { font-family: var(--sans); font-size: 13px; padding: 4px 8px; border: 1px solid var(--line); border-radius: 7px; background: var(--paper-sunk); color: var(--ink); margin-left: 6px; }
+  .ec-nums { display: flex; align-items: center; justify-content: center; gap: 8px; flex-wrap: wrap; }
+  .ec-box { display: flex; flex-direction: column; align-items: center; min-width: 56px; padding: 8px 12px; border: 1px solid var(--line); border-radius: 8px; background: var(--paper-sunk); }
+  .ec-k { font-size: 11px; color: var(--ink-faint); font-family: var(--sans); }
+  .ec-v { font-size: 22px; font-weight: 700; color: var(--ink); font-family: var(--serif); font-variant-numeric: tabular-nums; }
+  .ec-op { font-size: 18px; color: var(--ink-faint); }
+  .ec-chi { background: var(--ai-wash); border-color: var(--ai); }
+  .ec-chi .ec-v, .ec-chi .ec-k { color: var(--ai); }
+  .ec-cap { margin-top: 14px; font-size: 13px; line-height: 1.8; color: var(--ink-faint); font-family: var(--sans); }
+  .ec-cap b { color: var(--ink); font-weight: 700; }
+</style>

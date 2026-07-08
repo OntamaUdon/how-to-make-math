@@ -1,0 +1,143 @@
+---
+/* WindingNumber.astro — 基本群 π₁(S¹)≅ℤ の体験装置。
+   原点（穴）のまわりのループを選び、スライダーで点を動かすと、
+   ・穴を回った累積角 θ(t) が右のバー（普遍被覆 ℝ への持ち上げ）で上下し、
+   ・一周し終えたときの θ/2π ＝ 巻き数（winding number）＝ ループのホモトピー類が出る。
+   「ループを穴の外へ連続変形しても巻き数は変わらない＝ℤ で分類される」を体感する。
+   状態はメモリ内のみ（storage 不使用）。 */
+---
+
+<figure class="wn" role="group" aria-label="巻き数と基本群">
+  <div class="wn-controls">
+    <label class="wn-label">ループ
+      <select id="wn-loop" class="wn-sel">
+        <option value="w1">1 周（巻き数 +1）</option>
+        <option value="w2">2 周（巻き数 +2）</option>
+        <option value="wm1">逆に 1 周（巻き数 −1）</option>
+        <option value="w0">穴を回らない（巻き数 0）</option>
+        <option value="wback">巻いて戻る（巻き数 0・可縮）</option>
+      </select>
+    </label>
+    <label class="wn-label">t = <output id="wn-t-v">0.00</output>
+      <input id="wn-t" type="range" min="0" max="1" step="0.005" value="0" /></label>
+  </div>
+  <div class="wn-row">
+    <canvas id="wn-cv" width="300" height="300" class="wn-cv"></canvas>
+    <div class="wn-lift">
+      <div class="wn-lt">持ち上げ θ(t)/2π</div>
+      <svg id="wn-bar" viewBox="0 0 60 300" class="wn-barsvg" aria-hidden="true"></svg>
+    </div>
+  </div>
+  <figcaption id="wn-cap" class="wn-cap"></figcaption>
+</figure>
+
+<script>
+  type C = [number, number];
+  const loops: Record<string, { g: (t: number) => C; note: string }> = {
+    w1:   { g: (t) => [2 * Math.cos(2 * Math.PI * t), 2 * Math.sin(2 * Math.PI * t)], note: "原点を反時計回りに 1 周。巻き数 +1。" },
+    w2:   { g: (t) => [2 * Math.cos(4 * Math.PI * t), 2 * Math.sin(4 * Math.PI * t)], note: "2 周。巻き数 +2。持ち上げは 2 段上る。" },
+    wm1:  { g: (t) => [2 * Math.cos(-2 * Math.PI * t), 2 * Math.sin(-2 * Math.PI * t)], note: "時計回りに 1 周。巻き数 −1（逆元）。" },
+    w0:   { g: (t) => [2 + 0.9 * Math.cos(2 * Math.PI * t), 0.9 * Math.sin(2 * Math.PI * t)], note: "原点を含まない小さな輪。巻き数 0。持ち上げは元に戻る。" },
+    wback:{ g: (t) => { const a = 2 * Math.PI * (t < 0.5 ? 1.6 * t : 1.6 * (1 - t)); return [2 * Math.cos(a), 2 * Math.sin(a)]; }, note: "途中まで巻いて引き返す。純巻き数 0＝定値ループに連続変形できる（可縮）。" },
+  };
+
+  const sel = document.getElementById("wn-loop") as HTMLSelectElement | null;
+  const tIn = document.getElementById("wn-t") as HTMLInputElement | null;
+  const tOut = document.getElementById("wn-t-v");
+  const cv = document.getElementById("wn-cv") as HTMLCanvasElement | null;
+  const bar = document.getElementById("wn-bar");
+  const capEl = document.getElementById("wn-cap");
+
+  if (sel && tIn && tOut && cv && bar && capEl) {
+    const ctx = cv.getContext("2d")!;
+    const W = cv.width, H = cv.height, R = 3.2;
+    const NS = "http://www.w3.org/2000/svg";
+    const css = (v: string) => getComputedStyle(document.documentElement).getPropertyValue(v).trim() || "#888";
+    const px = (x: number) => (x + R) / (2 * R) * W;
+    const py = (y: number) => H - (y + R) / (2 * R) * H;
+
+    // 連続な累積角 θ(t) を数値で作る
+    const buildTheta = (g: (t: number) => C) => {
+      const N = 600; const th: number[] = []; let prev = Math.atan2(g(0)[1], g(0)[0]); let acc = prev;
+      th.push(acc);
+      for (let i = 1; i <= N; i++) {
+        const [x, y] = g(i / N); let a = Math.atan2(y, x);
+        let dd = a - prev; while (dd > Math.PI) dd -= 2 * Math.PI; while (dd < -Math.PI) dd += 2 * Math.PI;
+        acc += dd; prev = a; th.push(acc);
+      }
+      return { th, N, theta0: th[0] };
+    };
+
+    const render = () => {
+      const { g, note } = loops[sel.value];
+      const t = parseFloat(tIn.value); tOut.textContent = t.toFixed(2);
+      const { th, N, theta0 } = buildTheta(g);
+      const total = (th[N] - theta0) / (2 * Math.PI);
+      const winding = Math.round(total);
+
+      // ── 平面 ──
+      ctx.clearRect(0, 0, W, H);
+      ctx.strokeStyle = css("--line"); ctx.lineWidth = 1;
+      ctx.beginPath(); ctx.moveTo(px(-R), py(0)); ctx.lineTo(px(R), py(0)); ctx.moveTo(px(0), py(-R)); ctx.lineTo(px(0), py(R)); ctx.stroke();
+      // 穴（原点）
+      ctx.fillStyle = css("--shu"); ctx.beginPath(); ctx.arc(px(0), py(0), 4, 0, 2 * Math.PI); ctx.fill();
+      ctx.strokeStyle = css("--shu"); ctx.lineWidth = 1; ctx.beginPath(); ctx.arc(px(0), py(0), 9, 0, 2 * Math.PI); ctx.stroke();
+      // ループ全体（薄い藍）
+      ctx.strokeStyle = css("--ai"); ctx.globalAlpha = 0.35; ctx.lineWidth = 1.5; ctx.beginPath();
+      for (let i = 0; i <= N; i++) { const [x, y] = g(i / N); i ? ctx.lineTo(px(x), py(y)) : ctx.moveTo(px(x), py(y)); } ctx.stroke();
+      ctx.globalAlpha = 1;
+      // t までの軌跡（濃い藍）
+      ctx.strokeStyle = css("--ai"); ctx.lineWidth = 2.4; ctx.beginPath();
+      const kmax = Math.round(t * N);
+      for (let i = 0; i <= kmax; i++) { const [x, y] = g(i / N); i ? ctx.lineTo(px(x), py(y)) : ctx.moveTo(px(x), py(y)); } ctx.stroke();
+      // 現在点と原点からの半径
+      const [cxp, cyp] = g(t);
+      ctx.strokeStyle = css("--ink-faint"); ctx.lineWidth = 1; ctx.beginPath(); ctx.moveTo(px(0), py(0)); ctx.lineTo(px(cxp), py(cyp)); ctx.stroke();
+      ctx.fillStyle = css("--ai"); ctx.beginPath(); ctx.arc(px(cxp), py(cyp), 5, 0, 2 * Math.PI); ctx.fill();
+
+      // ── 持ち上げバー（θ/2π） ──
+      bar.innerHTML = "";
+      const lo = Math.min(0, winding) - 0.4, hi = Math.max(1, winding + 0.4, total + 0.4);
+      const Y = (v: number) => 290 - (v - lo) / (hi - lo) * 280;
+      const line = (y1: number, y2: number, x: number, col: string, w: number) => {
+        const l = document.createElementNS(NS, "line"); l.setAttribute("x1", String(x)); l.setAttribute("y1", String(y1));
+        l.setAttribute("x2", String(x)); l.setAttribute("y2", String(y2)); l.setAttribute("stroke", col); l.setAttribute("stroke-width", String(w)); bar.appendChild(l);
+      };
+      // 整数目盛り（各 2π ＝ 被覆の各葉）
+      for (let k = Math.ceil(lo); k <= Math.floor(hi); k++) {
+        const yk = Y(k);
+        const tick = document.createElementNS(NS, "line");
+        tick.setAttribute("x1", "6"); tick.setAttribute("y1", String(yk)); tick.setAttribute("x2", "54"); tick.setAttribute("y2", String(yk));
+        tick.setAttribute("stroke", css("--line")); tick.setAttribute("stroke-dasharray", "2 3"); bar.appendChild(tick);
+        const tx = document.createElementNS(NS, "text"); tx.setAttribute("x", "0"); tx.setAttribute("y", String(yk + 3));
+        tx.setAttribute("font-size", "9"); tx.setAttribute("fill", css("--ink-faint")); tx.textContent = String(k); bar.appendChild(tx);
+      }
+      line(Y(0), Y((th[kmax] - theta0) / (2 * Math.PI)), 30, css("--ai"), 3); // 0 から現在まで
+      const dot = document.createElementNS(NS, "circle");
+      dot.setAttribute("cx", "30"); dot.setAttribute("cy", String(Y((th[kmax] - theta0) / (2 * Math.PI)))); dot.setAttribute("r", "4"); dot.setAttribute("fill", css("--ai")); bar.appendChild(dot);
+
+      capEl.innerHTML = note +
+        ` 現在の累積角 θ(t)/2π = <b>${((th[kmax] - theta0) / (2 * Math.PI)).toFixed(2)}</b>、一周後の<b>巻き数 = ${winding}</b>。` +
+        " これがループのホモトピー類＝ π₁(S¹)≅ℤ の元。穴の外へ変形しても整数の巻き数は変わらない。";
+    };
+
+    sel.addEventListener("change", () => { tIn.value = "1"; render(); });
+    tIn.addEventListener("input", render);
+    tIn.value = "1"; render();
+  }
+</script>
+
+<style>
+  .wn { margin: 26px 0; padding: 16px 18px 14px; border: 1px solid var(--line); border-radius: 10px; background: var(--card); }
+  .wn-controls { display: flex; flex-wrap: wrap; gap: 10px 18px; margin-bottom: 12px; }
+  .wn-label { font-size: 13px; font-weight: 600; color: var(--ink); font-family: var(--sans); display: flex; align-items: center; gap: 6px; }
+  .wn-label input[type=range] { width: 130px; accent-color: var(--shu); }
+  .wn-sel { font-family: var(--sans); font-size: 13px; padding: 4px 8px; border: 1px solid var(--line); border-radius: 7px; background: var(--paper-sunk); color: var(--ink); }
+  .wn-row { display: flex; align-items: stretch; justify-content: center; gap: 12px; flex-wrap: wrap; }
+  .wn-cv { width: 100%; max-width: 280px; height: auto; border: 1px solid var(--line); border-radius: 6px; background: var(--paper-sunk); }
+  .wn-lift { display: flex; flex-direction: column; align-items: center; }
+  .wn-lt { font-size: 11px; color: var(--ink-faint); font-family: var(--sans); margin-bottom: 4px; }
+  .wn-barsvg { width: 60px; height: 260px; }
+  .wn-cap { margin-top: 12px; font-size: 13px; line-height: 1.8; color: var(--ink-faint); font-family: var(--sans); }
+  .wn-cap b { color: var(--ink); font-weight: 700; }
+</style>
