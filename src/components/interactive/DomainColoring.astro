@@ -1,0 +1,97 @@
+---
+/* DomainColoring.astro — 複素関数の位相ポートレート（領域彩色）。
+   各点 z を f(z) の偏角 arg で色相に、絶対値 |f| の対数で明暗の縞に塗る。
+   ・零点：まわりを色相環が一周する点（全色が集まる）。
+   ・極：色相環が逆回り、明るい縞が密集して発散。
+   ・真性特異点（exp(1/z)）：近傍で色が激しく乱れる（あらゆる値を取る）。
+   零点・極・特異点を「見て」区別する。状態はメモリ内のみ（storage 不使用）。 */
+---
+
+<figure class="dc" role="group" aria-label="複素関数の位相ポートレート">
+  <div class="dc-controls">
+    <label class="dc-label">f(z) =
+      <select id="dc-fn" class="dc-sel">
+        <option value="z2m1">z² − 1（零点 ±1）</option>
+        <option value="z3m1">z³ − 1（零点：1 の 3 乗根）</option>
+        <option value="inv">1/z（原点は極）</option>
+        <option value="rat">(z²−1)/(z²+1)（零点 ±1・極 ±i）</option>
+        <option value="pole2">1/(z−1)²（2 位の極）</option>
+        <option value="ess">exp(1/z)（真性特異点）</option>
+      </select>
+    </label>
+  </div>
+  <canvas id="dc-cv" width="320" height="320" class="dc-cv"></canvas>
+  <figcaption id="dc-cap" class="dc-cap"></figcaption>
+</figure>
+
+<script>
+  type C = [number, number];
+  const cmul = (a: C, b: C): C => [a[0] * b[0] - a[1] * b[1], a[0] * b[1] + a[1] * b[0]];
+  const cadd = (a: C, b: C): C => [a[0] + b[0], a[1] + b[1]];
+  const cdiv = (a: C, b: C): C => { const d = b[0] * b[0] + b[1] * b[1]; return [(a[0] * b[0] + a[1] * b[1]) / d, (a[1] * b[0] - a[0] * b[1]) / d]; };
+  const cexp = (a: C): C => { const e = Math.exp(a[0]); return [e * Math.cos(a[1]), e * Math.sin(a[1])]; };
+
+  const fns: Record<string, { f: (z: C) => C; note: string }> = {
+    z2m1: { f: (z) => cadd(cmul(z, z), [-1, 0]), note: "z²−1。<b>零点 ±1</b> のまわりを色相環が一周（全色が集まる）。多項式なので極は無い。" },
+    z3m1: { f: (z) => cadd(cmul(cmul(z, z), z), [-1, 0]), note: "z³−1。<b>3 つの零点</b>（1 の 3 乗根）で色相環が一周ずつ。零点の個数＝次数。" },
+    inv:  { f: (z) => cdiv([1, 0], z), note: "1/z。<b>原点は極</b>：色相環が零点と逆回りし、明るい縞が中心へ密集して発散。" },
+    rat:  { f: (z) => cdiv(cadd(cmul(z, z), [-1, 0]), cadd(cmul(z, z), [1, 0])), note: "(z²−1)/(z²+1)。<b>零点 ±1</b>（実軸）と<b>極 ±i</b>（虚軸）が色の回り方で区別できる。" },
+    pole2:{ f: (z) => cdiv([1, 0], cmul(cadd(z, [-1, 0]), cadd(z, [-1, 0]))), note: "1/(z−1)²。<b>2 位の極</b>：z=1 のまわりを色相環が<b>2 周</b>する（位数＝周回数）。" },
+    ess:  { f: (z) => cexp(cdiv([1, 0], z)), note: "exp(1/z)。<b>真性特異点</b>：原点近傍で色が激しく乱れ、あらゆる値を取る（カゾラーティ–ワイエルシュトラス）。" },
+  };
+
+  const sel = document.getElementById("dc-fn") as HTMLSelectElement | null;
+  const cv = document.getElementById("dc-cv") as HTMLCanvasElement | null;
+  const capEl = document.getElementById("dc-cap");
+
+  if (sel && cv && capEl) {
+    const ctx = cv.getContext("2d")!;
+    const W = cv.width, H = cv.height, R = 2.2;
+    const hsl2rgb = (h: number, s: number, l: number): [number, number, number] => {
+      const c = (1 - Math.abs(2 * l - 1)) * s, x = c * (1 - Math.abs(((h / 60) % 2) - 1)), m = l - c / 2;
+      let r = 0, g = 0, b = 0;
+      if (h < 60) [r, g, b] = [c, x, 0]; else if (h < 120) [r, g, b] = [x, c, 0]; else if (h < 180) [r, g, b] = [0, c, x];
+      else if (h < 240) [r, g, b] = [0, x, c]; else if (h < 300) [r, g, b] = [x, 0, c]; else [r, g, b] = [c, 0, x];
+      return [(r + m) * 255, (g + m) * 255, (b + m) * 255];
+    };
+
+    const render = () => {
+      const { f, note } = fns[sel.value];
+      const imgData = ctx.createImageData(W, H);
+      const d = imgData.data;
+      for (let py = 0; py < H; py++) {
+        const im = R - (2 * R) * py / H;
+        for (let px = 0; px < W; px++) {
+          const re = -R + (2 * R) * px / W;
+          const w = f([re, im]);
+          const idx = 4 * (py * W + px);
+          if (!isFinite(w[0]) || !isFinite(w[1])) { d[idx] = d[idx + 1] = d[idx + 2] = 20; d[idx + 3] = 255; continue; }
+          const arg = Math.atan2(w[1], w[0]);
+          const hue = ((arg / (2 * Math.PI)) + 1) % 1 * 360;
+          const mod = Math.hypot(w[0], w[1]);
+          // |f| の対数で明暗の縞（等高線）: fractional part of log2|f|
+          const lg = Math.log2(mod + 1e-12);
+          const frac = lg - Math.floor(lg);
+          const l = 0.32 + 0.42 * frac; // 0.32〜0.74 の縞
+          const [r, g, b] = hsl2rgb(hue, 0.85, Math.max(0.08, Math.min(0.92, l)));
+          d[idx] = r; d[idx + 1] = g; d[idx + 2] = b; d[idx + 3] = 255;
+        }
+      }
+      ctx.putImageData(imgData, 0, 0);
+      capEl.innerHTML = "<b>色相＝偏角 arg f(z)</b>（赤=正の実、水色=負の実…）、<b>明暗の縞＝|f| の等高線</b>。 " + note;
+    };
+
+    sel.addEventListener("change", render);
+    render();
+  }
+</script>
+
+<style>
+  .dc { margin: 26px 0; padding: 16px 18px 14px; border: 1px solid var(--line); border-radius: 10px; background: var(--card); }
+  .dc-controls { margin-bottom: 12px; }
+  .dc-label { font-size: 13px; font-weight: 600; color: var(--ink); font-family: var(--sans); }
+  .dc-sel { font-family: var(--sans); font-size: 13px; padding: 4px 8px; border: 1px solid var(--line); border-radius: 7px; background: var(--paper-sunk); color: var(--ink); margin-left: 6px; }
+  .dc-cv { display: block; margin: 0 auto; width: 100%; max-width: 320px; height: auto; border: 1px solid var(--line); border-radius: 6px; }
+  .dc-cap { margin-top: 12px; font-size: 13px; line-height: 1.8; color: var(--ink-faint); font-family: var(--sans); }
+  .dc-cap b { color: var(--ink); font-weight: 700; }
+</style>

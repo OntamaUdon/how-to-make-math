@@ -1,0 +1,109 @@
+---
+layout: ../../layouts/BaseLayout.astro
+title: 第6章 正規拡大
+description: 「根を一つ含めば全部含む」拡大。正規拡大の定義、分解体による特徴づけ、埋め込みによる特徴づけ、そして正規でない例。
+---
+
+import Term from "../../components/assets/Term.astro";
+import Statement from "../../components/assets/Statement.astro";
+
+# 第6章 正規拡大
+
+## 「片方の根だけ」では対称性が壊れる
+
+$\mathbb Q(\sqrt[3]2)$ を考えます。これは $x^3-2$ の根 $\sqrt[3]2$ を含みますが、他の2根 $\omega\sqrt[3]2,\omega^2\sqrt[3]2$（複素数）は
+含みません。すると困ったことが起きる——「$\sqrt[3]2\mapsto\omega\sqrt[3]2$」という根の入れ替えは、行き先が体の外なので
+**自己同型にならない**。片方の根しか無いと、体の対称性（ガロア群）が痩せてしまうのです。
+
+ガロア理論がうまく働くには、「$K$ 係数の既約多項式が根を一つ含むなら、全部の根を含む」という条件が要ります。
+これが**正規拡大**です。正規性は「分解体である」ことと同値で、「どんな埋め込みも体を自分自身に写す」とも言い換えられる。
+次章の分離性とあわせて、正規かつ分離な拡大＝**ガロア拡大**（[第8章](/field-and-galois/8)）が、理論の主役になります。
+
+> 正規拡大 ＝「$K$ 上既約な多項式が $L$ に根を1つもてば、$L$ で完全分解する」＝ ある多項式族の分解体。
+
+## 正規拡大の定義
+
+<Statement kind="definition" title="正規拡大">
+代数拡大 $L/K$ が<Term>正規</Term>とは、$L$ に根を**1つでも**もつ $K[x]$ の既約多項式が、$L$ 内で**完全に一次式に分解する**こと。
+（＝ $L$ の各元の $K$ 上共役がすべて $L$ に入る。）
+</Statement>
+
+「1つ根が入れば、共役の根も全部入る」——$\mathbb Q(\sqrt2)$ は $x^2-2$ の両根 $\pm\sqrt2$ を含むので正規、
+$\mathbb Q(\sqrt[3]2)$ は $x^3-2$ の1根しか含まないので**正規でない**。有限拡大では、正規性は「分解体であること」と一致します。
+
+<Statement kind="theorem" title="正規性 ⇔ 分解体">
+有限拡大 $L/K$ について、次は同値：
+1. $L/K$ は正規。
+2. $L$ はある多項式 $f\in K[x]$ の（$K$ 上の）分解体。
+</Statement>
+
+<Statement kind="proof">
+**(1)⇒(2)**：$L=K(\alpha_1,\dots,\alpha_n)$（有限拡大ゆえ有限生成、各 $\alpha_i$ 代数的）。各 $\alpha_i$ の最小多項式 $m_i$ は
+正規性より $L$ で完全分解する。$f=m_1\cdots m_n$ とおくと、$f$ は $L$ で分解し、その根が $L$ を生成する（$\alpha_i$ を含む）ので、
+$L$ は $f$ の分解体。
+**(2)⇒(1)**：$L$ を $f$ の分解体とし、$p\in K[x]$ 既約が $L$ に根 $\alpha$ をもつとする。$p$ の別の根 $\beta$（代数閉包内）をとり、
+$L(\beta)$ を考える。[第2章の共役同型](/field-and-galois/2) $\sigma:K(\alpha)\to K(\beta),\ \alpha\mapsto\beta$ を、[第4章の同型延長定理](/field-and-galois/4)で
+$\tilde\sigma:L(\alpha)\to L(\beta)$（$=$ 分解体どうし）に延ばす。$\tilde\sigma$ は $f$ の根の集合を保つので $\tilde\sigma(L)=L$、
+ゆえ $\beta=\tilde\sigma(\alpha)\in\tilde\sigma(L)=L$。よって $p$ の全根が $L$ に入り、$L/K$ は正規。∎
+</Statement>
+
+証明の (2)⇒(1) が[第4章の同型延長定理](/field-and-galois/4)を使う要所です。「分解体は同型で自分に写る」ことが、
+「根が1つ入れば全部入る」を保証する。この論法が次の埋め込みによる特徴づけに繋がります。
+
+## 埋め込みによる特徴づけ
+
+正規性を「$K$-埋め込み（$K$ を固定する体の準同型）」の言葉で言い換えると、ガロア群の議論に直結します。
+
+<Statement kind="theorem" title="正規性 ⇔ 埋め込みが安定">
+代数拡大 $L/K$（$\overline K$ を代数閉包）について、次は同値：
+1. $L/K$ は正規。
+2. $K$ を固定する任意の埋め込み $\sigma:L\to\overline K$ は、$\sigma(L)=L$（$L$ を自分自身に写す）。
+</Statement>
+
+<Statement kind="proof">
+**(1)⇒(2)**：$\sigma:L\to\overline K$ を $K$-埋め込みとする。$\alpha\in L$ の最小多項式 $m$ について、$\sigma(\alpha)$ も $m$ の根
+（$\sigma$ が $K$ 係数を固定するので $m(\sigma\alpha)=\sigma(m(\alpha))=0$）。正規性より $m$ の全根は $L$ にあるので $\sigma(\alpha)\in L$。
+ゆえ $\sigma(L)\subseteq L$、次数が等しいので $\sigma(L)=L$。
+**(2)⇒(1)**：$p\in K[x]$ 既約が $L$ に根 $\alpha$、$\overline K$ に別の根 $\beta$ をもつとする。共役同型 $K(\alpha)\to K(\beta)\subseteq\overline K$ を
+$L\to\overline K$ の埋め込み $\sigma$ に延ばすと（同型延長）、$\sigma(\alpha)=\beta$。仮定 (2) より $\sigma(L)=L$ なので $\beta\in L$。
+ゆえ $p$ の全根が $L$、正規。∎
+</Statement>
+
+「$K$ を固定するどんな埋め込みも $L$ を外へ出さない」——正規拡大では、$L\to\overline K$ の埋め込みが実は $L$ の
+**自己同型**になります。これがガロア群 $\mathrm{Gal}(L/K)$ の元の供給源です（[第8章](/field-and-galois/8)）。正規でないと、
+埋め込みが $L$ を外の共役体へ運んでしまい、自己同型が足りなくなります。
+
+<Statement kind="example" title="正規・非正規の例">
+- $\mathbb Q(\sqrt2)/\mathbb Q$：正規（$x^2-2$ の分解体）。埋め込みは $\mathrm{id}$ と $\sqrt2\mapsto-\sqrt2$ で、両方 $L$ 内。
+- $\mathbb Q(\sqrt[3]2)/\mathbb Q$：**非正規**。$\sqrt[3]2\mapsto\omega\sqrt[3]2$ の埋め込みは $L$ を複素数の共役体 $\mathbb Q(\omega\sqrt[3]2)$ へ運ぶ（$L$ の外）。
+- $\mathbb Q(\sqrt[3]2,\omega)/\mathbb Q$：正規（$x^3-2$ の分解体、全根を含む）。$\mathbb Q(\sqrt[3]2)$ の正規性の“欠落”を補った体。
+</Statement>
+
+## 正規閉包
+
+非正規な拡大も、共役をすべて添加すれば正規にできます。
+
+<Statement kind="definition" title="正規閉包">
+有限拡大 $L/K$ に対し、$L$ を含む最小の $K$ 上正規な拡大 $N$ を<Term>正規閉包</Term>という（$L=K(\alpha_1,\dots,\alpha_n)$ なら
+$\prod m_{\alpha_i}$ の分解体）。$\mathbb Q(\sqrt[3]2)$ の正規閉包は $\mathbb Q(\sqrt[3]2,\omega)$。
+</Statement>
+
+正規閉包は「足りない共役根を全部足して正規にした最小の体」。非正規な中間拡大を扱うとき（[基本定理](/field-and-galois/9)で
+非正規部分群に対応）、正規閉包が背後で効きます。
+
+## つまずきポイント
+
+<Statement kind="remark" title="よくある誤解">
+- **正規性は「分解体である」こと。** 一つの既約多項式でなく、族でもよいが、有限なら一つの多項式の分解体。「根が1つ入れば全部入る」。
+- **$\mathbb Q(\sqrt[3]2)/\mathbb Q$ は非正規。** 実根だけで複素根を欠く。ガロア群が痩せる原因。正規閉包 $\mathbb Q(\sqrt[3]2,\omega)$ で補う。
+- **正規性は推移しない。** $M/L$ 正規かつ $L/K$ 正規でも $M/K$ 正規とは限らない（$\mathbb Q\subset\mathbb Q(\sqrt2)\subset\mathbb Q(\sqrt[4]2)$：各段正規だが $\mathbb Q(\sqrt[4]2)/\mathbb Q$ は非正規、虚根 $i\sqrt[4]2$ を欠く）。
+- **正規＋分離＝ガロア**（[第8章](/field-and-galois/8)）。正規だけではガロアでない（分離性も要る、次章）。
+</Statement>
+
+## この章のまとめ
+
+- **正規拡大** ＝「$K$ 上既約な多項式が $L$ に根を1つもてば $L$ で完全分解」。有限拡大では**「ある多項式の分解体」と同値**。
+- 埋め込みによる特徴づけ：$K$ を固定する任意の埋め込み $\sigma:L\to\overline K$ が **$\sigma(L)=L$**（自己同型になる）。ガロア群の元の供給源。
+- $\mathbb Q(\sqrt2)/\mathbb Q$ は正規、$\mathbb Q(\sqrt[3]2)/\mathbb Q$ は非正規（複素根を欠く）。共役を補った最小の正規拡大が**正規閉包**。正規性は推移しない。
+
+次章は、もう一つのガロアの条件——重根をもたない**分離拡大**と**完全体**を扱います。

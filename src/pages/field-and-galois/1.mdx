@@ -1,0 +1,104 @@
+---
+layout: ../../layouts/BaseLayout.astro
+title: 第1章 体の拡大の基礎
+description: 方程式を解くには体を広げる。体の拡大、拡大次数（ベクトル空間の次元）、そして拡大次数の乗法性（塔の公式）。
+---
+
+import Term from "../../components/assets/Term.astro";
+import Statement from "../../components/assets/Statement.astro";
+
+# 第1章 体の拡大の基礎
+
+## 方程式を解くとは、体を広げること
+
+$x^2=2$ は有理数の中に解をもちません。$x^2=-1$ もそう。方程式を解くには、$\mathbb Q$ に $\sqrt2$ や $i$ を
+**付け加えて体を広げる**必要があります。$\mathbb Q\subset\mathbb Q(\sqrt2)\subset\mathbb R\subset\mathbb C$——数の体系を
+だんだん広げていくこの営みが、体論の主役です。
+
+そしてガロアの天才的な洞察は、「体をどう広げたか」という情報が、実は**群**（[群論](/group-theory)）に翻訳できる、
+というものでした。方程式の可解性という解析的な問いが、対称性の群論的な問いに化ける——それが[ガロア理論](/field-and-galois/9)です。
+そこへ至る第一歩として、この章では「体の拡大」を厳密に定義し、その“大きさ”を測る**拡大次数**を導入します。
+鍵は、大きい体を小さい体の上の**ベクトル空間**とみなすこと——[線形代数](/linear-algebra)がここで効きます。
+
+> 体の拡大 $L/K$ の“大きさ”は、$L$ を $K$ 上のベクトル空間とみた**次元 $[L:K]$**（拡大次数）で測る。
+
+## 体の拡大
+
+<Statement kind="definition" title="体の拡大">
+体 $K$ が体 $L$ の部分体であるとき、$L$ を $K$ の<Term>拡大体</Term>、この状況を<Term>体の拡大</Term> $L/K$ という
+（$K$ を<Term>基礎体</Term>、$L$ を上の体）。
+</Statement>
+
+拡大 $L/K$ を調べる決定的なアイデアは、$L$ を「$K$ を係数とするベクトル空間」とみることです。$L$ の元は足せるし、
+$K$ の元（スカラー）を掛けられる——まさにベクトル空間の公理（[線形代数第1章](/linear-algebra/1)）を満たします。
+
+<Statement kind="definition" title="拡大次数">
+拡大 $L/K$ において、$L$ を $K$ 上のベクトル空間とみたときの次元 $\dim_K L$ を<Term>拡大次数</Term> $[L:K]$ という。
+$[L:K]<\infty$ のとき<Term>有限拡大</Term>、そうでないとき<Term>無限拡大</Term>という。
+</Statement>
+
+<Statement kind="example" title="拡大次数の例">
+- $[\mathbb C:\mathbb R]=2$：$\mathbb C=\mathbb R\oplus\mathbb R i$、基底 $\{1,i\}$。
+- $[\mathbb Q(\sqrt2):\mathbb Q]=2$：$\mathbb Q(\sqrt2)=\{a+b\sqrt2\}$、基底 $\{1,\sqrt2\}$。
+- $[\mathbb Q(\sqrt[3]2):\mathbb Q]=3$：基底 $\{1,\sqrt[3]2,\sqrt[3]4\}$。
+- $[\mathbb R:\mathbb Q]=\infty$（$\mathbb R$ は $\mathbb Q$ 上非可算次元）。
+</Statement>
+
+拡大次数を「ベクトル空間の次元」として定義したことで、線形代数の道具（基底・次元）がまるごと使えます。
+その最初の、そして最も重要な帰結が次の塔の公式です。
+
+## 塔の公式（拡大次数の乗法性）
+
+体を二段階に広げたとき、次数はどうなるか。答えは「掛け算」です。
+
+<Statement kind="theorem" title="塔の公式">
+体の拡大の塔 $K\subseteq L\subseteq M$ について
+$$[M:K]=[M:L]\cdot[L:K].$$
+特に $[M:K]<\infty\iff[M:L]<\infty$ かつ $[L:K]<\infty$。
+</Statement>
+
+<Statement kind="proof">
+$\{\alpha_i\}_{i\in I}$ を $L$ の $K$ 上の基底、$\{\beta_j\}_{j\in J}$ を $M$ の $L$ 上の基底とする
+（$|I|=[L:K],\ |J|=[M:L]$）。積 $\{\alpha_i\beta_j\}_{(i,j)\in I\times J}$ が $M$ の $K$ 上の基底であることを示せば
+$[M:K]=|I\times J|=|I||J|$ となる。
+
+**生成**：任意の $m\in M$ は $M$ の $L$ 上基底で $m=\sum_j b_j\beta_j\ (b_j\in L)$、各 $b_j$ は $L$ の $K$ 上基底で
+$b_j=\sum_i a_{ij}\alpha_i\ (a_{ij}\in K)$。代入して $m=\sum_{i,j}a_{ij}\alpha_i\beta_j$。ゆえ $\{\alpha_i\beta_j\}$ が $M$ を $K$ 上生成。
+
+**一次独立**：$\sum_{i,j}a_{ij}\alpha_i\beta_j=0\ (a_{ij}\in K)$ とする。$\sum_j\big(\sum_i a_{ij}\alpha_i\big)\beta_j=0$ で、
+$\sum_i a_{ij}\alpha_i\in L$、$\{\beta_j\}$ が $L$ 上一次独立なので各 $j$ で $\sum_i a_{ij}\alpha_i=0$。さらに $\{\alpha_i\}$ が
+$K$ 上一次独立なので各 $a_{ij}=0$。∎
+</Statement>
+
+証明は純粋に線形代数——「基底の積が基底になる」という二重の一次独立性の議論です。塔の公式は、拡大次数を
+**因数分解**する道具。「$[M:K]$ が素数なら中間体が無い」といった強い制約を生み、後のガロア理論で
+中間体の存在・非存在を支配します。
+
+<Statement kind="corollary" title="塔の公式の帰結">
+$K\subseteq L\subseteq M$ で $[M:K]$ が有限のとき、$[L:K]$ は $[M:K]$ を割り切る。
+特に $[M:K]$ が素数なら、$K$ と $M$ の間に真の中間体は無い。
+</Statement>
+
+<Statement kind="proof">
+$[L:K]\mid[M:K]$ は塔の公式 $[M:K]=[M:L][L:K]$ から直接。$[M:K]=p$ 素数なら $[L:K]\in\{1,p\}$、
+つまり $L=K$ または $L=M$。∎
+</Statement>
+
+これは[群論のラグランジュの定理](/group-theory/3)（部分群の位数が群の位数を割る）と瓜二つの主張です。実際、
+ガロア理論で「中間体 ↔ 部分群」の対応がつくと、この2つが**同じ定理の二つの顔**になります——伏線です。
+
+## つまずきポイント
+
+<Statement kind="remark" title="よくある誤解">
+- **拡大次数はベクトル空間の次元。** $[L:K]=\dim_K L$。「体としての大きさ」ではなく「$K$ 上の線形空間としての次元」。$[\mathbb Q(\sqrt2):\mathbb Q]=2$ は $\{1,\sqrt2\}$ が基底だから。
+- **塔の公式は掛け算。** $[M:K]=[M:L][L:K]$。段を重ねると次数が掛かる。ゆえ中間体の次数は全体の次数を割る。
+- **$L/K$ は「$L$ 割る $K$」ではない。** 単に「$K$ を含む拡大体 $L$」を表す記法。剰余ではない。
+</Statement>
+
+## この章のまとめ
+
+- 方程式を解くには体を広げる。**体の拡大** $L/K$ の大きさは、$L$ を $K$ 上ベクトル空間とみた次元 **$[L:K]$**（拡大次数）で測る。線形代数が土台。
+- **塔の公式** $[M:K]=[M:L][L:K]$（証明は「基底の積が基底」）。中間体の次数は全体の次数を割り、素数次数なら中間体が無い——ラグランジュの定理と平行。
+- $[\mathbb C:\mathbb R]=2$、$[\mathbb Q(\sqrt2):\mathbb Q]=2$、$[\mathbb Q(\sqrt[3]2):\mathbb Q]=3$ など。
+
+次章は、一つの元を付け加える**単拡大**と、その次数を決める**最小多項式**を扱います。

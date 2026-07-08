@@ -1,0 +1,111 @@
+---
+layout: ../../layouts/BaseLayout.astro
+title: 第3章 べき級数と初等関数
+description: 収束半径の内側で正則なべき級数、初等関数の複素拡張とオイラーの公式、そして対数・べき乗の多価性と分岐。
+---
+
+import Term from "../../components/assets/Term.astro";
+import Statement from "../../components/assets/Statement.astro";
+
+# 第3章 べき級数と初等関数
+
+## 正則関数のいちばん豊かな供給源
+
+正則関数はどこにあるのか。最も豊かな供給源が**べき級数**です。[微積分第4章](/calculus/4)で実のべき級数を扱いましたが、
+複素にすると理論がずっと綺麗になります。収束半径の内側で、べき級数は**自動的に正則**で、しかも何回でも項別微分できる。
+実の $e^{-1/x^2}$ のような病的な例は、複素の世界には存在しません。
+
+そしてべき級数を通じて、指数・三角・対数といった初等関数が複素数へ拡張されます。ここで有名な**オイラーの公式**
+$e^{i\theta}=\cos\theta+i\sin\theta$ が現れ、指数関数と三角関数が実は親戚だと明かされます。一方、対数とべき乗は
+複素では**多価**になる——$\log$ が「一つの値」に決まらない。この多価性が、複素解析特有の「分岐」という
+繊細で美しい現象を生みます。この章は、正則関数の在庫を一気に増やします。
+
+> べき級数は収束半径の内側で正則（項別微分自由）。$e^z,\sin z,\cos z$ が定義でき、オイラーの公式で結ばれる。$\log,z^\alpha$ は多価。
+
+## べき級数と正則性
+
+<Statement kind="theorem" title="べき級数の収束と正則性">
+べき級数 $\sum_{n=0}^\infty c_n(z-a)^n$ には<Term>収束半径</Term> $R$（$\dfrac1R=\limsup\sqrt[n]{|c_n|}$、コーシー–アダマール）が定まり、
+$|z-a|<R$ で絶対収束、$|z-a|>R$ で発散する。しかも和 $f(z)$ は円板 $|z-a|<R$ で**正則**で、項別微分してよい：
+$$f'(z)=\sum_{n=1}^\infty n\,c_n(z-a)^{n-1}\quad(\text{収束半径は同じ } R).$$
+</Statement>
+
+実の場合（[微積分第4章](/calculus/4)）とまったく同じ形ですが、結論の「正則」がずっと強い。収束円板の内側では、
+べき級数は**多項式と同じ気軽さ**で複素微分でき、何回でも微分できます。後の[第6章](/complex-analysis/6)で、逆に
+「正則関数は必ずべき級数に展開できる」ことを示し、**正則 ＝ 解析的（べき級数で書ける）**が完全に一致します
+（実解析では一致しなかった！）。
+
+## 指数・三角関数とオイラーの公式
+
+実のマクローリン展開（[微積分第6章](/calculus/6)）の $x$ を $z$ に置き換えて、複素へ拡張します。
+
+<Statement kind="definition" title="複素指数・三角関数">
+$$e^z=\sum_{n=0}^\infty\frac{z^n}{n!},\qquad \cos z=\sum_{n=0}^\infty\frac{(-1)^nz^{2n}}{(2n)!},\qquad \sin z=\sum_{n=0}^\infty\frac{(-1)^nz^{2n+1}}{(2n+1)!}$$
+はすべて収束半径 $\infty$（全平面で正則、<Term>整関数</Term>）。$(e^z)'=e^z$、$e^{z+w}=e^ze^w$。
+</Statement>
+
+<Statement kind="theorem" title="オイラーの公式">
+$$e^{i\theta}=\cos\theta+i\sin\theta\qquad(\theta\in\mathbb R).$$
+したがって $\cos z=\dfrac{e^{iz}+e^{-iz}}2$、$\sin z=\dfrac{e^{iz}-e^{-iz}}{2i}$、そして $e^{i\pi}+1=0$。
+</Statement>
+
+<Statement kind="proof">
+$e^{i\theta}=\sum\frac{(i\theta)^n}{n!}$ を実部・虚部に分けると、$i^n$ が $1,i,-1,-i$ を周期 $4$ で巡るので、偶数項が $\cos\theta$ の級数、
+奇数項が $i\sin\theta$ の級数になる。∎
+</Statement>
+
+**指数関数と三角関数が、複素の世界では同じもの**だった——実数だけ見ていては見えなかった深い統一が、
+$z$ を複素に許した瞬間に現れます。$e^{i\theta}$ は単位円周上を回る点で、複素数の極形式 $z=re^{i\theta}$ の $e^{i\theta}$ が
+まさにこれ。回転が指数関数で書ける、というのが複素解析の美しさの源です。指数関数は $2\pi i$ 周期
+（$e^{z+2\pi i}=e^z$）——この周期性が、逆関数である対数の多価性を生みます。
+
+## 対数の多価性
+
+実の $\log$ は $e^x$ の逆関数で一価でした。複素では $e^z$ が周期的なので、逆関数 $\log$ が**一つに決まりません**。
+
+<Statement kind="definition" title="複素対数">
+$w=\log z$ を「$e^w=z$」の解と定める。$z=re^{i\theta}$（$r=|z|>0$）に対し
+$$\log z=\ln r+i(\theta+2\pi k)\qquad(k\in\mathbb Z),$$
+無限個の値をもつ<Term>多価関数</Term>。$k=0$ かつ $-\pi<\theta\le\pi$（主値の偏角）をとったものを<Term>主値</Term> $\operatorname{Log}z$ という。
+</Statement>
+
+$\log$ が多価なのは、$\arg z$ が $2\pi$ の不定性をもつから（$e^{i\theta}$ が $2\pi$ 周期）。$\log 1=0,\ 2\pi i,\ -2\pi i,\dots$ と
+無限個。「一つの値」を選ぶには、偏角の範囲を切って**枝（branch）**を決めます。
+
+<Statement kind="definition" title="分岐点・分岐切断・枝">
+$\log z$ が一価に定まらない原因の点 $z=0$ を<Term>分岐点</Term>という。平面から $0$ を起点とする半直線（例：負の実軸）を
+除く（<Term>分岐切断</Term>）と、その上で $\log$ の連続な一価<Term>枝</Term>がとれ、正則になる。
+</Statement>
+
+分岐切断を横切ると値が $2\pi i$ 飛びます。「$0$ のまわりを一周すると $\log$ が $2\pi i$ 増える」——この現象が、
+[第12章のモノドロミー](/complex-analysis/12)（一周して値が変わる）の原型です。$\sqrt z=e^{\frac12\log z}$ なら一周で符号が変わり、
+$2$ 価。**多価性は複素解析特有で、これを制御する分岐の理論**が、この分野の繊細さの源です。
+
+## べき乗の多価性
+
+<Statement kind="definition" title="複素べき乗">
+$\alpha\in\mathbb C$ に対し $z^\alpha=e^{\alpha\log z}$（$\log$ が多価ゆえ一般に多価）。
+- $\alpha=n$（整数）：一価。$\alpha=1/n$：$n$ 価（$n$ 乗根）。$\alpha$ 無理数・複素：無限多価。
+</Statement>
+
+<Statement kind="example" title="多価性の実例">
+$i^i=e^{i\log i}=e^{i(i\pi/2+2\pi ik)}=e^{-\pi/2-2\pi k}$（$k\in\mathbb Z$）——すべて**実数**で、主値は $e^{-\pi/2}\approx0.208$。
+「虚数の虚数乗が実数」という驚きは、多価対数から来る。$\sqrt{-1}=e^{\frac12\log(-1)}=e^{\frac12(i\pi+2\pi ik)}=\pm i$（$2$ 価）。
+</Statement>
+
+## つまずきポイント
+
+<Statement kind="remark" title="よくある誤解">
+- **べき級数は収束円板内で正則。** 収束半径 $R$ の内側で自動的に無限回微分可能。境界 $|z-a|=R$ 上は個別判定（[微積分第4章](/calculus/4)）。
+- **$e^z$ は $2\pi i$ 周期。** $e^{z+2\pi i}=e^z$。だから逆関数 $\log$ が多価。実の指数関数と違い単射でない。
+- **$\log z$ は多価（$+2\pi ik$）。** 一価にするには分岐切断で枝を選ぶ。$\log(zw)=\log z+\log w$ は枝を無視すると崩れる（主値では一般に不成立）。
+- **$z^\alpha$ は一般に多価。** $\sqrt z$ は $2$ 価、$i^i$ は無限多価だが全部実数。多価性は複素解析の本質。
+</Statement>
+
+## この章のまとめ
+
+- **べき級数**は収束半径 $R$（コーシー–アダマール）の内側で**正則**、項別微分自由。$e^z,\sin z,\cos z$ は全平面で正則な整関数。
+- **オイラーの公式** $e^{i\theta}=\cos\theta+i\sin\theta$ が指数と三角を統一。$e^z$ は $2\pi i$ 周期。
+- 逆関数 $\log z=\ln|z|+i(\arg z+2\pi k)$ は**多価**（分岐点 $0$、分岐切断で枝をとる）。$z^\alpha=e^{\alpha\log z}$ も一般に多価。多価性・分岐は複素解析特有の現象。
+
+正則関数の道具が揃いました。次章から**複素積分**に入り、複素解析の心臓——コーシーの積分定理を扱います。

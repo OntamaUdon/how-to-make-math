@@ -1,0 +1,112 @@
+---
+layout: ../../layouts/BaseLayout.astro
+title: 第2章 単拡大と最小多項式
+description: 一つの元を付け加える。単拡大 K(α)、最小多項式、K(α) ≅ K[x]/(最小多項式)、拡大次数＝最小多項式の次数。
+---
+
+import Term from "../../components/assets/Term.astro";
+import Statement from "../../components/assets/Statement.astro";
+
+# 第2章 単拡大と最小多項式
+
+## 「$\sqrt2$ を付け加える」を正確に言う
+
+$\mathbb Q$ に $\sqrt2$ を付け加えた $\mathbb Q(\sqrt2)=\{a+b\sqrt2\}$。前章で次数 $2$ と分かりました。では、なぜ
+$\{1,\sqrt2\}$ だけで済み、$\sqrt2^2,\sqrt2^3,\dots$ が要らないのか？ 理由は $\sqrt2$ が方程式 $x^2-2=0$ を満たすから——
+$\sqrt2^2=2$ で、高い冪はすべて $1,\sqrt2$ に還元できるのです。
+
+この「$\alpha$ が満たす最小の方程式」＝**最小多項式**が、単拡大 $K(\alpha)$ のすべてを決めます。最小多項式の次数が
+拡大次数になり、$K(\alpha)$ の構造は[環論](/ring-theory)の剰余環 $K[x]/(\text{最小多項式})$ として完全に記述される。
+[環論第2章](/ring-theory/2)で $\mathbb R[x]/(x^2+1)\cong\mathbb C$ と見た現象の、一般的な正体がこれです。体論と環論が
+ここで一つになります。
+
+> 単拡大 $K(\alpha)$ は、$\alpha$ の**最小多項式** $m_\alpha$ ですべて決まる。$K(\alpha)\cong K[x]/(m_\alpha)$、$[K(\alpha):K]=\deg m_\alpha$。
+
+## 単拡大と代数的元
+
+<Statement kind="definition" title="単拡大・代数的元・超越的元">
+$L/K$ と $\alpha\in L$ に対し、$\alpha$ を含む $K$ 上の最小の部分体を $K(\alpha)$（$K$ に $\alpha$ を<Term>添加</Term>した<Term>単拡大</Term>）という。
+$\alpha$ が $K$ 上の**ある非零多項式の根**であるとき $\alpha$ は $K$ 上<Term>代数的</Term>、そうでないとき<Term>超越的</Term>という。
+</Statement>
+
+$\sqrt2$ は $\mathbb Q$ 上代数的（$x^2-2$ の根）、$\pi$ は $\mathbb Q$ 上超越的（どんな有理係数多項式の根でもない、リンデマン）。
+代数的な $\alpha$ については、それが満たす多項式の中で最も基本的なものを取り出せます。
+
+<Statement kind="theorem" title="最小多項式">
+$\alpha$ が $K$ 上代数的なら、$\alpha$ を根にもつモニックな $K$ 係数多項式のうち**次数最小のもの** $m_\alpha(x)$ が一意に存在する
+（<Term>最小多項式</Term>）。$m_\alpha$ は $K[x]$ で**既約**で、$\alpha$ を根にもつ任意の $K$ 係数多項式 $f$ は $m_\alpha$ で割り切れる。
+</Statement>
+
+<Statement kind="proof">
+$I=\{f\in K[x]:f(\alpha)=0\}$ は評価写像 $\mathrm{ev}_\alpha:K[x]\to L,\ f\mapsto f(\alpha)$ の核でイデアル（[環論第3章](/ring-theory/3)）。
+$\alpha$ 代数的ゆえ $I\ne\{0\}$。$K[x]$ は PID（[環論第7章](/ring-theory/7)）なので $I=(m_\alpha)$ が単項、$m_\alpha$ をモニックにとれば一意。
+$I=(m_\alpha)$ より「$f(\alpha)=0\iff m_\alpha\mid f$」。既約性：$m_\alpha=gh$（次数 $\ge1$）なら $0=m_\alpha(\alpha)=g(\alpha)h(\alpha)$、
+$L$ は体（零因子なし）ゆえ $g(\alpha)=0$ か $h(\alpha)=0$、次数最小性に反する。∎
+</Statement>
+
+証明は環論の道具（評価写像の核＝イデアル、$K[x]$ が PID）でほぼ自動です。$K[x]$ が PID だから、$\alpha$ を殺す
+多項式全体が一つの $m_\alpha$ で生成される——これが「最小多項式」の存在の本質です。次数を計算しましょう。
+
+## K(α) の構造
+
+<Statement kind="theorem" title="単拡大の構造定理">
+$\alpha$ が $K$ 上代数的で $\deg m_\alpha=n$ とすると、
+$$K(\alpha)\ \cong\ K[x]/(m_\alpha),\qquad [K(\alpha):K]=n,$$
+かつ $\{1,\alpha,\alpha^2,\dots,\alpha^{n-1}\}$ が $K(\alpha)$ の $K$ 上の基底。
+</Statement>
+
+<Statement kind="proof">
+評価写像 $\mathrm{ev}_\alpha:K[x]\to L$ の像は $K[\alpha]=\{f(\alpha):f\in K[x]\}$、核は $(m_\alpha)$。第一同型定理より
+$K[x]/(m_\alpha)\cong K[\alpha]$。$m_\alpha$ 既約ゆえ $(m_\alpha)$ は $K[x]$（PID）で**極大イデアル**（[環論第8章](/ring-theory/8)：既約⇒極大）、
+したがって $K[x]/(m_\alpha)$ は**体**（[環論第4章](/ring-theory/4)）。ゆえ $K[\alpha]$ 自身が体で $K(\alpha)=K[\alpha]$。
+$K[x]/(m_\alpha)$ の元は次数 $<n$ の多項式で一意に代表される（$m_\alpha$ で割った余り）ので、基底は $\{1,x,\dots,x^{n-1}\}$、
+対応して $K(\alpha)$ の基底は $\{1,\alpha,\dots,\alpha^{n-1}\}$、$[K(\alpha):K]=n$。∎
+</Statement>
+
+**「拡大次数＝最小多項式の次数」**——これが体論の最も基本的な計算原理です。$\alpha^n$ 以上の冪が $m_\alpha$ の関係
+$m_\alpha(\alpha)=0$ で低次に還元されるので、$1,\alpha,\dots,\alpha^{n-1}$ だけで済む。$\sqrt2$ なら $m=x^2-2$、次数 $2$、
+基底 $\{1,\sqrt2\}$——冒頭の疑問の答えです。
+
+<Statement kind="example" title="最小多項式と次数">
+- $\sqrt[3]2$ over $\mathbb Q$：$m=x^3-2$（アイゼンシュタイン $p=2$ で既約、[環論第10章](/ring-theory/10)）、$[\mathbb Q(\sqrt[3]2):\mathbb Q]=3$。
+- $i$ over $\mathbb R$：$m=x^2+1$、$\mathbb R(i)=\mathbb C$、次数 $2$。
+- 原始 $p$ 乗根 $\zeta_p$ over $\mathbb Q$：$m=\Phi_p(x)=x^{p-1}+\cdots+1$（円分多項式、既約）、次数 $p-1$（[第11章](/field-and-galois/11)）。
+</Statement>
+
+既約性判定（[環論第10章](/ring-theory/10)）が、ここで拡大次数の計算に直結します。$m_\alpha$ が既約かどうかを
+アイゼンシュタイン等で確かめれば、次数が決まる。
+
+## 単拡大どうしの同型
+
+最小多項式が同じなら、単拡大は同型になります。これはガロア理論で「根の入れ替え（自己同型）」を作る土台です。
+
+<Statement kind="proposition" title="共役な元は同型を与える">
+$\alpha,\beta$ がともに $K$ 上代数的で、**同じ最小多項式**をもつ（互いに<Term>共役</Term>）なら、
+$K$ を固定する体同型 $K(\alpha)\xrightarrow{\cong}K(\beta),\ \alpha\mapsto\beta$ がある。
+</Statement>
+
+<Statement kind="proof">
+ともに $K[x]/(m)\cong K(\alpha)$ および $\cong K(\beta)$（$m$ が共通の最小多項式）。この2つの同型を合成すると
+$K(\alpha)\cong K(\beta)$ で、$x\bmod m$ が $\alpha,\beta$ にそれぞれ対応するので $\alpha\mapsto\beta$、$K$ は固定。∎
+</Statement>
+
+$\sqrt2$ と $-\sqrt2$ は同じ最小多項式 $x^2-2$ をもつので、$\sqrt2\mapsto-\sqrt2$ という $\mathbb Q$ を固定する同型
+（$\mathbb Q(\sqrt2)$ の自己同型）がある——これがガロア群の元の正体です（[第8章](/field-and-galois/8)）。**根を共役な根に写す**という
+操作が、体の対称性を生みます。
+
+## つまずきポイント
+
+<Statement kind="remark" title="よくある誤解">
+- **最小多項式は既約でモニック。** $\alpha$ を根にもつ最小次数のモニック多項式。既約なので、既約性判定（アイゼンシュタイン等）で次数が決まる。
+- **$[K(\alpha):K]=\deg m_\alpha$。** 拡大次数は最小多項式の次数。$\alpha$ の高い冪は関係式で低次に還元される。
+- **$K[\alpha]=K(\alpha)$（代数的なとき）。** 代数的元では「多項式で書ける元 $K[\alpha]$」がすでに体になる（極大イデアルで割るから）。超越的なら $K[\alpha]\ne K(\alpha)$（次章）。
+- **共役＝同じ最小多項式をもつ根。** $\sqrt2,-\sqrt2$ は共役。共役どうしの入れ替えが体の自己同型を生む。
+</Statement>
+
+## この章のまとめ
+
+- $\alpha$ が代数的なら、それを根にもつ最小次数モニック多項式＝**最小多項式** $m_\alpha$ が一意存在し既約（$K[x]$ が PID ゆえ）。
+- **$K(\alpha)\cong K[x]/(m_\alpha)$ は体**（$m_\alpha$ 既約 ⇒ $(m_\alpha)$ 極大）、**$[K(\alpha):K]=\deg m_\alpha$**、基底 $\{1,\alpha,\dots,\alpha^{n-1}\}$。体論と環論が合流。
+- 同じ最小多項式をもつ**共役**な元 $\alpha,\beta$ は $K$ を固定する同型 $K(\alpha)\cong K(\beta)$（$\alpha\mapsto\beta$）を与える——ガロア群の元の源。
+
+次章は、代数的な元だけからなる拡大——**代数拡大**と、その対極の**超越拡大**を扱います。

@@ -1,0 +1,110 @@
+---
+layout: ../../layouts/BaseLayout.astro
+title: 第9章 実積分への応用
+description: 実数の難しい定積分を複素で解く。三角関数の有理式、無限区間の有理関数、フーリエ型積分、そして分岐点を含む積分。
+---
+
+import Term from "../../components/assets/Term.astro";
+import Statement from "../../components/assets/Statement.astro";
+
+# 第9章 実積分への応用
+
+## 実数の積分を、複素平面へ回り道して解く
+
+$\displaystyle\int_{-\infty}^\infty\frac{dx}{1+x^4}$ を実の方法で計算しようとすると、部分分数分解が煩雑で骨が折れます。ところが
+複素解析を使うと——実軸を含む閉曲線をとり、囲んだ極の留数を足すだけ——数行で答え $\frac{\pi}{\sqrt2}$ が出ます。
+「実数の問題を、わざわざ複素平面へ回り道して解く」という一見遠回りが、実は最短経路なのです。
+
+これが留数定理（前章）の最も華麗な応用です。コツは共通しています：**実軸上の積分を、閉曲線の一部とみなし、
+残りの部分（半円や大円）の寄与が消えることを示す**。すると閉曲線積分＝実積分＋$0$＝$2\pi i\sum\operatorname{Res}$ となり、
+実積分が留数で書ける。この章では、4つの典型パターンを、それぞれの“閉じ方”とともに整理します。実解析では
+手に負えない積分が、機械的なレシピで解けるようになります。
+
+> 実積分＝閉曲線積分の一部。残りの寄与が消えるよう閉じれば、実積分＝$2\pi i\sum\operatorname{Res}$ で計算できる。
+
+## 型1：三角関数の有理式（単位円）
+
+$\int_0^{2\pi}$ の三角関数の積分は、$z=e^{i\theta}$ とおいて**単位円周上の複素積分**に変換します。
+
+<Statement kind="theorem" title="三角関数の有理式">
+$\displaystyle\int_0^{2\pi}R(\cos\theta,\sin\theta)\,d\theta$（$R$ は有理式）は、$z=e^{i\theta}$、$\cos\theta=\frac{z+z^{-1}}2$、$\sin\theta=\frac{z-z^{-1}}{2i}$、$d\theta=\frac{dz}{iz}$ で
+単位円 $|z|=1$ 上の積分になり、$=2\pi i\sum(\text{単位円内の極の留数})$。
+</Statement>
+
+<Statement kind="example" title="計算例">
+$\displaystyle\int_0^{2\pi}\frac{d\theta}{a+\cos\theta}$（$a>1$）$=\oint_{|z|=1}\frac{1}{a+\frac{z+z^{-1}}2}\frac{dz}{iz}=\oint\frac{2\,dz}{i(z^2+2az+1)}$。
+分母の根 $z_\pm=-a\pm\sqrt{a^2-1}$ のうち単位円内は $z_+$ のみ。$\operatorname{Res}_{z_+}=\frac{2}{i(2z_++2a)}=\frac{1}{i\sqrt{a^2-1}}$。
+よって積分 $=2\pi i\cdot\frac{1}{i\sqrt{a^2-1}}=\frac{2\pi}{\sqrt{a^2-1}}$。
+</Statement>
+
+$\theta\in[0,2\pi]$ が「単位円を一周」に化けるので、閉曲線が自動的に手に入る。あとは円内の極を拾うだけです。
+
+## 型2：無限区間の有理関数（半円）
+
+$\int_{-\infty}^\infty\frac{p(x)}{q(x)}dx$ は、実軸＋**上半平面の大半円**で閉じます。半円の寄与が消えるのが鍵です。
+
+<Statement kind="theorem" title="無限区間の有理関数">
+$\deg q\ge\deg p+2$、$q$ が実軸上に零点をもたないとき
+$$\int_{-\infty}^\infty\frac{p(x)}{q(x)}\,dx=2\pi i\sum(\text{上半平面の極の留数}).$$
+</Statement>
+
+<Statement kind="proof">
+実軸 $[-R,R]$ と上半円 $C_R$（$|z|=R$、$\operatorname{Im}\ge0$）で閉曲線を作る。留数定理より $\int_{-R}^R+\int_{C_R}=2\pi i\sum\operatorname{Res}$。
+$C_R$ 上、$\deg q\ge\deg p+2$ ゆえ $\left|\frac pq\right|\le\frac{C}{R^2}$、$\operatorname{length}(C_R)=\pi R$ なので $\left|\int_{C_R}\right|\le\frac{C}{R^2}\pi R=\frac{C\pi}R\to0$。
+$R\to\infty$ で実軸の積分だけが残る。∎
+</Statement>
+
+<Statement kind="example" title="計算例">
+$\displaystyle\int_{-\infty}^\infty\frac{dx}{1+x^4}$：$z^4=-1$ の根のうち上半平面のものは $e^{i\pi/4},e^{3i\pi/4}$。各留数は $\frac1{4z^3}=\frac{z}{4z^4}=-\frac z4$。
+和 $-\frac14(e^{i\pi/4}+e^{3i\pi/4})=-\frac14\cdot i\sqrt2\cdot$…を計算して $2\pi i$ 倍すると $\dfrac{\pi}{\sqrt2}$。実の部分分数分解より遥かに速い。
+</Statement>
+
+「分母の次数が分子より $2$ 以上大きい」と半円が消える（$1/R^2\times R\to0$）。ここが型2の生命線です。
+
+## 型3：フーリエ型積分（ジョルダンの補題）
+
+$\int_{-\infty}^\infty f(x)e^{iax}dx$（$a>0$）型は、$e^{iaz}$ が上半平面で減衰することを使います。$e^{iaz}=e^{ia(x+iy)}=e^{iax}e^{-ay}$ で、
+上半平面 $y>0$ では $e^{-ay}$ が減衰する——これが半円の寄与を消します。
+
+<Statement kind="lemma" title="ジョルダンの補題">
+$a>0$、$M(R)=\max_{C_R}|f|\to0$（上半円で）なら $\displaystyle\int_{C_R}f(z)e^{iaz}\,dz\to0$。
+</Statement>
+
+<Statement kind="example" title="計算例">
+$\displaystyle\int_{-\infty}^\infty\frac{\cos x}{1+x^2}dx=\operatorname{Re}\int_{-\infty}^\infty\frac{e^{ix}}{1+x^2}dx$。$\frac{e^{iz}}{1+z^2}$ の上半平面の極は $z=i$、
+$\operatorname{Res}_i=\frac{e^{i\cdot i}}{2i}=\frac{e^{-1}}{2i}$。ジョルダンの補題で半円が消えるので $\int=2\pi i\cdot\frac{e^{-1}}{2i}=\frac{\pi}e$。実部をとって $\frac\pi e$。
+</Statement>
+
+$\cos x$ を直接扱わず $e^{ix}$（複素）にして、上半平面の減衰を使うのがコツ。フーリエ変換（[実解析・フーリエ解析](/fourier-analysis)）の
+計算で多用されます。
+
+## 型4：分岐点を含む積分（鍵穴経路）
+
+$\int_0^\infty\frac{x^{s-1}}{1+x}dx$ のような、$x^{s-1}$（多価、[第3章](/complex-analysis/3)）を含む積分には、**分岐切断を避ける鍵穴経路
+（keyhole contour）**を使います。
+
+<Statement kind="remark" title="鍵穴経路の考え方">
+正の実軸に沿って分岐切断を入れ、切断のすぐ上と下、大円と原点近くの小円で「鍵穴」型の閉曲線を作る。切断の上下で
+$x^{s-1}$ の値が因子 $e^{2\pi i(s-1)}$ だけずれる（一周で偏角が $2\pi$ 増える多価性）ため、上下の積分が打ち消さず
+一定倍の差を生む。これを留数と等値して積分を求める。例：$\int_0^\infty\frac{x^{s-1}}{1+x}dx=\frac{\pi}{\sin\pi s}$（$0<s<1$）。
+多価性（分岐）が、むしろ計算の武器になる。
+</Statement>
+
+分岐点を含む積分は、多価性（第3章）と留数（第8章）が組み合わさる、複素解析の技巧の集大成です。
+
+## つまずきポイント
+
+<Statement kind="remark" title="よくある誤解">
+- **閉じ方はパターンごとに違う。** 三角関数は単位円、無限区間は半円、フーリエ型はジョルダン、分岐は鍵穴。「残りの寄与が消える」向き・形を選ぶ。
+- **半円が消える条件を確認。** 型2は $\deg q\ge\deg p+2$、型3はジョルダンの補題（$e^{iaz}$ の減衰、$a>0$ なら上半平面）。条件を満たさないと半円が残る。
+- **上半平面か下半平面か。** $e^{iaz}$（$a>0$）は上半平面で減衰なので上で閉じる。$a<0$ なら下半平面。囲む極が変わる。
+- **実軸上に極があるときは主値・小半円で回避。** $\int\frac{\sin x}x$ 型は、原点の極を小半円で避ける（主値積分）。
+</Statement>
+
+## この章のまとめ
+
+- 実積分を**閉曲線積分の一部**とみなし、残りの寄与が消えるよう閉じて $2\pi i\sum\operatorname{Res}$ で計算する。
+- **型1**（三角関数）：$z=e^{i\theta}$ で単位円。**型2**（無限区間の有理関数）：上半円、$\deg q\ge\deg p+2$ で半円が消える。
+- **型3**（フーリエ型）：$e^{iaz}$ の上半平面での減衰（**ジョルダンの補題**）。**型4**（分岐点）：**鍵穴経路**で多価性を武器にする。実解析では困難な積分が機械的に解ける。
+
+次章は、留数の応用のもう一つの柱——零点と極を数える**偏角の原理とルーシェの定理**を扱います。

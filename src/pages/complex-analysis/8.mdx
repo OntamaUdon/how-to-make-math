@@ -1,0 +1,96 @@
+---
+layout: ../../layouts/BaseLayout.astro
+title: 第8章 留数定理
+description: たった一つの係数が積分を決める。留数、留数定理と証明、極における留数の計算法。
+---
+
+import Term from "../../components/assets/Term.astro";
+import Statement from "../../components/assets/Statement.astro";
+
+# 第8章 留数定理
+
+## 積分は「留数の合計」だけで決まる
+
+第4章のコーシーの積分定理は「穴が無ければ閉曲線積分は $0$」でした。では、囲んだ中に特異点（穴）があると、
+積分にはどれだけ残るのか？ 答えは驚くほど単純です——**各特異点の“留数”を合計して $2\pi i$ 倍するだけ**。
+
+$$\oint_\gamma f(z)\,dz=2\pi i\sum(\text{囲まれた特異点の留数}).$$
+
+留数とは、ローラン展開（前章）の $\frac1{z-z_0}$ の係数 $c_{-1}$、たった一つの数です。無限に複雑に見える積分が、
+各特異点でのこの一つの数の足し算に還元される。これが留数定理で、複素解析で最も実用的な定理です。
+次章では、これを使って実数の難しい定積分——$\int_{-\infty}^\infty\frac{dx}{1+x^4}$ のような、実解析では手強いもの——を
+機械的に計算します。この章はその計算エンジンを組み立てます。
+
+> 留数定理：$\oint_\gamma f\,dz=2\pi i\sum\operatorname{Res}$。留数はローラン展開の $1/(z-z_0)$ の係数 $c_{-1}$ ただ一つ。
+
+## 留数
+
+<Statement kind="definition" title="留数">
+$z_0$ を $f$ の孤立特異点とし、$z_0$ まわりのローラン展開を $f(z)=\sum_n c_n(z-z_0)^n$ とする。係数 $c_{-1}$ を $f$ の $z_0$ での
+<Term>留数</Term> $\operatorname{Res}_{z_0}f$ という。
+</Statement>
+
+なぜ $c_{-1}$ だけが特別なのか。ローラン展開の各項 $c_n(z-z_0)^n$ を $z_0$ を囲む円で積分すると、
+$\oint(z-z_0)^n dz=\begin{cases}2\pi i&(n=-1)\\0&(n\ne-1)\end{cases}$——**$n=-1$ の項だけが積分に生き残る**からです
+（[第4章の $\oint\frac{dz}{z-z_0}=2\pi i$](/complex-analysis/4)）。他の項は原始関数 $\frac{(z-z_0)^{n+1}}{n+1}$ をもち閉曲線で消える。
+留数は「積分に残る唯一の情報」なのです。これを一般化したのが留数定理です。
+
+## 留数定理
+
+<Statement kind="theorem" title="留数定理">
+$f$ が単連結領域 $D$ 内で、有限個の孤立特異点 $z_1,\dots,z_k$ を除いて正則とする。$\gamma$ を $D$ 内でこれらを正の向きに
+一周する単純閉曲線とすると
+$$\oint_\gamma f(z)\,dz=2\pi i\sum_{j=1}^k\operatorname{Res}_{z_j}f.$$
+</Statement>
+
+<Statement kind="proof">
+各 $z_j$ を小円 $C_j$（互いに交わらない）で囲む。$\gamma$ と $C_1,\dots,C_k$ で囲まれた領域では $f$ が正則なので、コーシーの積分定理
+（[第4章](/complex-analysis/4)）より $\oint_\gamma f=\sum_j\oint_{C_j}f$。各 $C_j$ 上でローラン展開を項別積分すると、$c_{-1}^{(j)}$ の項だけが
+$2\pi i$ を残し他は $0$、すなわち $\oint_{C_j}f=2\pi i\,c_{-1}^{(j)}=2\pi i\operatorname{Res}_{z_j}f$。合計して結論。∎
+</Statement>
+
+証明は「$\gamma$ を各特異点を囲む小円に分解し（コーシーの定理）、各小円で $c_{-1}$ だけが残る」。第4章・第7章が
+そのまま結実します。あとは留数を**計算する**方法があれば、実戦で使えます。
+
+## 極における留数の計算
+
+真性特異点では留数を求めるのにローラン展開が要りますが、**極**なら公式で機械的に計算できます。
+
+<Statement kind="theorem" title="極での留数公式">
+- **$1$ 位の極**：$\operatorname{Res}_{z_0}f=\lim_{z\to z_0}(z-z_0)f(z)$。
+- **$f=\dfrac{g}{h}$、$g(z_0)\ne0$、$h$ が $z_0$ で $1$ 位の零点**（$h(z_0)=0,h'(z_0)\ne0$）：$\operatorname{Res}_{z_0}\dfrac gh=\dfrac{g(z_0)}{h'(z_0)}$。
+- **$m$ 位の極**：$\operatorname{Res}_{z_0}f=\dfrac{1}{(m-1)!}\lim_{z\to z_0}\dfrac{d^{m-1}}{dz^{m-1}}\big[(z-z_0)^mf(z)\big]$。
+</Statement>
+
+<Statement kind="proof">
+$m$ 位の極なら $(z-z_0)^mf(z)=\sum_{k\ge0}c_{k-m}(z-z_0)^k$（正則）。この $m-1$ 階微分の $z\to z_0$ 極限は $(m-1)!\,c_{-1}$ で、
+$(m-1)!$ で割ると $c_{-1}=\operatorname{Res}$。$m=1$ が第1式。$g/h$ の式は $1$ 位の極で $\lim(z-z_0)\frac{g}{h}=\frac{g(z_0)}{\lim\frac{h(z)-h(z_0)}{z-z_0}}=\frac{g(z_0)}{h'(z_0)}$。∎
+</Statement>
+
+とくに $\dfrac{g(z_0)}{h'(z_0)}$ は絶大に便利です。$\dfrac1{h}$ 型（$h$ の単純零点が極）の留数が、分母を微分するだけで出ます。
+
+<Statement kind="example" title="留数の計算例">
+- $f=\dfrac{1}{z^2+1}=\dfrac1{(z-i)(z+i)}$：$z=i$ は $1$ 位の極、$\operatorname{Res}_i f=\dfrac1{(z+i)}\Big|_{z=i}=\dfrac1{2i}$。（公式 $\frac{g}{h'}=\frac1{2z}\big|_i=\frac1{2i}$ でも同じ。）
+- $f=\dfrac{e^z}{z^2}$：$z=0$ は $2$ 位の極、$\operatorname{Res}_0 f=\dfrac1{1!}\dfrac{d}{dz}\big[z^2\cdot\frac{e^z}{z^2}\big]_{z=0}=\dfrac{d}{dz}e^z\big|_0=1$。
+- $f=\cot z=\dfrac{\cos z}{\sin z}$：$z=n\pi$ は $1$ 位の極、$\operatorname{Res}=\dfrac{\cos n\pi}{\cos n\pi}=1$（$\frac{g}{h'}$ 公式）。
+</Statement>
+
+$1$ 位の極なら「$(z-z_0)$ を掛けて代入」または「分母を微分」、$m$ 位なら「$(z-z_0)^m$ を掛けて $m-1$ 回微分」。
+このレシピで、次章の実積分がベルトコンベアのように計算できます。
+
+## つまずきポイント
+
+<Statement kind="remark" title="よくある誤解">
+- **留数は $c_{-1}$（$1/(z-z_0)$ の係数）だけ。** 他のローラン係数は積分に効かない。$\oint(z-z_0)^n dz$ が $n=-1$ でのみ $2\pi i$。
+- **留数定理は「囲んだ」特異点だけ。** $\gamma$ の内部にある特異点の留数だけ足す。外の特異点は無関係。向き（正の向き＝反時計回り）に注意。
+- **極の位数に応じた公式を使う。** $m$ 位なら $(z-z_0)^m$ を掛けて $m-1$ 回微分。位数を間違えると誤る。$m$ を取りすぎても（余分に微分して）正しい極限は出るが手間。
+- **真性特異点の留数は公式で出ない。** ローラン展開の $c_{-1}$ を直接読む（$e^{1/z}$ の $\operatorname{Res}_0=1$ は $\frac1{1!z}$ の係数）。
+</Statement>
+
+## この章のまとめ
+
+- **留数** $\operatorname{Res}_{z_0}f=c_{-1}$（ローラン展開の $1/(z-z_0)$ の係数）。$\oint(z-z_0)^n dz$ が $n=-1$ でのみ $2\pi i$ を残すので、積分に効く唯一の係数。
+- **留数定理** $\oint_\gamma f=2\pi i\sum\operatorname{Res}$。証明はコーシーの定理で各特異点の小円に分解し、$c_{-1}$ だけが残る。
+- 極での留数は公式で計算：$1$ 位は $\lim(z-z_0)f$ または $\frac{g(z_0)}{h'(z_0)}$、$m$ 位は $\frac1{(m-1)!}\frac{d^{m-1}}{dz^{m-1}}[(z-z_0)^mf]$。
+
+次章は、この留数定理の華麗な応用——**実数の定積分**を複素積分で計算します。

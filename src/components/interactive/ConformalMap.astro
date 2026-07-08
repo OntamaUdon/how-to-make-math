@@ -1,0 +1,113 @@
+---
+/* ConformalMap.astro — 等角写像の体験装置。
+   正則関数 f を選ぶと、左の直交格子（定義域）が f によって右の像へどう写るかを描く。
+   ・格子の交点で、像の曲線どうしも直交している＝f が角度を保つ（等角）ことが見える。
+   ・z², 1/z, eᶻ, sin z, メビウス変換など。
+   正則性の幾何的意味＝「局所的に回転＋拡大」を体感する。
+   状態はメモリ内のみ（storage 不使用）。 */
+---
+
+<figure class="cm" role="group" aria-label="等角写像の可視化">
+  <div class="cm-controls">
+    <label class="cm-label">写像 f(z) =
+      <select id="cm-fn" class="cm-sel">
+        <option value="sq">z²</option>
+        <option value="cube">z³</option>
+        <option value="inv">1/z</option>
+        <option value="exp">eᶻ</option>
+        <option value="sin">sin z</option>
+        <option value="mob">(z−1)/(z+1)（メビウス）</option>
+      </select>
+    </label>
+  </div>
+  <div class="cm-canvases">
+    <div class="cm-side"><div class="cm-t">定義域 z</div><canvas id="cm-dom" width="300" height="300" class="cm-cv"></canvas></div>
+    <div class="cm-arrow">→ f →</div>
+    <div class="cm-side"><div class="cm-t">像 f(z)</div><canvas id="cm-img" width="300" height="300" class="cm-cv"></canvas></div>
+  </div>
+  <figcaption id="cm-cap" class="cm-cap"></figcaption>
+</figure>
+
+<script>
+  type C = [number, number];
+  const cadd = (a: C, b: C): C => [a[0] + b[0], a[1] + b[1]];
+  const cmul = (a: C, b: C): C => [a[0] * b[0] - a[1] * b[1], a[0] * b[1] + a[1] * b[0]];
+  const cdiv = (a: C, b: C): C => { const d = b[0] * b[0] + b[1] * b[1]; return [(a[0] * b[0] + a[1] * b[1]) / d, (a[1] * b[0] - a[0] * b[1]) / d]; };
+  const cexp = (a: C): C => { const e = Math.exp(a[0]); return [e * Math.cos(a[1]), e * Math.sin(a[1])]; };
+  const csin = (a: C): C => [Math.sin(a[0]) * Math.cosh(a[1]), Math.cos(a[0]) * Math.sinh(a[1])];
+
+  const fns: Record<string, { f: (z: C) => C; note: string }> = {
+    sq:   { f: (z) => cmul(z, z), note: "z² は角度を 2 倍に開く（原点以外では等角）。原点は f′(0)=0 の臨界点で、そこだけ角度が保たれない。" },
+    cube: { f: (z) => cmul(cmul(z, z), z), note: "z³ は角度を 3 倍に。原点は臨界点。" },
+    inv:  { f: (z) => cdiv([1, 0], z), note: "1/z は円・直線を円・直線に写す等角写像。原点は極（無限遠へ飛ぶ）。" },
+    exp:  { f: (z) => cexp(z), note: "eᶻ は横線を放射状の半直線へ、縦線を同心円へ写す。周期 2πi で、帯を全平面に巻きつける。" },
+    sin:  { f: (z) => csin(z), note: "sin z は帯を平面に写す等角写像。z=±π/2 などが臨界点。" },
+    mob:  { f: (z) => cdiv(cadd(z, [-1, 0]), cadd(z, [1, 0])), note: "メビウス変換 (z−1)/(z+1) は円・直線を円・直線に、角度を保って写す。" },
+  };
+
+  const sel = document.getElementById("cm-fn") as HTMLSelectElement | null;
+  const domCv = document.getElementById("cm-dom") as HTMLCanvasElement | null;
+  const imgCv = document.getElementById("cm-img") as HTMLCanvasElement | null;
+  const capEl = document.getElementById("cm-cap");
+
+  if (sel && domCv && imgCv && capEl) {
+    const R = 2, OR = 2.6; // 定義域半幅 / 出力窓半幅
+    const css = (v: string) => getComputedStyle(document.documentElement).getPropertyValue(v).trim() || "#888";
+    const setup = (cv: HTMLCanvasElement, half: number) => {
+      const ctx = cv.getContext("2d")!; const W = cv.width, H = cv.height;
+      ctx.clearRect(0, 0, W, H);
+      const px = (re: number) => (re + half) / (2 * half) * W;
+      const py = (im: number) => H - (im + half) / (2 * half) * H;
+      // 軸
+      ctx.strokeStyle = css("--line"); ctx.lineWidth = 1;
+      ctx.beginPath(); ctx.moveTo(px(-half), py(0)); ctx.lineTo(px(half), py(0)); ctx.moveTo(px(0), py(-half)); ctx.lineTo(px(0), py(half)); ctx.stroke();
+      return { ctx, px, py, W, H };
+    };
+
+    const render = () => {
+      const { f, note } = fns[sel.value];
+      const dom = setup(domCv, R), img = setup(imgCv, OR);
+      const vcol = css("--ai"), hcol = css("--shu");
+      const step = 0.4, N = 240;
+      const drawLine = (pts: C[], color: string, g: ReturnType<typeof setup>) => {
+        g.ctx.strokeStyle = color; g.ctx.lineWidth = 1.2; g.ctx.beginPath();
+        let pen = false;
+        for (const w of pts) {
+          if (!isFinite(w[0]) || !isFinite(w[1]) || Math.abs(w[0]) > OR * 1.5 || Math.abs(w[1]) > OR * 1.5) { pen = false; continue; }
+          const X = g.px(w[0]), Y = g.py(w[1]);
+          if (!pen) { g.ctx.moveTo(X, Y); pen = true; } else g.ctx.lineTo(X, Y);
+        }
+        g.ctx.stroke();
+      };
+      // 縦線 x=const（藍）と横線 y=const（朱）
+      for (let x = -R; x <= R + 1e-9; x += step) {
+        const dpts: C[] = [], ipts: C[] = [];
+        for (let i = 0; i <= N; i++) { const y = -R + (2 * R) * i / N; const z: C = [x, y]; dpts.push(z); ipts.push(f(z)); }
+        drawLine(dpts, vcol, dom); drawLine(ipts, vcol, img);
+      }
+      for (let y = -R; y <= R + 1e-9; y += step) {
+        const dpts: C[] = [], ipts: C[] = [];
+        for (let i = 0; i <= N; i++) { const x = -R + (2 * R) * i / N; const z: C = [x, y]; dpts.push(z); ipts.push(f(z)); }
+        drawLine(dpts, hcol, dom); drawLine(ipts, hcol, img);
+      }
+      capEl.innerHTML = note + " <b>格子の交点に注目</b>：定義域では藍と朱が直交、像でも（臨界点以外は）直交したまま——これが「等角＝角度を保つ」。";
+    };
+
+    sel.addEventListener("change", render);
+    render();
+  }
+</script>
+
+<style>
+  .cm { margin: 26px 0; padding: 16px 18px 14px; border: 1px solid var(--line); border-radius: 10px; background: var(--card); }
+  .cm-controls { margin-bottom: 12px; }
+  .cm-label { font-size: 13px; font-weight: 600; color: var(--ink); font-family: var(--sans); }
+  .cm-sel { font-family: var(--sans); font-size: 13px; padding: 4px 8px; border: 1px solid var(--line); border-radius: 7px; background: var(--paper-sunk); color: var(--ink); margin-left: 6px; }
+  .cm-canvases { display: flex; align-items: center; justify-content: center; gap: 6px; flex-wrap: wrap; }
+  .cm-side { text-align: center; }
+  .cm-t { font-size: 11px; color: var(--ink-faint); font-family: var(--sans); margin-bottom: 4px; }
+  .cm-cv { width: 100%; max-width: 260px; height: auto; border: 1px solid var(--line); border-radius: 6px; background: var(--paper-sunk); }
+  .cm-arrow { font-size: 14px; color: var(--ink-faint); font-family: var(--sans); }
+  .cm-cap { margin-top: 12px; font-size: 13px; line-height: 1.8; color: var(--ink-faint); font-family: var(--sans); }
+  .cm-cap b { color: var(--ink); font-weight: 700; }
+</style>

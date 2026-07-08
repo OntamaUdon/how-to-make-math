@@ -1,0 +1,105 @@
+---
+layout: ../../layouts/BaseLayout.astro
+title: 第9章 ガロア理論の基本定理
+description: 中間体と部分群の完全な対応。ガロア対応、拡大次数と部分群の位数、そして正規部分群と正規（ガロア）中間体の対応。
+---
+
+import Term from "../../components/assets/Term.astro";
+import Statement from "../../components/assets/Statement.astro";
+import GaloisLattice from "../../components/interactive/GaloisLattice.astro";
+
+# 第9章 ガロア理論の基本定理
+
+## 体の世界と群の世界が、鏡のように対応する
+
+ここが体論・ガロア理論の頂点です。ガロア拡大 $L/K$ について、**中間体**（$K$ と $L$ の間の体）の全体と、
+**ガロア群の部分群**の全体が、包含関係を逆にして**完全に一対一対応**する——これがガロア理論の基本定理です。
+
+体の問い（どんな中間体があるか、その拡大次数は、正規か）が、すべて群の問い（どんな部分群があるか、その指数は、
+正規部分群か）に翻訳される。$L$ という一つの体の内部構造が、有限群 $\operatorname{Gal}(L/K)$ という**目に見える有限の対象**に
+丸ごと映されるのです。前章のアルティンの定理（群 → 固定体）と、埋め込みの理論（体 → 群）が噛み合って、この
+辞書が完成します。まず対応を体感し、それから証明しましょう。
+
+> ガロア対応：**中間体 $F$ ↔ 部分群 $\operatorname{Gal}(L/F)$**（包含を逆にした一対一）。$[L:F]=|H|$、正規部分群 ↔ ガロアな中間体。
+
+## 対応を体感する
+
+下の装置で、2つの束（左＝中間体、右＝部分群）を見比べてください。ノードをクリックすると、対応する相手が光ります。
+包含が**上下逆**（大きい体 ↔ 小さい群）になっていること、そして S₃ の例では**正規部分群だけが $\mathbb Q$ 上ガロアな
+中間体に対応する**ことを確かめられます。
+
+<GaloisLattice />
+
+$\mathbb Q(\sqrt2,\sqrt3)/\mathbb Q$（群 $V_4$）は可換なので全部分群が正規＝すべての中間体がガロア。一方 $x^3-2$ の分解体
+（群 $S_3$）では、位数 $2$ の非正規部分群が「$\mathbb Q$ 上正規でない中間体」$\mathbb Q(\sqrt[3]2)$ 等に対応し、正規部分群 $A_3$ が
+ガロアな中間体 $\mathbb Q(\omega)$ に対応します。この「正規 ↔ 正規」が基本定理の華です。
+
+## 基本定理
+
+<Statement kind="theorem" title="ガロア理論の基本定理">
+$L/K$ を有限ガロア拡大、$G=\operatorname{Gal}(L/K)$ とする。次の対応
+$$F\ \longmapsto\ \operatorname{Gal}(L/F)=\{\sigma\in G:\sigma|_F=\mathrm{id}\},\qquad H\ \longmapsto\ L^H$$
+は、**中間体 $\{F:K\subseteq F\subseteq L\}$ と部分群 $\{H:H\le G\}$ の間の包含を逆にする一対一対応**（ガロア対応）である。さらに：
+
+1. **次数と位数**：$[L:F]=|H|$、$[F:K]=[G:H]$（$H=\operatorname{Gal}(L/F)$）。
+2. **正規性**：$F/K$ が正規（＝ガロア）$\iff H=\operatorname{Gal}(L/F)$ が $G$ の正規部分群。このとき
+$$\operatorname{Gal}(F/K)\ \cong\ G/H.$$
+</Statement>
+
+<Statement kind="proof">
+**対応が互いに逆**：中間体 $F$ について、$L/F$ もガロア（$L$ は $K$ 上分離的多項式の分解体ゆえ $F$ 上でもそう）なので、
+[前章の同値条件(4)](/field-and-galois/8)より $L^{\operatorname{Gal}(L/F)}=F$。逆に部分群 $H$ について、[アルティンの定理](/field-and-galois/8)より
+$\operatorname{Gal}(L/L^H)=H$。ゆえ $F\mapsto\operatorname{Gal}(L/F)$ と $H\mapsto L^H$ は互いに逆。包含を逆にするのは定義から明らか
+（$F_1\subseteq F_2\Rightarrow\operatorname{Gal}(L/F_2)\subseteq\operatorname{Gal}(L/F_1)$）。
+
+**1. 次数と位数**：$L/F$ はガロアで $|\operatorname{Gal}(L/F)|=[L:F]$（前章）、すなわち $|H|=[L:F]$。塔の公式より
+$[F:K]=[L:K]/[L:F]=|G|/|H|=[G:H]$。
+
+**2. 正規性**：$\sigma\in G$ に対し $\sigma(F)$ の対応する部分群は $\operatorname{Gal}(L/\sigma F)=\sigma H\sigma^{-1}$（共役）。
+$F/K$ が正規 $\iff$ 任意の $K$-埋め込み（＝ $G$ の元）が $F$ を保つ（[第6章](/field-and-galois/6)）$\iff\sigma(F)=F\ (\forall\sigma)$
+$\iff\sigma H\sigma^{-1}=H\ (\forall\sigma)\iff H\trianglelefteq G$。このとき制限写像 $G\to\operatorname{Gal}(F/K),\ \sigma\mapsto\sigma|_F$ は
+全射準同型で核が $\operatorname{Gal}(L/F)=H$、第一同型定理（[群論](/group-theory/5)）より $\operatorname{Gal}(F/K)\cong G/H$。∎
+</Statement>
+
+証明を貫くのは、前章までの2つの結果——**$L^{\operatorname{Gal}(L/F)}=F$**（ガロアの特徴づけ）と**$\operatorname{Gal}(L/L^H)=H$**
+（アルティン）——が互いに逆の対応を与えること。正規性の部分では、[第6章の埋め込みによる正規性](/field-and-galois/6)と
+[群論の正規部分群](/group-theory/4)がぴたり噛み合い、しかも $\operatorname{Gal}(F/K)\cong G/H$ が[第一同型定理](/group-theory/5)そのもの。
+体論・群論の総合力が結実する瞬間です。
+
+## 対応表
+
+| 体の世界（中間体 $F$） | 群の世界（部分群 $H=\operatorname{Gal}(L/F)$） |
+|---|---|
+| $L$（最大） | $\{e\}$（最小） |
+| $K$（最小） | $G$（最大） |
+| $[L:F]$ | $|H|$ |
+| $[F:K]$ | $[G:H]$（指数） |
+| $F/K$ がガロア | $H\trianglelefteq G$（正規） |
+| $\operatorname{Gal}(F/K)$ | $G/H$（剰余群） |
+| 大きい体 | 小さい群（包含が逆） |
+
+<Statement kind="example" title="Q(√2,√3) の中間体をすべて求める">
+$G=\operatorname{Gal}(\mathbb Q(\sqrt2,\sqrt3)/\mathbb Q)\cong V_4$。$V_4$ の部分群は $\{e\},\ \langle\sigma\rangle,\langle\tau\rangle,\langle\sigma\tau\rangle,\ V_4$ の**ちょうど5個**。
+基本定理より中間体も**ちょうど5個**：$\mathbb Q(\sqrt2,\sqrt3),\ \mathbb Q(\sqrt3),\mathbb Q(\sqrt2),\mathbb Q(\sqrt6),\ \mathbb Q$。「群の部分群を数えれば、
+中間体が全部わかる」——体の内部構造を、有限群の計算で完全に決定できる。
+</Statement>
+
+「中間体を直接探す」のは難しいのに、「有限群 $V_4$ の部分群を列挙する」のは易しい。ガロア対応は、難しい体の問題を
+易しい群の問題に変換する**翻訳機**なのです。この威力が、次章以降の有限体・円分体・可解性で全開になります。
+
+## つまずきポイント
+
+<Statement kind="remark" title="よくある誤解">
+- **対応は包含を逆にする。** 大きい中間体 ↔ 小さい部分群。$L\leftrightarrow\{e\}$、$K\leftrightarrow G$。「上下が逆の鏡」。
+- **$[L:F]=|H|$ であって $[F:K]=|H|$ ではない。** 上側の次数が部分群の位数、下側の次数 $[F:K]$ が指数 $[G:H]$。混同しやすい。
+- **正規部分群 ↔ ガロアな中間体。** $H\trianglelefteq G\iff F/K$ ガロア。非正規部分群は「$K$ 上ガロアでない中間体」（$\mathbb Q(\sqrt[3]2)$）。$\operatorname{Gal}(F/K)\cong G/H$。
+- **基本定理は有限ガロア拡大で。** 無限次では位相（クルル位相）を入れた profinite 群で対応する（発展）。
+</Statement>
+
+## この章のまとめ
+
+- **ガロア理論の基本定理**：有限ガロア拡大 $L/K$ で、**中間体 $F$ ↔ 部分群 $\operatorname{Gal}(L/F)$** が包含を逆にして一対一対応。証明は「$L^{\operatorname{Gal}(L/F)}=F$」と「アルティン $\operatorname{Gal}(L/L^H)=H$」が互いに逆であること。
+- **$[L:F]=|H|$、$[F:K]=[G:H]$**。**正規部分群 $H\trianglelefteq G$ ↔ ガロアな中間体 $F/K$**、そのとき $\operatorname{Gal}(F/K)\cong G/H$（第一同型定理）。
+- 中間体の決定が、有限群の部分群の列挙に帰着する。難しい体の問題を易しい群の問題に翻訳する。
+
+次章から**応用**へ。まず、ガロア理論が最も鮮やかに働く**有限体**を扱います。

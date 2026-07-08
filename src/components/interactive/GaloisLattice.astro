@@ -1,0 +1,187 @@
+---
+/* GaloisLattice.astro — ガロア対応の体験装置。
+   ガロア拡大の例を選ぶと、左に中間体の束、右に部分群の束を並べて描く。
+   ・中間体 F と部分群 H が包含を逆にして一対一対応（上下が逆）する様子を可視化。
+   ・どちらかのノードをクリックすると、対応する相手が光り、固定体・拡大次数・
+     「正規部分群 ↔ 正規（ガロア）拡大」の対応を説明する。
+   例：ℚ(√2,√3)/ℚ（群 V₄・全部正規）と、x³−2 の分解体（群 S₃・非正規あり）。
+   状態はメモリ内のみ（storage 不使用）。 */
+---
+
+<figure class="gl" role="group" aria-label="ガロア対応の束">
+  <div class="gl-controls">
+    <label class="gl-label">例
+      <select id="gl-ex" class="gl-sel">
+        <option value="v4">ℚ(√2,√3) / ℚ（ガロア群 V₄・可換）</option>
+        <option value="s3">x³−2 の分解体 / ℚ（ガロア群 S₃・非可換）</option>
+      </select>
+    </label>
+  </div>
+  <div class="gl-panels">
+    <div class="gl-panel"><div class="gl-ptitle">中間体（体 F）</div><div id="gl-fields" class="gl-stage"></div></div>
+    <div class="gl-arrow">↔</div>
+    <div class="gl-panel"><div class="gl-ptitle">部分群（H = Gal(L/F)）</div><div id="gl-groups" class="gl-stage"></div></div>
+  </div>
+  <figcaption id="gl-cap" class="gl-cap"></figcaption>
+</figure>
+
+<script>
+  type Node = { id: string; label: string; row: number; x: number; normal?: boolean };
+  type Ex = { fields: Node[]; groups: Node[]; fEdges: [string, string][]; gEdges: [string, string][];
+    corr: Record<string, string>; rows: number; note: (fid: string) => string };
+
+  const examples: Record<string, Ex> = {
+    v4: {
+      rows: 3,
+      fields: [
+        { id: "L", label: "ℚ(√2,√3)", row: 0, x: 0.5 },
+        { id: "f2", label: "ℚ(√2)", row: 1, x: 0.16 },
+        { id: "f6", label: "ℚ(√6)", row: 1, x: 0.5 },
+        { id: "f3", label: "ℚ(√3)", row: 1, x: 0.84 },
+        { id: "Q", label: "ℚ", row: 2, x: 0.5 },
+      ],
+      groups: [
+        { id: "e", label: "{e}", row: 0, x: 0.5, normal: true },
+        { id: "tau", label: "⟨τ⟩", row: 1, x: 0.16, normal: true },
+        { id: "st", label: "⟨στ⟩", row: 1, x: 0.5, normal: true },
+        { id: "sig", label: "⟨σ⟩", row: 1, x: 0.84, normal: true },
+        { id: "V", label: "V₄", row: 2, x: 0.5, normal: true },
+      ],
+      fEdges: [["L", "f2"], ["L", "f6"], ["L", "f3"], ["f2", "Q"], ["f6", "Q"], ["f3", "Q"]],
+      gEdges: [["e", "tau"], ["e", "st"], ["e", "sig"], ["tau", "V"], ["st", "V"], ["sig", "V"]],
+      corr: { L: "e", f2: "tau", f6: "st", f3: "sig", Q: "V" },
+      note: (fid) => {
+        const m: Record<string, string> = {
+          L: "最大体 ℚ(√2,√3) ↔ 単位群 {e}（何も動かさない）。[L:L]=|{e}|=1。",
+          f2: "ℚ(√2) ↔ ⟨τ⟩（τ: √3↦−√3, √2 は固定）。τ が固定する体がちょうど ℚ(√2)。[L:ℚ(√2)]=|⟨τ⟩|=2。",
+          f6: "ℚ(√6) ↔ ⟨στ⟩（στ: √2↦−√2, √3↦−√3。積 √6=√2·√3 は不変）。[L:ℚ(√6)]=2。",
+          f3: "ℚ(√3) ↔ ⟨σ⟩（σ: √2↦−√2, √3 は固定）。[L:ℚ(√3)]=2。",
+          Q: "基礎体 ℚ ↔ 全体 V₄。ℚ は V₄ 全体が固定する体。[L:ℚ]=|V₄|=4。",
+        };
+        return m[fid] + " V₄ は可換なので全部分群が正規＝すべての中間体が ℚ 上ガロア拡大。";
+      },
+    },
+    s3: {
+      rows: 4,
+      fields: [
+        { id: "L", label: "ℚ(∛2,ω)", row: 0, x: 0.5 },
+        { id: "c1", label: "ℚ(∛2)", row: 1, x: 0.14 },
+        { id: "c2", label: "ℚ(ω∛2)", row: 1, x: 0.4 },
+        { id: "c3", label: "ℚ(ω²∛2)", row: 1, x: 0.66 },
+        { id: "fw", label: "ℚ(ω)", row: 2, x: 0.85 },
+        { id: "Q", label: "ℚ", row: 3, x: 0.5 },
+      ],
+      groups: [
+        { id: "e", label: "{e}", row: 0, x: 0.5, normal: true },
+        { id: "h1", label: "⟨(23)⟩", row: 1, x: 0.14 },
+        { id: "h2", label: "⟨(13)⟩", row: 1, x: 0.4 },
+        { id: "h3", label: "⟨(12)⟩", row: 1, x: 0.66 },
+        { id: "A3", label: "A₃", row: 2, x: 0.85, normal: true },
+        { id: "S3", label: "S₃", row: 3, x: 0.5, normal: true },
+      ],
+      fEdges: [["L", "c1"], ["L", "c2"], ["L", "c3"], ["L", "fw"], ["c1", "Q"], ["c2", "Q"], ["c3", "Q"], ["fw", "Q"]],
+      gEdges: [["e", "h1"], ["e", "h2"], ["e", "h3"], ["e", "A3"], ["h1", "S3"], ["h2", "S3"], ["h3", "S3"], ["A3", "S3"]],
+      corr: { L: "e", c1: "h1", c2: "h2", c3: "h3", fw: "A3", Q: "S3" },
+      note: (fid) => {
+        const m: Record<string, string> = {
+          L: "分解体 ℚ(∛2,ω) ↔ {e}。[L:L]=1。分解体は ℚ 上ガロア（正規かつ分離）。",
+          c1: "ℚ(∛2) ↔ ⟨(23)⟩（∛2 を固定＝他の2根を入れ替える位数2の部分群）。[L:ℚ(∛2)]=2。この部分群は<b>正規でない</b>ので、ℚ(∛2) は ℚ 上<b>正規でない</b>拡大（共役 ℚ(ω∛2) 等が外にある）。",
+          c2: "ℚ(ω∛2) ↔ ⟨(13)⟩。位数2・非正規 ↔ ℚ 上非正規拡大。",
+          c3: "ℚ(ω²∛2) ↔ ⟨(12)⟩。位数2・非正規 ↔ ℚ 上非正規拡大。",
+          fw: "ℚ(ω) ↔ A₃（位数3の巡回部分群）。A₃ は<b>正規部分群</b>（S₃ で指数2）なので、ℚ(ω) は ℚ 上<b>ガロア拡大</b>。[L:ℚ(ω)]=3。",
+          Q: "基礎体 ℚ ↔ S₃ 全体。[L:ℚ]=|S₃|=6。",
+        };
+        return m[fid] + " ——<b>正規部分群 ↔ ℚ 上ガロアな中間体</b>（ガロア理論の基本定理）。";
+      },
+    },
+  };
+
+  const exSel = document.getElementById("gl-ex") as HTMLSelectElement | null;
+  const fStage = document.getElementById("gl-fields");
+  const gStage = document.getElementById("gl-groups");
+  const capEl = document.getElementById("gl-cap");
+
+  if (exSel && fStage && gStage && capEl) {
+    const W = 250, PAD = 26, ROWH = 62;
+    const NS = "http://www.w3.org/2000/svg";
+    const revCorr = (ex: Ex) => { const r: Record<string, string> = {}; for (const k in ex.corr) r[ex.corr[k]] = k; return r; };
+
+    const buildPanel = (stage: HTMLElement, nodes: Node[], edges: [string, string][], side: "f" | "g") => {
+      const H = PAD * 2 + (Math.max(...nodes.map((n) => n.row))) * ROWH;
+      stage.style.height = H + "px";
+      const cx = (n: Node) => PAD + n.x * (W - 2 * PAD);
+      const cy = (n: Node) => PAD + n.row * ROWH;
+      const byId = Object.fromEntries(nodes.map((n) => [n.id, n]));
+      // edges (SVG)
+      const svg = document.createElementNS(NS, "svg");
+      svg.setAttribute("viewBox", `0 0 ${W} ${H}`); svg.setAttribute("class", "gl-svg");
+      for (const [a, b] of edges) {
+        const l = document.createElementNS(NS, "line");
+        l.setAttribute("x1", String(cx(byId[a]))); l.setAttribute("y1", String(cy(byId[a])));
+        l.setAttribute("x2", String(cx(byId[b]))); l.setAttribute("y2", String(cy(byId[b])));
+        l.setAttribute("stroke", "var(--line)"); l.setAttribute("stroke-width", "1.5");
+        svg.appendChild(l);
+      }
+      stage.appendChild(svg);
+      // nodes
+      for (const n of nodes) {
+        const btn = document.createElement("button");
+        btn.type = "button"; btn.className = "gl-node" + (side === "g" && n.normal ? " gl-normal" : "");
+        btn.dataset.id = n.id; btn.dataset.side = side;
+        btn.textContent = n.label;
+        btn.style.left = cx(n) + "px"; btn.style.top = cy(n) + "px";
+        stage.appendChild(btn);
+      }
+    };
+
+    let ex: Ex;
+    const select = (fid: string) => {
+      const gid = ex.corr[fid];
+      document.querySelectorAll<HTMLElement>(".gl-node").forEach((el) => el.classList.remove("gl-sel"));
+      fStage.querySelector(`.gl-node[data-id="${fid}"]`)?.classList.add("gl-sel");
+      gStage.querySelector(`.gl-node[data-id="${gid}"]`)?.classList.add("gl-sel");
+      capEl.innerHTML = ex.note(fid);
+    };
+
+    const rebuild = () => {
+      ex = examples[exSel.value];
+      fStage.innerHTML = ""; gStage.innerHTML = "";
+      buildPanel(fStage, ex.fields, ex.fEdges, "f");
+      buildPanel(gStage, ex.groups, ex.gEdges, "g");
+      const rev = revCorr(ex);
+      document.querySelectorAll<HTMLButtonElement>(".gl-node").forEach((btn) => {
+        btn.addEventListener("click", () => {
+          const id = btn.dataset.id!, side = btn.dataset.side!;
+          select(side === "f" ? id : rev[id]);
+        });
+      });
+      select("Q"); // 基礎体 ↔ 全体 から
+    };
+
+    exSel.addEventListener("change", rebuild);
+    rebuild();
+  }
+</script>
+
+<style>
+  .gl { margin: 26px 0; padding: 16px 18px 14px; border: 1px solid var(--line); border-radius: 10px; background: var(--card); }
+  .gl-controls { margin-bottom: 12px; }
+  .gl-label { font-size: 12px; font-weight: 600; color: var(--ink-faint); font-family: var(--sans); display: flex; flex-direction: column; gap: 4px; }
+  .gl-sel { font-family: var(--sans); font-size: 13px; padding: 5px 8px; border: 1px solid var(--line); border-radius: 7px; background: var(--paper-sunk); color: var(--ink); }
+  .gl-panels { display: flex; align-items: center; justify-content: center; gap: 4px; flex-wrap: wrap; }
+  .gl-panel { flex: 1; min-width: 240px; }
+  .gl-ptitle { text-align: center; font-size: 12px; font-weight: 700; color: var(--ink-faint); font-family: var(--sans); margin-bottom: 6px; }
+  .gl-stage { position: relative; width: 250px; margin: 0 auto; }
+  .gl-svg { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; }
+  .gl-arrow { font-size: 20px; color: var(--ink-faint); padding: 0 2px; align-self: center; }
+  .gl-node {
+    position: absolute; transform: translate(-50%, -50%); white-space: nowrap;
+    font-family: var(--mono); font-size: 12px; padding: 3px 9px; cursor: pointer;
+    border: 1px solid var(--line); border-radius: 999px; background: var(--card); color: var(--ink);
+  }
+  .gl-node:hover { border-color: var(--ai); }
+  .gl-normal { box-shadow: 0 0 0 2px var(--ai-wash); }
+  .gl-sel { background: var(--shu); color: #fff; border-color: var(--shu); font-weight: 700; }
+  .gl-cap { margin-top: 14px; font-size: 13px; line-height: 1.8; color: var(--ink-faint); font-family: var(--sans); }
+  .gl-cap b { color: var(--ink); font-weight: 700; }
+</style>

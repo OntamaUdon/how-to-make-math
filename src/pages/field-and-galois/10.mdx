@@ -1,0 +1,119 @@
+---
+layout: ../../layouts/BaseLayout.astro
+title: 第10章 有限体
+description: 有限体の完全な分類。位数 pⁿ の体の存在と一意性、乗法群の巡回性、フロベニウス自己同型と巡回ガロア群、部分体の対応。
+---
+
+import Term from "../../components/assets/Term.astro";
+import Statement from "../../components/assets/Statement.astro";
+
+# 第10章 有限体
+
+## 「要素が有限個の体」を、完全に分類する
+
+体というと $\mathbb Q,\mathbb R,\mathbb C$ のような無限のものを思い浮かべますが、要素が有限個の体もあります——$\mathbb F_p=\mathbb Z/p\mathbb Z$
+（$p$ 素数）が最小の例。では、有限体はどれだけあるのか？ 答えは驚くほど整然としています：**位数（要素数）は
+必ず素数べき $p^n$ で、各 $p^n$ に対して有限体はちょうど一つ（同型を除いて）**。
+
+有限体はガロア理論が最も美しく働く舞台です。$\mathbb F_{p^n}/\mathbb F_p$ は必ずガロアで、そのガロア群は**巡回群**——
+フロベニウス自己同型 $x\mapsto x^p$ が生成します。だから[基本定理](/field-and-galois/9)の対応で、部分体が「$n$ の約数」と
+一対一に並ぶ（巡回群の部分群が約数と対応、[群論第2章](/group-theory/2)）。符号理論・暗号・組合せ論で不可欠な有限体を、
+この章で完全に理解します。
+
+> 有限体の位数は素数べき $p^n$。各 $p^n$ にちょうど一つ存在。$\mathbb F_{p^n}/\mathbb F_p$ は巡回ガロア（フロベニウスが生成）。
+
+## 位数は素数べき
+
+<Statement kind="proposition" title="有限体の位数">
+有限体 $F$ の標数は素数 $p$ で、$|F|=p^n$（$n=[F:\mathbb F_p]$）。
+</Statement>
+
+<Statement kind="proof">
+有限体の標数は $0$ でありえない（$1$ の整数倍が有限個ゆえ）ので素数 $p$（[環論第1章](/ring-theory/1)：整域の標数は素数）。
+$F$ は素体 $\mathbb F_p$ を含み、$F$ を $\mathbb F_p$ 上のベクトル空間とみると次元 $n=[F:\mathbb F_p]$ が有限で、$|F|=p^n$。∎
+</Statement>
+
+## 存在と一意性
+
+<Statement kind="theorem" title="有限体の存在と一意性">
+各素数べき $q=p^n$ に対し、位数 $q$ の体が**同型を除いてちょうど一つ**存在する（<Term>ガロア体</Term> $\mathbb F_q$）。
+それは $x^q-x\in\mathbb F_p[x]$ の $\mathbb F_p$ 上の分解体である。
+</Statement>
+
+<Statement kind="proof">
+**存在**：$f=x^q-x$ の $\mathbb F_p$ 上分解体 $L$ をとる。$f'=qx^{q-1}-1=-1$（標数 $p$、$q=p^n$ ゆえ $qx^{q-1}=0$）なので
+$\gcd(f,f')=1$、$f$ は分離的で相異なる $q$ 個の根をもつ。根の集合 $S=\{a\in L:a^q=a\}$ は体をなす
+（フロベニウスの $q$ 乗写像 $a\mapsto a^q$ が体準同型で、その固定点集合）。$|S|=q$ で $S$ が $f$ を分解するので $L=S$、$|L|=q$。
+**一意性**：位数 $q$ の体 $F$ では、乗法群 $F^\times$（位数 $q-1$）の各元が $a^{q-1}=1$（[ラグランジュ](/group-theory/3)）ゆえ全元が $a^q=a$、
+つまり $F$ は $x^q-x$ の根全体＝分解体。[分解体の一意性](/field-and-galois/4)より位数 $q$ の体は一意。∎
+</Statement>
+
+「位数 $q$ の体＝ $x^q-x$ の分解体」という一言で、存在も一意性も出る。**すべての元が $a^q=a$ を満たす**というのが
+有限体 $\mathbb F_q$ の本質です（フェルマーの小定理 $a^p=a$ の一般化）。
+
+## 乗法群は巡回
+
+有限体の乗法構造は、可能な限り単純です。
+
+<Statement kind="theorem" title="乗法群の巡回性">
+有限体の乗法群 $\mathbb F_q^\times$（位数 $q-1$）は**巡回群**。その生成元を<Term>原始元</Term>という。
+</Statement>
+
+<Statement kind="proof">
+有限アーベル群 $\mathbb F_q^\times$ の指数（全元の位数の最小公倍数）を $m$ とすると、全元が $x^m=1$ を満たす。だが多項式 $x^m-1$ は
+体で高々 $m$ 個の根しかもてないので $q-1\le m$。一方 $m\mid q-1$（[ラグランジュ](/group-theory/3)）ゆえ $m=q-1$、すなわち位数 $q-1$ の元が
+存在し $\mathbb F_q^\times$ は巡回。∎
+</Statement>
+
+証明の急所は「体では $x^m-1$ の根が高々 $m$ 個」。これが「位数 $q-1$ の元がある」を強制します。乗法群が巡回だから、
+[原始元定理](/field-and-galois/7)より $\mathbb F_{p^n}=\mathbb F_p(\gamma)$（単拡大）で、$\mathbb F_{p^n}$ は既約多項式 $\mathbb F_p[x]$ の根で作れます。
+
+## フロベニウスと巡回ガロア群
+
+有限体のガロア群を決定します。主役はフロベニウス写像です。
+
+<Statement kind="theorem" title="フロベニウス自己同型とガロア群">
+写像 $\operatorname{Frob}:\mathbb F_{p^n}\to\mathbb F_{p^n},\ a\mapsto a^p$ は $\mathbb F_p$ を固定する体自己同型（<Term>フロベニウス自己同型</Term>）。
+$\mathbb F_{p^n}/\mathbb F_p$ はガロアで
+$$\operatorname{Gal}(\mathbb F_{p^n}/\mathbb F_p)=\langle\operatorname{Frob}\rangle\cong\mathbb Z_n\ (\text{位数}\ n\ \text{の巡回群}).$$
+</Statement>
+
+<Statement kind="proof">
+$\operatorname{Frob}$ は準同型：$(a+b)^p=a^p+b^p$（標数 $p$ で二項係数 $\binom pk$（$0<k<p$）が $p$ で割れる）、$(ab)^p=a^pb^p$。
+$\mathbb F_p$ の元は $a^p=a$（フェルマー）ゆえ固定。単射（体準同型）で有限集合上ゆえ全単射＝自己同型。位数：
+$\operatorname{Frob}^k=\mathrm{id}\iff a^{p^k}=a\ (\forall a)\iff$ 全元が $x^{p^k}-x$ の根 $\iff p^n\mid$ …正確には $n\mid k$。ゆえ $\operatorname{Frob}$ の位数は $n$。
+$\mathbb F_{p^n}/\mathbb F_p$ は分離的多項式 $x^{p^n}-x$ の分解体でガロア、$[\mathbb F_{p^n}:\mathbb F_p]=n$ で $|\langle\operatorname{Frob}\rangle|=n$ ゆえ
+$\operatorname{Gal}=\langle\operatorname{Frob}\rangle\cong\mathbb Z_n$。∎
+</Statement>
+
+**有限体の拡大のガロア群は、いつも巡回群**（フロベニウスが生成）。これは非常に扱いやすく、[基本定理](/field-and-galois/9)の
+対応が[巡回群の部分群 ↔ 約数](/group-theory/2)にそのまま乗ります。
+
+<Statement kind="corollary" title="部分体の対応">
+$\mathbb F_{p^n}$ の部分体は、$n$ の各約数 $d$ に対し $\mathbb F_{p^d}$ が**ちょうど一つ**ずつ、それで全部。$\mathbb F_{p^d}\subseteq\mathbb F_{p^m}\iff d\mid m$。
+</Statement>
+
+<Statement kind="proof">
+基本定理より、部分体 $\mathbb F_{p^n}$ の中間体は巡回群 $\mathbb Z_n$ の部分群と対応。$\mathbb Z_n$ の部分群は $n$ の各約数 $d$ に
+位数 $d$ のものが一つずつ（[群論第2章](/group-theory/2)）。位数 $d$ の部分群 $\leftrightarrow$ 次数 $n/d$ の固定体 $=\mathbb F_{p^d}$。∎
+</Statement>
+
+「$\mathbb F_{16}$ の部分体は $\mathbb F_2,\mathbb F_4,\mathbb F_{16}$（$4=2^2$ の約数 $1,2,4$）」——群論の約数の話が、そのまま部分体の構造になる。
+ガロア対応の威力を最も素直に見られる例です。
+
+## つまずきポイント
+
+<Statement kind="remark" title="よくある誤解">
+- **$\mathbb F_{p^n}\ne\mathbb Z/p^n\mathbb Z$。** 位数 $p^n$ の**体**は $\mathbb Z/p^n\mathbb Z$（$n\ge2$ で零因子をもち体でない）ではない。$\mathbb F_{p^n}$ は $x^{p^n}-x$ の分解体。$\mathbb F_p[x]/(既約 n 次)$ でも作れる。
+- **加法群と乗法群は別。** $(\mathbb F_{p^n},+)\cong(\mathbb Z_p)^n$（標数 $p$）、$(\mathbb F_{p^n}^\times,\cdot)\cong\mathbb Z_{p^n-1}$（巡回）。
+- **フロベニウスは $a\mapsto a^p$（$p$ 乗、$p^n$ 乗でない）。** 位数 $n$ で $\operatorname{Frob}^n=\mathrm{id}$。$\mathbb F_p$ を固定。
+- **部分体は約数と対応。** $\mathbb F_{p^d}\subseteq\mathbb F_{p^n}\iff d\mid n$。巡回ガロア群の部分群構造の反映。
+</Statement>
+
+## この章のまとめ
+
+- 有限体の位数は**素数べき $p^n$**、各 $p^n$ に**ちょうど一つ** $\mathbb F_{p^n}$（$=x^{p^n}-x$ の分解体、全元が $a^q=a$）。
+- 乗法群 $\mathbb F_q^\times$ は**巡回**（位数 $q-1$）。$\mathbb F_{p^n}/\mathbb F_p$ はガロアで、ガロア群は**フロベニウス $a\mapsto a^p$ が生成する巡回群 $\mathbb Z_n$**。
+- 部分体は $n$ の**約数と一対一**（$\mathbb F_{p^d}$、$d\mid n$）。巡回ガロア群の部分群＝約数の対応（基本定理）の最も明快な例。
+
+次章は、$1$ のべき根が生成する体——**円分体**と、正多角形の作図可能性を扱います。

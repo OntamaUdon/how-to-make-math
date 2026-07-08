@@ -1,0 +1,119 @@
+---
+layout: ../../layouts/BaseLayout.astro
+title: 第1章 複素微分とコーシー–リーマン方程式
+description: 「複素数として微分できる」という異様に強い条件。複素微分の定義、あらゆる方向からの極限、そしてコーシー–リーマン方程式。
+---
+
+import Term from "../../components/assets/Term.astro";
+import Statement from "../../components/assets/Statement.astro";
+
+# 第1章 複素微分とコーシー–リーマン方程式
+
+## 「複素数で微分できる」は、なぜそんなに特別なのか
+
+[微積分](/calculus)で見たように、実関数の微分可能性はわりと緩い条件でした。無限回微分できてもテイラー級数が
+元に戻らない病的な関数すらある（[微積分第6章](/calculus/6)の $e^{-1/x^2}$）。ところが、舞台を複素数に移して
+「**複素数として微分できる（正則）**」という条件を課すと、状況が一変します。一度微分できれば自動的に何回でも
+微分でき、必ずべき級数に展開でき、値は境界だけで決まる——実解析での「例外」が、複素解析では「定理」になる。
+
+なぜこんなに強いのか。カギは、微分の定義に現れる極限 $h\to0$ が、複素数では**平面上のあらゆる方向から**
+$0$ に近づける点にあります。実数では左右2方向だけでしたが、複素数では無限の方向。そのすべてで同じ極限をもて、
+という要求が、途方もなく強い制約——コーシー–リーマン方程式——を課すのです。この章で、その制約を導きます。
+
+> 複素微分は「あらゆる方向からの極限が一致」を要求する超強力な条件。その帰結が**コーシー–リーマン方程式**。
+
+## 複素数と複素平面
+
+複素数 $z=x+iy$（$x,y\in\mathbb R$、$i^2=-1$）は平面上の点 $(x,y)$。絶対値 $|z|=\sqrt{x^2+y^2}$、共役 $\bar z=x-iy$、
+極形式 $z=r(\cos\theta+i\sin\theta)=re^{i\theta}$（$r=|z|$、$\theta=\arg z$ が偏角）。掛け算は「絶対値を掛け、偏角を足す」
+＝**回転と拡大**——この幾何的意味が、複素微分の等角性（[第2章](/complex-analysis/2)）に直結します。$\mathbb C$ は
+[体](/field-and-galois/1)であり、代数閉体（[代数学の基本定理](/field-and-galois/5)、本章第5章で証明）でもあります。
+
+## 複素微分
+
+<Statement kind="definition" title="複素微分・正則">
+領域（連結開集合）$D\subseteq\mathbb C$ 上の関数 $f$ が点 $z_0$ で<Term>複素微分可能</Term>とは、極限
+$$f'(z_0)=\lim_{h\to0}\frac{f(z_0+h)-f(z_0)}{h}\qquad(h\in\mathbb C)$$
+が存在すること。$D$ の各点で複素微分可能な $f$ を $D$ 上<Term>正則</Term>（holomorphic）という。
+</Statement>
+
+形は実微分とまったく同じ。決定的な違いは $h\in\mathbb C$ で、**$h$ が平面上のどの方向から $0$ に近づいても、
+商が同じ値 $f'(z_0)$ に収束せねばならない**こと。この「方向によらない」という一点が、次の方程式を強制します。
+
+## コーシー–リーマン方程式
+
+$f=u+iv$（$u,v$ は実部・虚部、$x,y$ の実関数）と書き、$h$ を実軸方向・虚軸方向から近づけて比較します。
+
+<Statement kind="theorem" title="コーシー–リーマン方程式（必要性）">
+$f=u+iv$ が $z_0=x_0+iy_0$ で複素微分可能なら、$u,v$ は $(x_0,y_0)$ で偏微分可能で
+$$\boxed{\ \frac{\partial u}{\partial x}=\frac{\partial v}{\partial y},\qquad \frac{\partial u}{\partial y}=-\frac{\partial v}{\partial x}\ }\qquad(\text{コーシー–リーマン方程式}).$$
+このとき $f'(z_0)=u_x+iv_x=v_y-iu_y$。
+</Statement>
+
+<Statement kind="proof">
+極限は方向によらないので、2通りの近づけ方で計算して等値する。
+**実軸方向** $h=t\ (t\in\mathbb R,\ t\to0)$：
+$$f'(z_0)=\lim_{t\to0}\frac{f(z_0+t)-f(z_0)}{t}=u_x+iv_x.$$
+**虚軸方向** $h=it\ (t\to0)$：
+$$f'(z_0)=\lim_{t\to0}\frac{f(z_0+it)-f(z_0)}{it}=\frac1i(u_y+iv_y)=v_y-iu_y.$$
+両者が等しいので、実部・虚部を比較して $u_x=v_y$、$v_x=-u_y$。∎
+</Statement>
+
+証明はたった2行の計算——「実軸方向」と「虚軸方向」からの極限を等しいと置くだけ。でも、**たった2方向を
+比べただけ**でこれだけの制約が出る。全方向で一致することの、ほんの一部を使っただけでこの強さです。逆も
+（少し条件を足せば）成り立ちます。
+
+<Statement kind="theorem" title="コーシー–リーマン方程式（十分性）">
+領域 $D$ 上で $u,v$ が $C^1$ 級（偏微分が存在して連続）で、コーシー–リーマン方程式を満たすなら、$f=u+iv$ は $D$ 上正則。
+</Statement>
+
+<Statement kind="proof">
+$C^1$ ゆえ $u,v$ は全微分可能（[微積分第9章](/calculus/9)）：$\Delta u=u_x\Delta x+u_y\Delta y+o(|h|)$ 等。
+$h=\Delta x+i\Delta y$ として $\Delta f=\Delta u+i\Delta v$ を CR 方程式で整理すると
+$\Delta f=(u_x+iv_x)(\Delta x+i\Delta y)+o(|h|)=(u_x+iv_x)h+o(|h|)$。ゆえ $\dfrac{\Delta f}{h}\to u_x+iv_x$（方向によらず）、複素微分可能。∎
+</Statement>
+
+十分性の証明で、[微積分の全微分](/calculus/9)（$C^1\Rightarrow$ 全微分可能）が本質的に効いています。CR 方程式は
+「$u,v$ の変化がちょうど『複素数 $(u_x+iv_x)$ を掛ける』形にまとまる」ための条件——だから複素微分が
+方向によらず定まるのです。
+
+<Statement kind="example" title="正則な関数・そうでない関数">
+- $f(z)=z^2=(x^2-y^2)+i(2xy)$：$u_x=2x=v_y$、$u_y=-2y=-v_x$。CR 成立、正則。$f'(z)=2z$。
+- $f(z)=\bar z=x-iy$：$u_x=1,\ v_y=-1$ で $u_x\ne v_y$。CR を**満たさず**、どこでも正則でない。「共役をとる」は複素微分できない。
+- $f(z)=|z|^2=x^2+y^2$（$v=0$）：CR は $2x=0,\ 2y=0$、すなわち原点でのみ複素微分可能だが、$0$ の近傍で正則でない。
+</Statement>
+
+$\bar z$ や $|z|^2$ が正則でないのが要点です。「複素数を実部・虚部でいじる」自然な操作の多くは、複素微分できない。
+正則性は、それほど**特別で稀な**性質なのです。
+
+## 正則性の言い換え：$\partial_{\bar z}f=0$
+
+CR 方程式は、ヴィルティンガー微分を使うと一行で書けます。この形が正則性の本質を鮮やかに表します。
+
+<Statement kind="definition" title="ヴィルティンガー微分と正則性">
+$\dfrac{\partial}{\partial z}=\dfrac12\Big(\dfrac{\partial}{\partial x}-i\dfrac{\partial}{\partial y}\Big)$、$\dfrac{\partial}{\partial\bar z}=\dfrac12\Big(\dfrac{\partial}{\partial x}+i\dfrac{\partial}{\partial y}\Big)$ とおくと、
+CR 方程式は
+$$\frac{\partial f}{\partial\bar z}=0$$
+と同値。$f$ が正則 $\iff f$ は「$\bar z$ に依存しない」（$z$ だけの関数）。
+</Statement>
+
+「正則 ＝ $\bar z$ を含まない」——$z^2$ は正則、$\bar z$ や $|z|^2=z\bar z$ は $\bar z$ を含むので正則でない。この直感は
+非常に使えます。多項式・べき級数・$e^z,\sin z$ など「$z$ だけで書ける」ものが正則、共役や実部・絶対値が
+混じると正則でない、と即座に見分けられます。
+
+## つまずきポイント
+
+<Statement kind="remark" title="よくある誤解">
+- **複素微分は実微分より遥かに強い。** $h\to0$ が全方向で一致を要求。$\mathbb R^2\to\mathbb R^2$ の写像として全微分可能でも、CR を満たさなければ複素微分できない。
+- **CR 方程式だけでは正則を保証しない。** 偏微分の連続性（$C^1$）も要る（病的な反例がある）。実用上は $C^1$＋CR で正則。
+- **$\bar z,\ |z|,\ \operatorname{Re}z$ は正則でない。** 「$\bar z$ を含む」から。正則＝ $z$ だけの関数（$\partial_{\bar z}f=0$）。
+- **$f'(z)$ は一つの複素数。** 方向によらず定まる（それが複素微分可能の意味）。実の方向微分のように方向ごとに違う値、ではない。
+</Statement>
+
+## この章のまとめ
+
+- **複素微分**は $h\to0$ が**平面の全方向**で同じ極限をもつことを要求する、実微分より遥かに強い条件。$\mathbb C$ の掛け算＝回転＋拡大。
+- 実部・虚部で書くと**コーシー–リーマン方程式** $u_x=v_y,\ u_y=-v_x$ が必要。$C^1$＋CR なら十分（正則）。$f'=u_x+iv_x$。
+- 一行で書くと $\partial_{\bar z}f=0$：**正則 ＝ $\bar z$ を含まない（$z$ だけの関数）**。$\bar z,|z|^2$ は正則でない——正則性は特別で稀な性質。
+
+次章は、正則関数の幾何的な意味——**調和関数**との関係と、角度を保つ**等角性**を可視化しながら見ます。

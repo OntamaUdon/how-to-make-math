@@ -1,0 +1,124 @@
+---
+layout: ../../layouts/BaseLayout.astro
+title: 第4章 複素積分とコーシーの積分定理
+description: 経路に沿う複素積分、原始関数と閉曲線積分、そして複素解析の心臓——コーシーの積分定理をグルサの三角形分割で証明する。
+---
+
+import Term from "../../components/assets/Term.astro";
+import Statement from "../../components/assets/Statement.astro";
+
+# 第4章 複素積分とコーシーの積分定理
+
+## 複素解析のすべてが、この一つの定理から流れ出す
+
+複素解析の心臓は、たった一つの定理です——**コーシーの積分定理**：正則関数を単連結領域内の閉曲線に沿って
+積分すると、必ず $0$ になる。
+
+$$\oint_\gamma f(z)\,dz=0\qquad(f\ \text{正則},\ \gamma\ \text{閉曲線}).$$
+
+一見地味なこの等式から、次章以降のすべて——積分公式、無限回微分可能性、リウヴィルの定理、留数定理——が
+芋づる式に流れ出します。「正則関数は一度微分できれば無限回微分でき、べき級数に展開でき、値は境界だけで決まる」
+という複素解析の奇跡は、根源をたどればこの積分定理に行き着きます。この章では複素積分を定義し、コーシーの定理を、
+$f'$ の連続性すら仮定しない最も強い形（**グルサの定理**）で証明します。三角形を無限に分割していく、美しい証明です。
+
+> コーシーの積分定理：正則関数の閉曲線積分は $0$。複素解析のすべての奇跡の源泉。
+
+## 複素積分
+
+<Statement kind="definition" title="経路に沿う複素積分">
+滑らかな曲線 $\gamma:[a,b]\to\mathbb C$ と、その上の連続関数 $f$ に対し
+$$\int_\gamma f(z)\,dz=\int_a^b f(\gamma(t))\,\gamma'(t)\,dt.$$
+（[微積分第12章の線積分](/calculus/12)の複素版。区分的に滑らかな曲線には各区間の和で定める。）
+</Statement>
+
+<Statement kind="proposition" title="基本評価（ML 不等式）">
+$\left|\displaystyle\int_\gamma f\,dz\right|\le\Big(\max_{\gamma}|f|\Big)\cdot\operatorname{length}(\gamma)$。
+</Statement>
+
+この単純な評価（積分の大きさ $\le$ 最大値 × 経路長）が、後の証明で繰り返し効きます。まず、原始関数がある場合は
+積分が「端点だけ」で決まります——[微積分の基本定理](/calculus/7)の複素版です。
+
+<Statement kind="theorem" title="原始関数がある場合">
+$f$ が領域 $D$ で原始関数 $F$（$F'=f$）をもつなら、$D$ 内の曲線 $\gamma$（始点 $\alpha$・終点 $\beta$）について
+$$\int_\gamma f\,dz=F(\beta)-F(\alpha).$$
+特に $\gamma$ が閉曲線なら $\oint_\gamma f\,dz=0$。
+</Statement>
+
+<Statement kind="proof">
+$\int_\gamma f\,dz=\int_a^b F'(\gamma(t))\gamma'(t)\,dt=\int_a^b\frac{d}{dt}F(\gamma(t))\,dt=F(\gamma(b))-F(\gamma(a))=F(\beta)-F(\alpha)$（連鎖律と基本定理）。∎
+</Statement>
+
+だから「原始関数さえあれば閉曲線積分は $0$」。問題は、正則関数がいつも原始関数をもつとは限らないこと
+（$1/z$ は原点を囲む閉曲線で $\oint\frac{dz}z=2\pi i\ne0$！ 単連結でないため）。単連結領域では常に原始関数がある——
+それを保証するのがコーシーの定理です。
+
+## グルサの定理（三角形での消滅）
+
+コーシーの定理の核心は「三角形に沿う積分が $0$」です。しかもこれを、$f'$ の連続性を仮定せずに証明できます
+（グルサの貢献）。証明の道具は、三角形の**四分割**を無限に繰り返す縮小法です。
+
+<Statement kind="theorem" title="グルサの定理">
+$f$ が領域 $D$ で正則、$T\subseteq D$ を三角形（周を $\partial T$）とすると
+$$\oint_{\partial T}f(z)\,dz=0.$$
+</Statement>
+
+<Statement kind="proof">
+$I=\oint_{\partial T}f\,dz$ とおく。$T$ を各辺の中点で結んで**4つの小三角形** $T^{(1)},\dots,T^{(4)}$ に分ける。内部の辺は
+互いに逆向きに2度通り打ち消すので $I=\sum_{j}\oint_{\partial T^{(j)}}f\,dz$。ゆえ、ある $j$ で $\left|\oint_{\partial T^{(j)}}f\right|\ge\frac14|I|$。
+その三角形を $T_1$ とする。同様に $T_1$ を四分割して $T_2$、…と続けると、入れ子の三角形列 $T\supseteq T_1\supseteq T_2\supseteq\cdots$ で
+$$\Big|\oint_{\partial T_n}f\Big|\ge\frac1{4^n}|I|,\qquad \operatorname{diam}(T_n)=\frac{\operatorname{diam}T}{2^n},\quad \operatorname{length}(\partial T_n)=\frac{L}{2^n}.$$
+[区間縮小法](/set-topology/5)（三角形は閉で縮む）より一点 $z_0=\bigcap T_n\in D$ がある。$f$ は $z_0$ で複素微分可能ゆえ
+$$f(z)=f(z_0)+f'(z_0)(z-z_0)+\varepsilon(z)(z-z_0),\qquad \varepsilon(z)\to0\ (z\to z_0).$$
+$f(z_0)+f'(z_0)(z-z_0)$ は原始関数（$1$ 次式）をもつので $\oint_{\partial T_n}$ で消える。残るのは誤差項：
+$$\Big|\oint_{\partial T_n}f\Big|=\Big|\oint_{\partial T_n}\varepsilon(z)(z-z_0)\,dz\Big|\le\Big(\max_{\partial T_n}|\varepsilon|\Big)\cdot\operatorname{diam}(T_n)\cdot\operatorname{length}(\partial T_n)=\max|\varepsilon|\cdot\frac{\operatorname{diam}T\cdot L}{4^n}.$$
+これと $\left|\oint_{\partial T_n}f\right|\ge\frac{|I|}{4^n}$ を比べると $|I|\le\max_{\partial T_n}|\varepsilon|\cdot\operatorname{diam}T\cdot L$。$n\to\infty$ で
+$\max|\varepsilon|\to0$ ゆえ $I=0$。∎
+</Statement>
+
+証明の美しさを味わってください。「積分が大きい小三角形を選び続ける（$1/4^n$ 以上を保つ）」と「三角形は一点に縮む」を
+**区間縮小法**で噛み合わせる。その一点で複素微分可能性を使うと、$1$ 次式部分は原始関数で消え、誤差項は $ML$ 評価で
+消える。$4^n$ の増大と $4^n$ の減衰がちょうど釣り合い、$I=0$ が絞り出される——[微積分の $\varepsilon$-評価](/calculus/1)と
+[集合位相の縮小法](/set-topology/5)の合わせ技です。
+
+## コーシーの積分定理
+
+三角形での消滅から、一般の単連結領域へ広げます。
+
+<Statement kind="theorem" title="コーシーの積分定理">
+$f$ が**単連結**領域 $D$ で正則なら、$D$ 内の任意の閉曲線 $\gamma$ について $\oint_\gamma f\,dz=0$。
+同値：$f$ は $D$ 上で原始関数をもつ。
+</Statement>
+
+<Statement kind="proof">
+（要点。）グルサの定理より、三角形（ゆえ多角形、細分して）で積分が消える。単連結領域では、固定点 $z_0$ から $z$ への
+積分 $F(z)=\int_{z_0}^z f\,dw$ が**経路によらず**定まり（2経路の差が囲む領域を三角形分割すればグルサで $0$）、$F$ は正則で
+$F'=f$（原始関数）。原始関数があるので、前述より閉曲線積分は $0$。∎
+</Statement>
+
+**単連結性が本質**です。$1/z$ が正則な領域 $\mathbb C\setminus\{0\}$ は単連結でなく（原点に穴）、原点を囲む円で
+$\oint\frac{dz}z=2\pi i\ne0$。この「穴を囲むと積分が残る」現象こそ、次章のコーシーの積分公式、そして
+[第8章の留数定理](/complex-analysis/8)の源です。逆に言えば、**積分定理は「穴が無ければ積分は消える」、
+留数定理は「穴があるとどれだけ残るか」**を述べる、表裏一体の理論なのです。
+
+<Statement kind="remark" title="ホモトピー不変性">
+より一般に、$f$ が正則な領域内で、閉曲線 $\gamma_0,\gamma_1$ が**ホモトピック**（[位相幾何](/algebraic-topology)、連続変形で移り合う）なら
+$\oint_{\gamma_0}f=\oint_{\gamma_1}f$。積分は経路の「変形しても変わらない情報＝どの穴を何回まわるか」だけに依存する。
+複素積分と[基本群](/algebraic-topology)が出会う場所。
+</Statement>
+
+## つまずきポイント
+
+<Statement kind="remark" title="よくある誤解">
+- **コーシーの定理は単連結領域で。** 穴のある領域では成り立たない（$\oint\frac{dz}z=2\pi i$）。単連結性＝「囲む穴が無い」。
+- **グルサの定理は $f'$ の連続性を仮定しない。** 複素微分可能だけから閉三角形積分の消滅を導く。これが「正則なら $C^\infty$」（次章）を可能にする出発点。
+- **原始関数の存在 ⇔ 閉曲線積分が常に 0。** 単連結ならコーシーで保証。$1/z$ は $\mathbb C\setminus\{0\}$ で原始関数（一価の $\log$）をもたない。
+- **証明は区間縮小法＋$\varepsilon$ 評価。** $4^n$ の増大と縮小の釣り合いが核心。
+</Statement>
+
+## この章のまとめ
+
+- **複素積分** $\int_\gamma f\,dz$。原始関数 $F$ があれば端点だけで決まり（$F(\beta)-F(\alpha)$）、閉曲線で $0$。**ML 不等式**が基本評価。
+- **グルサの定理**：正則関数の閉三角形積分は $0$（$f'$ の連続性不要）。証明は**四分割の区間縮小法＋$ML$ 評価**。
+- **コーシーの積分定理**：単連結領域で $\oint_\gamma f=0$（＝原始関数が存在）。単連結性が本質で、穴があると積分が残る（$\oint\frac{dz}z=2\pi i$）——留数理論の源。ホモトピー不変。
+
+次章は、この定理から流れ出す第一の奇跡——**コーシーの積分公式**と、正則関数が無限回微分可能であることを示します。

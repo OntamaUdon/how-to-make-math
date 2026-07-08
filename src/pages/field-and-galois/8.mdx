@@ -1,0 +1,116 @@
+---
+layout: ../../layouts/BaseLayout.astro
+title: 第8章 ガロア拡大とガロア群
+description: 正規かつ分離な拡大。ガロア群、固定体、|Gal(L/K)| ≤ [L:K] と等号条件、アルティンの定理、そしてガロア拡大の特徴づけ。
+---
+
+import Term from "../../components/assets/Term.astro";
+import Statement from "../../components/assets/Statement.astro";
+
+# 第8章 ガロア拡大とガロア群
+
+## 体の「対称性の群」を取り出す
+
+いよいよガロア理論の中心概念です。[群論](/group-theory)で対称性を群として抜き出したように、体の拡大 $L/K$ の
+「対称性」——**$K$ を固定したまま $L$ を自分自身に写す入れ替え**——を群として取り出します。これがガロア群です。
+
+$\mathbb Q(\sqrt2)$ なら、$\sqrt2\mapsto\pm\sqrt2$ の2つの入れ替えがガロア群 $\{\mathrm{id},\sqrt2\mapsto-\sqrt2\}\cong\mathbb Z_2$。
+この群が、拡大の構造を完全に映します。ただし、ガロア群が拡大次数ぶんの大きさ（$|\mathrm{Gal}|=[L:K]$）をもつには、
+正規（[第6章](/field-and-galois/6)）かつ分離（[第7章](/field-and-galois/7)）——**ガロア拡大**であることが必要十分。この章で
+ガロア群を定義し、その大きさを決定し、次章の基本定理（中間体 ↔ 部分群の完全対応）への舞台を整えます。
+
+> ガロア拡大 ＝ 正規かつ分離な有限拡大。そのとき $|\mathrm{Gal}(L/K)|=[L:K]$ で、$L$ の $\mathrm{Gal}$-固定体は $K$ ちょうど。
+
+## ガロア群
+
+<Statement kind="definition" title="K-自己同型・ガロア群">
+拡大 $L/K$ の<Term>$K$-自己同型</Term>とは、$K$ を固定する体自己同型 $\sigma:L\to L$（$\sigma|_K=\mathrm{id}$）。
+$K$-自己同型全体は合成で群をなし、<Term>自己同型群</Term> $\operatorname{Aut}(L/K)$ という。
+$L/K$ がガロア拡大（後述）のとき、これを<Term>ガロア群</Term> $\operatorname{Gal}(L/K)$ と書く。
+</Statement>
+
+$K$-自己同型 $\sigma$ は、$\alpha\in L$ をその**共役**（同じ最小多項式の根）へ写します（$m(\sigma\alpha)=\sigma(m(\alpha))=0$）。
+だから $\operatorname{Aut}(L/K)$ の大きさは、根の入れ替えの数——[前章の埋め込みの個数](/field-and-galois/7)で上から抑えられます。
+
+<Statement kind="proposition" title="自己同型群の大きさ">
+有限拡大 $L/K$ について $|\operatorname{Aut}(L/K)|\le[L:K]_s\le[L:K]$。
+</Statement>
+
+<Statement kind="proof">
+$K$-自己同型 $L\to L$ は、特に $K$-埋め込み $L\to\overline K$（像が $L$ に収まるもの）ゆえ、その個数は埋め込みの個数 $[L:K]_s$ 以下。
+[前章](/field-and-galois/7)より $[L:K]_s\le[L:K]$。∎
+</Statement>
+
+等号 $|\operatorname{Aut}(L/K)|=[L:K]$ はいつ成り立つか。分離性（$[L:K]_s=[L:K]$）に加えて、埋め込みがすべて $L$ に収まる
+＝正規性（[第6章](/field-and-galois/6)）が要ります。この2条件を満たすのがガロア拡大です。
+
+## ガロア拡大
+
+<Statement kind="definition" title="ガロア拡大">
+有限拡大 $L/K$ が<Term>ガロア拡大</Term>とは、**正規かつ分離**であること。同値な条件：
+$|\operatorname{Aut}(L/K)|=[L:K]$。このとき $\operatorname{Aut}(L/K)=\operatorname{Gal}(L/K)$ と書く。
+</Statement>
+
+<Statement kind="theorem" title="ガロア拡大の同値条件">
+有限拡大 $L/K$ について、次は同値：
+1. $L/K$ は正規かつ分離（ガロア）。
+2. $|\operatorname{Aut}(L/K)|=[L:K]$。
+3. $L$ は $K$ 上の**分離的**多項式の分解体。
+4. $L^{\operatorname{Aut}(L/K)}=K$（$\operatorname{Aut}(L/K)$ の全元が固定する元は $K$ だけ）。
+</Statement>
+
+<Statement kind="proof">
+(1)⇔(2)：分離性で $[L:K]_s=[L:K]$、正規性で埋め込みが全て自己同型（[第6章](/field-and-galois/6)）ゆえ $|\operatorname{Aut}|=[L:K]_s=[L:K]$。逆も同様。
+(1)⇔(3)：正規＝分解体（[第6章](/field-and-galois/6)）、分離＝分離的多項式で分解体をとれる。(2)⇔(4) は次のアルティンの定理から。∎
+</Statement>
+
+条件 (4) が実用的です。「固定体がちょうど $K$」——群の作用で動かない元が基礎体だけ、というのがガロア拡大の
+本質的な特徴。これを保証するのがアルティンの定理です。
+
+## 固定体とアルティンの定理
+
+<Statement kind="definition" title="固定体">
+$L$ の自己同型の群 $G$ に対し、$G$ の全元が固定する元の集合 $L^G=\{\alpha\in L:\sigma(\alpha)=\alpha\ \forall\sigma\in G\}$ を
+<Term>固定体</Term>という（$L$ の部分体）。
+</Statement>
+
+<Statement kind="theorem" title="アルティンの定理">
+$L$ を体、$G$ を $L$ の自己同型のなす**有限**群とする。$K=L^G$ とおくと、$L/K$ はガロア拡大で
+$$[L:L^G]=|G|,\qquad \operatorname{Gal}(L/L^G)=G.$$
+</Statement>
+
+<Statement kind="proof">
+（要点。）$[L:L^G]\le|G|$：任意の $\alpha\in L$ に対し、軌道 $\{\sigma(\alpha):\sigma\in G\}$（相異なる元 $\alpha_1,\dots,\alpha_r$、$r\le|G|$）から
+$f(x)=\prod(x-\alpha_i)$ を作ると、$f$ は $G$ で不変ゆえ係数が $L^G$ にあり、$\alpha$ の $L^G$ 上最小多項式は $f$ を割る分離多項式で
+次数 $\le|G|$。ゆえ各元は $L^G$ 上次数 $\le|G|$ で、$L/L^G$ は分離・正規（共役が全て軌道内＝$L$ 内）で $[L:L^G]\le|G|$。
+逆 $[L:L^G]\ge|G|$：$G$ の相異なる $|G|$ 個の自己同型が $L^G$ 上一次独立（デデキントの補題：相異なる指標は一次独立）ゆえ
+$|G|\le[L:L^G]_s\le[L:L^G]$。合わせて $[L:L^G]=|G|$。$\operatorname{Gal}(L/L^G)\supseteq G$ かつ大きさが $[L:L^G]=|G|$ で一致。∎
+</Statement>
+
+アルティンの定理は「群 $G$ から出発して固定体 $L^G$ をとれば、$L/L^G$ がちょうど $G$ をガロア群にもつガロア拡大になる」
+と言います。**群 → 体**の方向の対応を確立するもので、次章の基本定理（中間体と部分群の一対一対応）の
+決定的な半分です。とくに「$[L:L^G]=|G|$」がガロア対応の“次数＝位数”を保証します。
+
+<Statement kind="example" title="ガロア群の計算例">
+- $\mathbb Q(\sqrt2)/\mathbb Q$：$\operatorname{Gal}=\{\mathrm{id},\ \sqrt2\mapsto-\sqrt2\}\cong\mathbb Z_2$。
+- $\mathbb Q(\sqrt2,\sqrt3)/\mathbb Q$：$\sqrt2\mapsto\pm\sqrt2,\ \sqrt3\mapsto\pm\sqrt3$ の独立な選択で $\operatorname{Gal}\cong\mathbb Z_2\times\mathbb Z_2=V_4$。次数 $4$。
+- $x^3-2$ の分解体 $\mathbb Q(\sqrt[3]2,\omega)/\mathbb Q$：$3$ つの根の置換で $\operatorname{Gal}\cong S_3$。次数 $6$。
+これらの束構造は[次章のインタラクティブ](/field-and-galois/9)で可視化する。
+</Statement>
+
+## つまずきポイント
+
+<Statement kind="remark" title="よくある誤解">
+- **ガロア拡大＝正規＋分離。** 片方だけでは不十分。$\mathbb Q(\sqrt[3]2)/\mathbb Q$ は分離だが非正規ゆえ非ガロア（$|\operatorname{Aut}|=1<3$）。標数 $0$ では分離は自動なので、実質「正規＝ガロア」。
+- **ガロア群の元は $K$ を固定し、根を共役に写す。** $\sigma$ は $K$ 係数を動かさず、$\alpha$ を同じ最小多項式の根へ。
+- **$|\operatorname{Gal}(L/K)|=[L:K]$ はガロアのときだけ。** 一般は $\le$。等号がガロアの定義（同値条件の一つ）。
+- **アルティン：群から固定体をとると必ずガロア。** $[L:L^G]=|G|$。デデキントの補題（指標の一次独立）が下からの評価の鍵。
+</Statement>
+
+## この章のまとめ
+
+- **$K$-自己同型群** $\operatorname{Aut}(L/K)$ は $K$ を固定し根を共役へ写す。$|\operatorname{Aut}(L/K)|\le[L:K]$。
+- **ガロア拡大** ＝ 正規かつ分離 $\iff|\operatorname{Aut}(L/K)|=[L:K]\iff$ 分離的多項式の分解体 $\iff L^{\operatorname{Aut}}=K$。標数 $0$ では正規＝ガロア。
+- **アルティンの定理**：自己同型の有限群 $G$ から $[L:L^G]=|G|$、$\operatorname{Gal}(L/L^G)=G$。**群 → 固定体**の対応を確立（次章の基本定理の半分）。
+
+いよいよ次章は、この分野の頂点——**ガロア理論の基本定理**（中間体と部分群の完全な対応）を証明します。

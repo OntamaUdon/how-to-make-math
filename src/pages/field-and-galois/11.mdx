@@ -1,0 +1,104 @@
+---
+layout: ../../layouts/BaseLayout.astro
+title: 第11章 円分体
+description: 1 のべき根が生成する体。円分多項式、ガロア群 (Z/n)˟、そしてガウスによる正多角形の作図可能性の完全な決定。
+---
+
+import Term from "../../components/assets/Term.astro";
+import Statement from "../../components/assets/Statement.astro";
+
+# 第11章 円分体
+
+## 「1 の n 乗根」がつくる、美しい対称性
+
+$1$ の $n$ 乗根——$z^n=1$ の解——は、複素平面で単位円周を $n$ 等分する点 $\zeta_n^k=e^{2\pi ik/n}$ です。これらを $\mathbb Q$ に
+添加した体 $\mathbb Q(\zeta_n)$ を**円分体**といいます。正 $n$ 角形の頂点を生成する、幾何と代数が出会う体です。
+
+円分体はガロア理論の宝石です。そのガロア群は $(\mathbb Z/n\mathbb Z)^\times$（$\bmod\,n$ の単元群、[環論第1章](/ring-theory/1)）という
+**具体的で可換な群**——つまり円分体は $\mathbb Q$ の**アーベル拡大**です。この明快さのおかげで、$2000$ 年の難問
+「どの正 $n$ 角形が定規とコンパスで作図できるか」に、ガウスが完全な答えを与えられました。[第5章の作図理論](/field-and-galois/5)と
+ガロア群の計算が結びつく、この章はガロア理論の応用の白眉です。
+
+> 円分体 $\mathbb Q(\zeta_n)$ のガロア群は $(\mathbb Z/n\mathbb Z)^\times$（可換）。正 $n$ 角形が作図可能 $\iff n=2^k\times$（相異なるフェルマー素数の積）。
+
+## 円分多項式
+
+<Statement kind="definition" title="1 のべき根・円分多項式">
+$z^n=1$ の解を<Term>$1$ の $n$ 乗根</Term>、位数がちょうど $n$ のもの（$\zeta^d\ne1\ (0<d<n)$）を<Term>原始 $n$ 乗根</Term>という。
+原始 $n$ 乗根は $\varphi(n)$ 個あり（$\varphi$ はオイラー関数）、<Term>円分多項式</Term>を
+$$\Phi_n(x)=\prod_{\substack{1\le k\le n\\ \gcd(k,n)=1}}(x-\zeta_n^k)\quad(\deg\Phi_n=\varphi(n))$$
+で定める。$x^n-1=\prod_{d\mid n}\Phi_d(x)$。
+</Statement>
+
+$\Phi_n$ は一見複素係数ですが、実は**整数係数**です（$x^n-1$ から約分で得られる）。そして既約——これが拡大次数を決めます。
+
+<Statement kind="theorem" title="円分多項式の既約性（ガウス）">
+$\Phi_n(x)\in\mathbb Z[x]$ は $\mathbb Q$ 上既約。ゆえ $\Phi_n$ は原始 $n$ 乗根 $\zeta_n$ の最小多項式で
+$$[\mathbb Q(\zeta_n):\mathbb Q]=\varphi(n).$$
+</Statement>
+
+<Statement kind="proof">
+（要点。）$\zeta$ を原始 $n$ 乗根、$p\nmid n$ を素数とする。$\zeta^p$ も原始 $n$ 乗根。$\zeta$ の最小多項式 $f$ と $\zeta^p$ の最小多項式 $g$ が
+異なると仮定すると、$f,g\mid\Phi_n$ で $f(x),g(x^p)$ が $\zeta$ を共通根にもつ。$\bmod\,p$ で還元すると $\bar g(x^p)=\bar g(x)^p$
+（フロベニウス）となり $\bar f,\bar g$ が共通因子をもつ＝ $x^n-1$ が $\bmod\,p$ で重根——だが $p\nmid n$ ゆえ $x^n-1$ は $\mathbb F_p$ で分離的、矛盾。
+よって $\zeta$ と $\zeta^p$ は同じ最小多項式。$\gcd(k,n)=1$ の $k$ は素因数の積なので、すべての原始根が同じ最小多項式をもち $f=\Phi_n$、既約。∎
+</Statement>
+
+$p=n$ 素数のときは[環論第10章](/ring-theory/10)でアイゼンシュタインにより既約性を示しました。一般の $n$ では、この
+$\bmod\,p$ 還元とフロベニウスを使う議論になります。既約性から次数 $\varphi(n)$ が確定します。
+
+## ガロア群は (Z/n)˟
+
+<Statement kind="theorem" title="円分体のガロア群">
+$\mathbb Q(\zeta_n)/\mathbb Q$ はアーベルなガロア拡大で
+$$\operatorname{Gal}(\mathbb Q(\zeta_n)/\mathbb Q)\ \cong\ (\mathbb Z/n\mathbb Z)^\times,\qquad \sigma_a:\zeta_n\mapsto\zeta_n^a\ (\gcd(a,n)=1)\ \leftrightarrow\ a.$$
+</Statement>
+
+<Statement kind="proof">
+$\mathbb Q(\zeta_n)$ は $x^n-1$（分離的、$\gcd(x^n-1,nx^{n-1})=1$）の分解体ゆえガロア。各 $\sigma\in\operatorname{Gal}$ は $\zeta_n$ を別の原始 $n$ 乗根
+$\zeta_n^a$（$\gcd(a,n)=1$）へ写し、$a\bmod n\in(\mathbb Z/n)^\times$ が定まる。$\sigma_a\sigma_b(\zeta)=\sigma_a(\zeta^b)=\zeta^{ab}=\sigma_{ab}(\zeta)$ ゆえ
+写像 $\sigma_a\mapsto a$ は準同型で単射。$|\operatorname{Gal}|=[\mathbb Q(\zeta_n):\mathbb Q]=\varphi(n)=|(\mathbb Z/n)^\times|$ より同型。$(\mathbb Z/n)^\times$ は可換ゆえアーベル拡大。∎
+</Statement>
+
+「$\zeta_n\mapsto\zeta_n^a$」という単純な作用で、ガロア群が $\bmod\,n$ の単元群として完全に決まる。円分体は、ガロア群が
+最も具体的に計算できる拡大です。$\mathbb Q$ 上のアーベル拡大がすべて円分体に含まれる（クロネッカー–ウェーバーの定理）という
+深い結果もあり、[代数的整数論](/algebraic-number-theory)・類体論の出発点になります。
+
+## 正多角形の作図可能性（ガウス）
+
+[第5章](/field-and-galois/5)の作図理論と、円分体のガロア群を結ぶと、正多角形の作図問題が解けます。正 $n$ 角形の作図は
+$\zeta_n$（の実部 $\cos\frac{2\pi}n$）の作図に帰着します。
+
+<Statement kind="theorem" title="ガウス–ワンツェルの定理">
+正 $n$ 角形が定規とコンパスで作図可能 $\iff$ $\zeta_n$ が作図可能 $\iff$
+$$n=2^k p_1p_2\cdots p_r\quad(p_i\ \text{は相異なる}\textbf{フェルマー素数}\ 2^{2^m}+1).$$
+</Statement>
+
+<Statement kind="proof">
+（要点。）[第5章](/field-and-galois/5)より $\zeta_n$ 作図可能 $\iff\mathbb Q(\zeta_n)$ が2次拡大の塔に入る。$\operatorname{Gal}(\mathbb Q(\zeta_n)/\mathbb Q)\cong(\mathbb Z/n)^\times$ は
+アーベルなので、$|(\mathbb Z/n)^\times|=\varphi(n)$ が $2$ のべきなら、$2$ 群のアーベル群は位数 $2$ の部分群の列（組成列）をもち、
+[基本定理](/field-and-galois/9)で2次拡大の塔が得られる（作図可能）。逆に作図可能なら $[\mathbb Q(\zeta_n):\mathbb Q]=\varphi(n)$ は $2$ のべき。
+$\varphi(n)=2^k\iff n=2^a p_1\cdots p_r$（$p_i$ 相異なる、$\varphi(p_i)=p_i-1$ が $2$ べき $\iff p_i$ フェルマー素数）。∎
+</Statement>
+
+フェルマー素数は $3,5,17,257,65537$（知られているのはこの $5$ 個）。だから正 $3,4,5,6,8,10,12,15,16,17,\dots$ 角形は
+作図可能、正 $7,9,11,13,14$ 角形は不可能。**$19$ 歳のガウスが正 $17$ 角形の作図法を発見した**のは、$17=2^4+1$ が
+フェルマー素数で $\varphi(17)=16=2^4$ だから——ガロア群が $2$ 群であることが、コンパスの作図を可能にしたのです。
+「作図可能性が体のガロア群の構造で決まる」——ガロア理論の応用の頂点の一つです。
+
+## つまずきポイント
+
+<Statement kind="remark" title="よくある誤解">
+- **円分多項式は整数係数で既約。** $\Phi_n$ の次数は $\varphi(n)$（原始根の個数）。$\Phi_p=x^{p-1}+\cdots+1$（$p$ 素数）。
+- **ガロア群 $(\mathbb Z/n)^\times$ は可換だが巡回とは限らない。** $(\mathbb Z/8)^\times\cong\mathbb Z_2\times\mathbb Z_2$（非巡回）。可換（アーベル拡大）なのは常に真。
+- **フェルマー素数は $2^{2^m}+1$ の形の素数。** $3,5,17,257,65537$ のみ既知。作図可能な正多角形はこれらと $2$ べきの積。
+- **正 $n$ 角形作図可能 $\iff\varphi(n)$ が $2$ べき。** ガロア群が $2$ 群 ⇒ 2次拡大の塔（作図可能）。ガロア理論と作図理論の合流。
+</Statement>
+
+## この章のまとめ
+
+- **円分体** $\mathbb Q(\zeta_n)$ は $1$ の原始 $n$ 乗根を添加した体。**円分多項式** $\Phi_n$（整数係数・既約・次数 $\varphi(n)$）が $\zeta_n$ の最小多項式で $[\mathbb Q(\zeta_n):\mathbb Q]=\varphi(n)$。
+- ガロア群は **$(\mathbb Z/n)^\times$（可換）**、作用は $\zeta_n\mapsto\zeta_n^a$。円分体は $\mathbb Q$ のアーベル拡大。
+- **ガウス–ワンツェル**：正 $n$ 角形作図可能 $\iff n=2^k\times$（相異なるフェルマー素数の積）$\iff\varphi(n)$ が $2$ べき。ガロア群が $2$ 群 ⇒ 作図可能。正 $17$ 角形がその名例。
+
+最終章は、ガロア理論の最大の成果——**べき根による可解性とアーベル–ルフィニの定理**（5次方程式に解の公式が無い）を扱います。
