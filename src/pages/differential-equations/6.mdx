@@ -1,0 +1,113 @@
+---
+layout: ../../layouts/BaseLayout.astro
+title: 第6章 連立線形系と行列指数関数
+description: 複数の未知関数を一挙に解く。連立線形系 x′=Ax、行列指数関数 e^{tA}、固有値・ジョルダン標準形による計算。
+---
+
+import Term from "../../components/assets/Term.astro";
+import Statement from "../../components/assets/Statement.astro";
+
+# 第6章 連立線形系と行列指数関数
+
+## $y'=ay$ の解 $e^{ax}$ を、行列に一般化する
+
+複数の量が絡み合って変化する系——捕食者と被食者、連成振動、化学反応の濃度——は、複数の未知関数の
+連立微分方程式になります。$\mathbf x'=A\mathbf x$（$\mathbf x$ はベクトル、$A$ は行列）の形です。
+
+一見複雑ですが、スカラーの $y'=ay$ の解が $y=e^{ax}y_0$ だったことを思い出してください。連立系の解も、
+まったく同じ形——$\mathbf x=e^{tA}\mathbf x_0$——で書けます。ここで $e^{tA}$ は**行列の指数関数**。「行列を指数の肩に乗せる」
+という一見奇妙な操作が、連立線形系を一挙に解く鍵です。そして $e^{tA}$ の計算は、[線形代数の固有値・対角化・
+ジョルダン標準形](/linear-algebra/9)にそっくり帰着します。微分方程式と線形代数が、ここで完全に一つになる。
+高階方程式もすべて一階の連立系に書き直せるので、これは線形 ODE の統一理論でもあります。
+
+> 連立線形系 $\mathbf x'=A\mathbf x$ の解は $\mathbf x=e^{tA}\mathbf x_0$。**行列指数関数** $e^{tA}$ は固有値・ジョルダン標準形で計算する。
+
+## 連立線形系と行列指数関数
+
+<Statement kind="definition" title="行列指数関数">
+$n\times n$ 行列 $A$ に対し、
+$$e^{A}=\sum_{k=0}^\infty\frac{A^k}{k!}=I+A+\frac{A^2}{2!}+\cdots$$
+（全平面で収束する[整関数](/complex-analysis/3)の行列版、絶対収束）を<Term>行列指数関数</Term>という。$\dfrac{d}{dt}e^{tA}=Ae^{tA}$。
+</Statement>
+
+<Statement kind="theorem" title="連立線形系の解">
+定数行列 $A$ による同次連立系 $\mathbf x'=A\mathbf x,\ \mathbf x(0)=\mathbf x_0$ の解は
+$$\mathbf x(t)=e^{tA}\mathbf x_0,$$
+一意（[ピカール–リンデレフ](/differential-equations/3)、$f=A\mathbf x$ はリプシッツ）。
+</Statement>
+
+<Statement kind="proof">
+$\frac{d}{dt}e^{tA}\mathbf x_0=Ae^{tA}\mathbf x_0=A\mathbf x$（項別微分：$\frac{d}{dt}\frac{(tA)^k}{k!}=\frac{A^k t^{k-1}}{(k-1)!}=A\frac{(tA)^{k-1}}{(k-1)!}$）。
+$t=0$ で $e^0\mathbf x_0=\mathbf x_0$。ゆえ初期値問題の解。∎
+</Statement>
+
+スカラーの $\frac{d}{dt}e^{at}=ae^{at}$ が、そのまま行列版 $\frac{d}{dt}e^{tA}=Ae^{tA}$ に一般化される。証明も同じ
+（べき級数の項別微分）。問題は $e^{tA}$ を**具体的に計算する**ことで、ここで線形代数が主役になります。
+
+## 固有値による計算
+
+$A$ が対角化できれば、$e^{tA}$ は対角成分の指数関数に落ちます。
+
+<Statement kind="theorem" title="対角化可能なとき">
+$A=P\operatorname{diag}(\lambda_1,\dots,\lambda_n)P^{-1}$（[対角化](/linear-algebra/8)）なら
+$$e^{tA}=P\operatorname{diag}(e^{\lambda_1t},\dots,e^{\lambda_nt})P^{-1}.$$
+ゆえ解は固有ベクトル $\mathbf v_i$ を使い $\mathbf x(t)=\sum_i c_ie^{\lambda_it}\mathbf v_i$。
+</Statement>
+
+<Statement kind="proof">
+$A^k=PD^kP^{-1}$（$D$ 対角）ゆえ $e^{tA}=\sum\frac{t^k}{k!}PD^kP^{-1}=Pe^{tD}P^{-1}$。$e^{tD}$ は対角成分 $e^{\lambda_it}$。∎
+</Statement>
+
+**「各固有方向で、独立に $e^{\lambda_it}$ 倍で進む」**——連立系が、固有ベクトルの向きに分解すると $n$ 個の独立な
+スカラー方程式 $y_i'=\lambda_iy_i$ に化ける。[線形代数の対角化](/linear-algebra/8)（座標を固有ベクトルにとると
+変換が単純になる）の、力学的な意味そのものです。固有値 $\lambda_i$ が各モードの成長率を決めます。
+
+<Statement kind="example" title="連立系の解">
+$\mathbf x'=\begin{pmatrix}0&1\\-2&-3\end{pmatrix}\mathbf x$：固有値 $\lambda=-1,-2$（特性方程式 $\lambda^2+3\lambda+2=0$）、
+固有ベクトル $\binom1{-1},\binom1{-2}$。解 $\mathbf x=c_1e^{-t}\binom1{-1}+c_2e^{-2t}\binom1{-2}$。両固有値が負ゆえ原点へ収束
+（安定、[次章](/differential-equations/7)）。
+</Statement>
+
+## ジョルダン標準形と重複固有値
+
+対角化できない（固有ベクトルが足りない）場合は、[ジョルダン標準形](/linear-algebra/9)で計算します。
+
+<Statement kind="theorem" title="ジョルダン細胞の指数関数">
+ジョルダン細胞 $J=\lambda I+N$（$N$ は冪零、右上に $1$）について、$\lambda I$ と $N$ は可換なので
+$$e^{tJ}=e^{\lambda t}e^{tN}=e^{\lambda t}\Big(I+tN+\frac{t^2}{2!}N^2+\cdots+\frac{t^{m-1}}{(m-1)!}N^{m-1}\Big)$$
+（$N$ 冪零ゆえ級数は有限）。
+</Statement>
+
+対角化できる場合の解は純粋な $e^{\lambda t}$ の重ね合わせでしたが、対角化できない（重複固有値で固有ベクトル不足）と
+$t,t^2,\dots$ の**多項式因子**が付きます——これが[第4章の重根 $xe^{\lambda x}$](/differential-equations/4)の、連立系版の正体です。
+[線形代数のジョルダン標準形の指数関数への応用](/linear-algebra/9)が、ここでそのまま微分方程式の解に現れます。
+
+## 高階方程式は一階の連立系
+
+すべての高階線形方程式は、一階の連立系に書き直せます。これが連立系の理論を「線形 ODE の統一理論」にします。
+
+<Statement kind="proposition" title="高階 → 一階連立系">
+$n$ 階方程式 $y^{(n)}=a_{n-1}y^{(n-1)}+\cdots+a_0y+g$ は、$\mathbf x=(y,y',\dots,y^{(n-1)})^\top$ とおくと
+$$\mathbf x'=\begin{pmatrix}0&1&&\\ &\ddots&\ddots&\\ &&0&1\\ a_0&a_1&\cdots&a_{n-1}\end{pmatrix}\mathbf x+\begin{pmatrix}0\\\vdots\\0\\g\end{pmatrix}$$
+（<Term>コンパニオン行列</Term>）という一階連立系になる。この行列の固有値＝特性方程式の根。
+</Statement>
+
+だから[第4章の特性方程式](/differential-equations/4)は、コンパニオン行列の固有値方程式にほかならず、重根 ↔ ジョルダン細胞、
+というきれいな対応がつきます。**線形 ODE の理論は、すべて $\mathbf x'=A\mathbf x$ と $e^{tA}$ に統一される**。
+
+## つまずきポイント
+
+<Statement kind="remark" title="よくある誤解">
+- **$e^{A+B}=e^Ae^B$ は $AB=BA$ のときのみ。** 行列は非可換なので、指数法則が一般には崩れる。$e^{tJ}=e^{\lambda t}e^{tN}$ が成り立つのは $\lambda I,N$ が可換だから。
+- **$e^{tA}$ の計算は固有値・ジョルダン標準形。** 対角化可能なら $e^{\lambda_it}$ の重ね合わせ、不可能なら $t$ の多項式因子（重根）。
+- **固有値の実部が安定性を決める。** $\operatorname{Re}\lambda_i<0$ なら $e^{\lambda_it}\to0$（収束）。[次章の相図](/differential-equations/7)の基礎。
+- **高階も連立系に帰着。** コンパニオン行列。特性方程式＝その固有値方程式。線形理論は $\mathbf x'=A\mathbf x$ に統一。
+</Statement>
+
+## この章のまとめ
+
+- 連立線形系 $\mathbf x'=A\mathbf x$ の解は $\mathbf x=e^{tA}\mathbf x_0$（**行列指数関数**、スカラー $e^{at}$ の一般化、$\frac{d}{dt}e^{tA}=Ae^{tA}$）。
+- $e^{tA}$ は[線形代数](/linear-algebra/9)で計算：**対角化**可能なら $\sum c_ie^{\lambda_it}\mathbf v_i$、**ジョルダン標準形**なら $t$ の多項式因子つき（重根の連立系版）。
+- 高階方程式は**コンパニオン行列**の一階連立系に帰着し、特性方程式＝固有値方程式。線形 ODE は $\mathbf x'=A\mathbf x$ に統一される。
+
+線形理論が完成しました。次章から**定性理論**——解を求めずに、平衡点・相図・安定性を読む技術に入ります。

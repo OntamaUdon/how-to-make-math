@@ -1,0 +1,109 @@
+---
+layout: ../../layouts/BaseLayout.astro
+title: 第4章 定数係数線形微分方程式
+description: 線形性という宝物。定数係数線形方程式を特性方程式で解く。重根・複素根の扱い、そして解空間が n 次元ベクトル空間であること。
+---
+
+import Term from "../../components/assets/Term.astro";
+import Statement from "../../components/assets/Statement.astro";
+
+# 第4章 定数係数線形微分方程式
+
+## 線形なら、代数方程式に化ける
+
+前章までの一般論は強力ですが、具体的に解を書けるわけではありません。ところが**線形**という条件を課すと、
+状況が一変します。とくに係数が定数の線形方程式——ばね振動 $y''+\omega^2y=0$、RLC 回路、減衰振動——は、
+**微分方程式が代数方程式（特性方程式）に化けて**、解が指数関数と三角関数で完全に書けます。
+
+秘密は「$e^{\lambda x}$ を微分しても $e^{\lambda x}$ の定数倍」という指数関数の性質。$y=e^{\lambda x}$ を代入すると、微分が
+$\lambda$ の掛け算に変わり、方程式が $\lambda$ の多項式方程式になる。あとは[代数学の基本定理](/complex-analysis/5)で根を求めるだけ。
+そして線形方程式のもう一つの宝が、**解全体がベクトル空間をなす**こと——[線形代数](/linear-algebra)がまるごと使えます。
+この章で、定数係数線形方程式を系統的に解く技術を確立します。
+
+> 定数係数線形方程式は、$y=e^{\lambda x}$ の代入で**特性方程式**（$\lambda$ の多項式）に化ける。解空間は $n$ 次元ベクトル空間。
+
+## 線形性と解空間
+
+<Statement kind="definition" title="線形微分方程式">
+$$y^{(n)}+a_{n-1}(x)y^{(n-1)}+\cdots+a_1(x)y'+a_0(x)y=g(x)$$
+を $n$ 階<Term>線形微分方程式</Term>という（$g=0$ で<Term>同次</Term>、$g\ne0$ で<Term>非同次</Term>）。左辺を作用素 $L[y]$ と書くと
+$L[c_1y_1+c_2y_2]=c_1L[y_1]+c_2L[y_2]$（<Term>線形性</Term>）。
+</Statement>
+
+<Statement kind="theorem" title="解空間は n 次元">
+同次線形方程式 $L[y]=0$ の解全体は、$n$ 次元の[ベクトル空間](/linear-algebra/1)をなす。すなわち一次独立な $n$ 個の解
+$y_1,\dots,y_n$（<Term>基本解系</Term>）があり、一般解は $y=c_1y_1+\cdots+c_ny_n$。
+</Statement>
+
+<Statement kind="proof">
+線形性より解の集合は部分空間。$n$ 次元であることは、[存在と一意性](/differential-equations/3)から：初期値 $(y(x_0),\dots,y^{(n-1)}(x_0))\in\mathbb R^n$ を
+解に対応させる写像が線形同型（各初期値にちょうど一つの解、逆に解は初期値で決まる）。ゆえ解空間 $\cong\mathbb R^n$。∎
+</Statement>
+
+**「解を全部知る＝$n$ 個の独立な解を見つける」**。線形代数の基底の考え方（[第2章](/linear-algebra/2)）が、微分方程式の
+解の構造をそのまま記述します。あとは、その $n$ 個の解を実際に求める方法です。
+
+## 特性方程式
+
+定数係数の同次方程式に $y=e^{\lambda x}$ を代入します。
+
+<Statement kind="theorem" title="特性方程式">
+定数係数同次方程式 $y^{(n)}+a_{n-1}y^{(n-1)}+\cdots+a_0y=0$ に $y=e^{\lambda x}$ を代入すると、$e^{\lambda x}\ne0$ より
+$$\lambda^n+a_{n-1}\lambda^{n-1}+\cdots+a_1\lambda+a_0=0$$
+（<Term>特性方程式</Term>）。この根 $\lambda$ が解 $e^{\lambda x}$ を与える。
+</Statement>
+
+$y^{(k)}=\lambda^ke^{\lambda x}$ なので、微分の階数 $k$ が $\lambda^k$ に対応し、微分方程式が多項式方程式になる。
+根の様子（相異なる・重根・複素）に応じて、基本解系が決まります。
+
+<Statement kind="theorem" title="根に応じた基本解">
+特性方程式の根に対し、$n$ 個の一次独立な実解を次で得る：
+- **相異なる実根** $\lambda$：$e^{\lambda x}$。
+- **$m$ 重根** $\lambda$：$e^{\lambda x},\ xe^{\lambda x},\ x^2e^{\lambda x},\dots,x^{m-1}e^{\lambda x}$（$m$ 個）。
+- **複素共役根** $\alpha\pm i\beta$：$e^{\alpha x}\cos\beta x,\ e^{\alpha x}\sin\beta x$（オイラーの公式で実化）。
+</Statement>
+
+<Statement kind="proof">
+（重根の場合。）$\lambda$ が特性多項式 $p$ の $m$ 重根なら、演算子 $L=p(D)$（$D=\frac{d}{dx}$）は $(D-\lambda)^m$ を因子にもつ。
+$(D-\lambda)^m[x^ke^{\lambda x}]=0$（$k<m$）が計算で確かめられる（$(D-\lambda)[x^ke^{\lambda x}]=kx^{k-1}e^{\lambda x}$ を $m$ 回で消える）。
+ゆえ $x^ke^{\lambda x}$（$k=0,\dots,m-1$）は解。複素根は[オイラーの公式](/complex-analysis/3) $e^{(\alpha+i\beta)x}=e^{\alpha x}(\cos\beta x+i\sin\beta x)$ の
+実部・虚部をとる。∎
+</Statement>
+
+微分演算子 $D=\frac{d}{dx}$ を「代数的な量」として扱い、$L=p(D)$ と因数分解する視点が強力です。$(D-\lambda)$ の掛け算が
+$e^{\lambda x}$ を消す、という代数計算で解が出ます。
+
+<Statement kind="example" title="振動と減衰">
+- **単振動** $y''+\omega^2y=0$：特性方程式 $\lambda^2+\omega^2=0$、根 $\pm i\omega$。一般解 $y=c_1\cos\omega x+c_2\sin\omega x$（振動）。
+- **減衰振動** $y''+2\gamma y'+\omega^2y=0$（$\gamma<\omega$）：根 $-\gamma\pm i\sqrt{\omega^2-\gamma^2}$。$y=e^{-\gamma x}(c_1\cos+c_2\sin)$（振幅が指数的に減衰）。
+- **重根（臨界減衰）** $y''+2y'+y=0$：$\lambda=-1$（$2$ 重）。$y=(c_1+c_2x)e^{-x}$。
+</Statement>
+
+物理の振動現象——単振動・減衰・臨界減衰・過減衰——が、特性方程式の根の位置（虚軸上・複素・実重根・実相異）で
+完全に分類されます。「根の実部が負なら減衰、虚部があれば振動」——この読み方が[定性理論](/differential-equations/7)へ繋がります。
+
+## オイラーの微分方程式
+
+定数係数でなくても、変数変換で定数係数に帰着する重要な型があります。
+
+<Statement kind="remark" title="オイラー（コーシー–オイラー）方程式">
+$x^2y''+axy'+by=0$（各項で $x$ の冪と微分の階数が一致）は、$y=x^\lambda$ を代入すると $\lambda$ の代数方程式に化ける
+（または $x=e^t$ の変換で定数係数になる）。特性方程式 $\lambda(\lambda-1)+a\lambda+b=0$ の根で解が決まる。
+</Statement>
+
+## つまずきポイント
+
+<Statement kind="remark" title="よくある誤解">
+- **重根では $x^ke^{\lambda x}$ を足す。** $m$ 重根なら $e^{\lambda x},xe^{\lambda x},\dots,x^{m-1}e^{\lambda x}$ の $m$ 個。$e^{\lambda x}$ だけでは基本解系が足りない。
+- **複素根は実解に直す。** $e^{(\alpha\pm i\beta)x}$ の実部・虚部 $e^{\alpha x}\cos\beta x,e^{\alpha x}\sin\beta x$。オイラーの公式。
+- **解空間は $n$ 次元。** 一般解は $n$ 個の任意定数（＝一次独立な $n$ 個の解の線形結合）。線形代数の基底そのもの。
+- **根の実部が安定性を決める。** 実部 $<0$ なら $x\to\infty$ で減衰、$>0$ なら発散。[定性理論](/differential-equations/7)の芽。
+</Statement>
+
+## この章のまとめ
+
+- **線形性**より同次方程式の解全体は **$n$ 次元ベクトル空間**（[存在一意性](/differential-equations/3)から）。一般解＝一次独立な $n$ 個の基本解の線形結合。
+- 定数係数なら $y=e^{\lambda x}$ の代入で**特性方程式**（$\lambda$ の多項式）に化ける。**相異なる根**は $e^{\lambda x}$、**$m$ 重根**は $x^ke^{\lambda x}$、**複素根**は $e^{\alpha x}\cos\beta x,e^{\alpha x}\sin\beta x$。
+- 振動・減衰・臨界減衰は根の位置で分類される。演算子 $L=p(D)$ の因数分解が解を生む。
+
+次章は、非同次項（外力）がある場合——**未定係数法・定数変化法**とロンスキアンを扱います。
