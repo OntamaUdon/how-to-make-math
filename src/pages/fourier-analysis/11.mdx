@@ -1,0 +1,111 @@
+---
+layout: ../../layouts/BaseLayout.astro
+title: 第11章 超関数の演算とフーリエ変換
+description: 「操作を試験関数へ移す」——この一手で、超関数はどれも無限回微分でき、フーリエ変換できる。デルタの変換が定数になる意味。
+---
+
+import Term from "../../components/assets/Term.astro";
+import Statement from "../../components/assets/Statement.astro";
+
+# 第11章 超関数の演算とフーリエ変換
+
+## 操作を「試験関数の側へ移す」
+
+超関数 $T$ は、試験関数 $\varphi$ に作用してのみ意味をもちました（$\langle T,\varphi\rangle$）。では、超関数を
+**微分する**にはどうすればいいか。$T$ そのものは値をもたないので、直接は微分できません。そこで、とっておきの
+手を使います——**操作を試験関数の側へ移す**のです。
+
+アイデアの源は部分積分。普通の関数 $f$（微分可能）なら、$\int f'\varphi=-\int f\varphi'$（境界項は $\varphi$ の
+急減少で消える）。左辺は「$f$ を微分して $\varphi$ に作用」、右辺は「$f$ に作用させ、微分を $\varphi$ に押しつけた」。
+両者が等しい。ならば、$T$ が微分できないなら、**右辺を定義とすればいい**。微分を、微分できる試験関数の側へ
+肩代わりさせるのです。
+
+> 超関数の演算は「操作を試験関数へ移して」定義する。試験関数は何でもできる（$C^\infty$・急減少）ので、超関数側は何もできなくてよい。
+
+## 超関数の微分
+
+<Statement kind="definition" title="超関数の微分">
+超関数 $T\in\mathcal S'$ の<Term>微分</Term> $T'$ を
+$$
+\langle T',\varphi\rangle=-\langle T,\varphi'\rangle\qquad(\forall\varphi\in\mathcal S)
+$$
+で定める。試験関数は $C^\infty$ なので何回でも微分でき、ゆえに**すべての超関数は無限回微分できる**。
+</Statement>
+
+この定義の威力は絶大です。「微分できない関数」も超関数として無限回微分できる。例で確かめましょう。
+
+<Statement kind="example" title="ヘヴィサイド関数の微分はデルタ">
+階段関数 $H(x)=\begin{cases}1&x>0\\0&x<0\end{cases}$（$x=0$ で不連続、古典的には微分不可能）を超関数として微分：
+$$
+\langle H',\varphi\rangle=-\langle H,\varphi'\rangle=-\int_0^\infty\varphi'(x)dx=-[\varphi]_0^\infty=\varphi(0)=\langle\delta,\varphi\rangle.
+$$
+よって $H'=\delta$。**跳びの微分がデルタ**。段差を微分すると、その位置に撃力（デルタ）が立つ——物理的直感
+（階段状の変化＝一瞬の衝撃）が、そのまま数式になる。同様に $\delta'$ は $\langle\delta',\varphi\rangle=-\varphi'(0)$。
+</Statement>
+
+微分できなかった不連続関数が、超関数の世界では自由に微分でき、しかも「跳び→デルタ」という自然な答えを返す。
+超関数は、微分を万能にする枠組みなのです。同じ「操作を移す」手で、平行移動・掛け算（滑らかな関数との）なども
+定義できます。
+
+## 超関数のフーリエ変換
+
+いよいよ本命。同じ「操作を移す」手で、超関数のフーリエ変換を定義します。普通の関数なら、変換の中身を
+入れ替える等式 $\int\hat f\varphi=\int f\hat\varphi$（フビニで確かめられる）が成り立つ。これを定義に格上げします。
+
+<Statement kind="definition" title="超関数のフーリエ変換">
+$T\in\mathcal S'$ の<Term>フーリエ変換</Term> $\hat T$ を
+$$
+\langle\hat T,\varphi\rangle=\langle T,\hat\varphi\rangle\qquad(\forall\varphi\in\mathcal S)
+$$
+で定める。$\hat\varphi\in\mathcal S$（[前章](/fourier-analysis/10)：$\mathcal S$ は変換で閉じる）なので右辺は
+意味をもつ。ゆえに**すべての緩増加超関数はフーリエ変換できる**。
+</Statement>
+
+シュワルツ空間が変換で閉じている——前章で強調したこの性質が、ここで効きます。$\hat\varphi$ もまたシュワルツ
+試験関数だから、右辺 $\langle T,\hat\varphi\rangle$ が定義でき、変換が全域化する。$L^1$ でも $L^2$ でも変換
+できなかった対象（多項式、$e^{ix\xi}$、デルタ）が、すべて変換可能になります。
+
+<Statement kind="theorem" title="基本的な超関数のフーリエ変換">
+$$
+\hat\delta=1,\qquad \hat 1=2\pi\,\delta,\qquad \widehat{e^{ia x}}=2\pi\,\delta_a,\qquad \widehat{\delta_a}=e^{-ia\xi}.
+$$
+</Statement>
+
+<Statement kind="proof">
+$\langle\hat\delta,\varphi\rangle=\langle\delta,\hat\varphi\rangle=\hat\varphi(0)=\int\varphi(x)dx=\langle 1,\varphi\rangle$。
+よって $\hat\delta=1$。$\hat 1=2\pi\delta$ は反転（第7章の対称性 $\hat{\hat f}(x)=2\pi f(-x)$）から。∎
+</Statement>
+
+$\hat\delta=1$ の意味を味わってください。**一点に集中したデルタ（時間で最大に局在）のスペクトルは、全振動数を
+均等に含む定数 $1$（振動数で最大に非局在）**。逆に、定数 $1$（全空間に一様＝時間で非局在）の変換はデルタ
+（振動数 $0$ に集中）。第8章の不確定性原理の**極限**がここにあります——完全に局在した対象は、完全に非局在な
+スペクトルをもつ。デルタと定数は、その両極端。
+
+<Statement kind="remark" title="なぜ超関数が要るのか——変換の完成">
+$e^{ia x}$（純粋な単一振動数の波）は $L^1$ でも $L^2$ でもない（減衰しない）ので、古典的にはフーリエ変換できな
+かった。だが超関数なら $\widehat{e^{iax}}=2\pi\delta_a$——「振動数 $a$ に立つデルタ」という当然の答えを返す。
+超関数は、フーリエ変換を**あらゆる緩増加対象へ拡張**し、理論を完成させる。物理で平面波やデルタを平気で変換
+できるのは、この理論のおかげ。
+</Statement>
+
+## つまずきポイント
+
+<Statement kind="remark" title="よくある誤解">
+- **超関数の演算は「試験関数へ操作を移す」。** 微分もフーリエ変換も、$T$ でなく $\varphi$ の側で行う。符号
+  （微分で $-$）は部分積分から来る。
+- **すべての超関数が無限回微分できる。** 古典的に微分不可能な関数も。ただし答えは超関数（デルタなど）に
+  なりうる。$H'=\delta$。
+- **$\hat\delta=1$、$\hat1=2\pi\delta$。** 局在↔非局在の交換。不確定性原理の極限。混同しやすいので、どちらが
+  デルタでどちらが定数か、意味（局在の度合い）で覚える。
+- **シュワルツ空間が変換で閉じるのが鍵。** これがないと $\langle T,\hat\varphi\rangle$ が定義できない。前章の
+  性質が効いている。
+</Statement>
+
+## この章のまとめ
+
+- 超関数の演算は**操作を試験関数へ移して**定義：微分 $\langle T',\varphi\rangle=-\langle T,\varphi'\rangle$（部分積分）。ゆえに**すべての超関数が無限回微分でき**、**跳びの微分はデルタ**（$H'=\delta$）。
+- フーリエ変換 $\langle\hat T,\varphi\rangle=\langle T,\hat\varphi\rangle$。$\mathcal S$ が変換で閉じるので**すべての緩増加超関数が変換可能**。$L^1,L^2$ で不可能だった多項式・平面波・デルタも変換できる。
+- $\hat\delta=1$、$\hat1=2\pi\delta$、$\widehat{e^{iax}}=2\pi\delta_a$：局在↔非局在の交換（不確定性原理の極限）。超関数がフーリエ変換を完成させる。
+- 最終章では、超関数を使って微分方程式の**基本解**を作り、フーリエ解析全体を総括して次への橋を渡します。
+
+次章では、超関数の枠組みで基本解（グリーン関数）を構成し、フーリエ解析の全体像をまとめます。

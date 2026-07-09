@@ -1,0 +1,125 @@
+---
+/* ProjectionApprox.astro — ヒルベルト空間の「最良近似＝直交射影」を平面で体感する装置。
+   部分空間（原点を通る直線 M）と点 v を用意し、
+     ・v の M への直交射影 p＝Mの中で v にいちばん近い点（最良近似）
+     ・誤差 e=v−p は M と直交（e⊥M）
+     ・M 上の別の点はどれも v から遠い（p が最小距離）
+     ・|v|² = |p|² + |e|²（ピタゴラス＝パーセバルの芽）
+   を見せる。キャンバスをクリックで v を移動、スライダーで M の向きを回す。
+   状態はメモリ内のみ（storage 不使用）。 */
+---
+
+<figure class="pa" role="group" aria-label="直交射影と最良近似">
+  <div class="pa-controls">
+    <label class="pa-label">部分空間 M の向き
+      <input id="pa-ang" type="range" min="0" max="180" value="28" step="1" class="pa-range" />
+    </label>
+    <label class="pa-label">M 上の比較点
+      <input id="pa-cmp" type="range" min="-100" max="100" value="60" step="1" class="pa-range" />
+    </label>
+    <span class="pa-hint">キャンバスをクリックで点 v を移動</span>
+  </div>
+  <canvas id="pa-cv" width="360" height="300" class="pa-cv"></canvas>
+  <figcaption id="pa-cap" class="pa-cap"></figcaption>
+</figure>
+
+<script>
+  const angIn = document.getElementById("pa-ang") as HTMLInputElement | null;
+  const cmpIn = document.getElementById("pa-cmp") as HTMLInputElement | null;
+  const cv = document.getElementById("pa-cv") as HTMLCanvasElement | null;
+  const capEl = document.getElementById("pa-cap");
+
+  if (angIn && cmpIn && cv && capEl) {
+    const ctx = cv.getContext("2d")!;
+    const W = cv.width, H = cv.height, cx = W / 2, cy = H / 2, S = 46;
+    const css = (v: string) => getComputedStyle(document.documentElement).getPropertyValue(v).trim() || "#888";
+    const px = (x: number) => cx + x * S, py = (y: number) => cy - y * S;
+    let v: [number, number] = [1.4, 2.0]; // world 座標の点 v
+
+    const dot = (a: number[], b: number[]) => a[0] * b[0] + a[1] * b[1];
+    const arrow = (x0: number, y0: number, x1: number, y1: number, color: string, w = 2) => {
+      ctx.strokeStyle = color; ctx.fillStyle = color; ctx.lineWidth = w;
+      ctx.beginPath(); ctx.moveTo(px(x0), py(y0)); ctx.lineTo(px(x1), py(y1)); ctx.stroke();
+      const a = Math.atan2(-(y1 - y0), x1 - x0), h = 8;
+      ctx.beginPath(); ctx.moveTo(px(x1), py(y1));
+      ctx.lineTo(px(x1) - h * Math.cos(a - 0.4), py(y1) + h * Math.sin(a - 0.4));
+      ctx.lineTo(px(x1) - h * Math.cos(a + 0.4), py(y1) + h * Math.sin(a + 0.4));
+      ctx.closePath(); ctx.fill();
+    };
+
+    const render = () => {
+      const th = Number(angIn.value) * Math.PI / 180;
+      const u: [number, number] = [Math.cos(th), Math.sin(th)]; // M の単位方向
+      ctx.clearRect(0, 0, W, H);
+      // 軸
+      ctx.strokeStyle = css("--line"); ctx.lineWidth = 1;
+      ctx.beginPath(); ctx.moveTo(0, cy); ctx.lineTo(W, cy); ctx.moveTo(cx, 0); ctx.lineTo(cx, H); ctx.stroke();
+      // 部分空間 M（原点を通る直線）
+      ctx.strokeStyle = css("--ai"); ctx.lineWidth = 2;
+      ctx.beginPath(); ctx.moveTo(px(-5 * u[0]), py(-5 * u[1])); ctx.lineTo(px(5 * u[0]), py(5 * u[1])); ctx.stroke();
+
+      // 射影 p = (v·u)u
+      const t = dot(v, u);
+      const p: [number, number] = [t * u[0], t * u[1]];
+      const e: [number, number] = [v[0] - p[0], v[1] - p[1]];
+      // 誤差 e（v から p への垂線、破線）
+      ctx.strokeStyle = css("--ink-faint"); ctx.lineWidth = 1.5; ctx.setLineDash([5, 4]);
+      ctx.beginPath(); ctx.moveTo(px(v[0]), py(v[1])); ctx.lineTo(px(p[0]), py(p[1])); ctx.stroke(); ctx.setLineDash([]);
+      // 直角マーク
+      const s2 = 0.28, ux = u[0], uy = u[1], nx = -uy, ny = ux;
+      const c0: [number, number] = [p[0] + s2 * (e[0] >= 0 || e[1] >= 0 ? Math.sign(dot(e, [nx, ny])) : 1) * nx, 0];
+      // シンプルな直角マーク（p を起点に u 方向と e 方向へ小さな四角）
+      const eSign = dot(e, [nx, ny]) >= 0 ? 1 : -1;
+      const uSign = t >= 0 ? 1 : -1;
+      ctx.strokeStyle = css("--ink-faint"); ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.moveTo(px(p[0] + s2 * uSign * ux), py(p[1] + s2 * uSign * uy));
+      ctx.lineTo(px(p[0] + s2 * uSign * ux + s2 * eSign * nx), py(p[1] + s2 * uSign * uy + s2 * eSign * ny));
+      ctx.lineTo(px(p[0] + s2 * eSign * nx), py(p[1] + s2 * eSign * ny));
+      ctx.stroke();
+
+      // M 上の比較点 q（スライダー）：p からどれだけ v より遠いか
+      const qt = Number(cmpIn.value) / 100 * 3;
+      const q: [number, number] = [qt * u[0], qt * u[1]];
+      ctx.strokeStyle = css("--ink-faint"); ctx.lineWidth = 1; ctx.globalAlpha = 0.6; ctx.setLineDash([2, 3]);
+      ctx.beginPath(); ctx.moveTo(px(v[0]), py(v[1])); ctx.lineTo(px(q[0]), py(q[1])); ctx.stroke(); ctx.setLineDash([]); ctx.globalAlpha = 1;
+      ctx.fillStyle = css("--ink-faint"); ctx.beginPath(); ctx.arc(px(q[0]), py(q[1]), 3, 0, 2 * Math.PI); ctx.fill();
+
+      // ベクトル v と 射影 p
+      arrow(0, 0, v[0], v[1], css("--shu"));
+      arrow(0, 0, p[0], p[1], css("--ai"));
+      ctx.fillStyle = css("--shu"); ctx.beginPath(); ctx.arc(px(v[0]), py(v[1]), 4, 0, 2 * Math.PI); ctx.fill();
+      ctx.fillStyle = css("--ai"); ctx.beginPath(); ctx.arc(px(p[0]), py(p[1]), 4, 0, 2 * Math.PI); ctx.fill();
+
+      const dp = Math.hypot(e[0], e[1]);          // v から射影 p までの距離（最小）
+      const dq = Math.hypot(v[0] - q[0], v[1] - q[1]); // v から比較点 q まで
+      const nv2 = dot(v, v), np2 = dot(p, p), ne2 = dot(e, e);
+      capEl.innerHTML =
+        `<b class="ai">射影 p</b>＝部分空間 M の中で <b class="shu">点 v</b> にいちばん近い点（<b>最良近似</b>）。` +
+        `誤差 e=v−p は M と<b>直交</b>（直角マーク）。<br>` +
+        `v→p の距離 ＝ <b>${dp.toFixed(2)}</b>（最小）　vs　v→M上の別の点 q の距離 ＝ ${dq.toFixed(2)}（つねに ≥ 最小）。<br>` +
+        `ピタゴラス：|v|² ＝ |p|² + |e|² → ${nv2.toFixed(2)} ＝ ${np2.toFixed(2)} + ${ne2.toFixed(2)}（<b>パーセバルの芽</b>）。`;
+    };
+
+    cv.addEventListener("click", (ev) => {
+      const r = cv.getBoundingClientRect();
+      const X = (ev.clientX - r.left) * (W / r.width), Y = (ev.clientY - r.top) * (H / r.height);
+      v = [(X - cx) / S, (cy - Y) / S]; render();
+    });
+    angIn.addEventListener("input", render); cmpIn.addEventListener("input", render);
+    render();
+  }
+</script>
+
+<style>
+  .pa { margin: 26px 0; padding: 16px 18px 14px; border: 1px solid var(--line); border-radius: 10px; background: var(--card); }
+  .pa-controls { display: flex; flex-wrap: wrap; gap: 10px 18px; margin-bottom: 12px; align-items: center; }
+  .pa-label { font-size: 13px; font-weight: 600; color: var(--ink); font-family: var(--sans); display: flex; align-items: center; gap: 6px; }
+  .pa-range { width: 130px; accent-color: var(--shu); }
+  .pa-hint { font-size: 11px; color: var(--ink-faint); font-family: var(--sans); }
+  .pa-cv { display: block; margin: 0 auto; width: 100%; max-width: 360px; height: auto; border: 1px solid var(--line); border-radius: 6px; background: var(--paper-sunk); cursor: crosshair; }
+  .pa-cap { margin-top: 12px; font-size: 13px; line-height: 1.85; color: var(--ink-faint); font-family: var(--sans); }
+  .pa-cap b { color: var(--ink); font-weight: 700; }
+  .pa-cap b.shu { color: var(--shu); }
+  .pa-cap b.ai { color: var(--ai); }
+</style>

@@ -1,0 +1,124 @@
+---
+layout: ../../layouts/BaseLayout.astro
+title: 第6章 畳み込みと近似単位元
+description: フーリエ変換は畳み込みを積に変える。この相棒の演算と、ガウス核による「なめらかな近似」——近似単位元が反転公式への道を開く。
+---
+
+import Term from "../../components/assets/Term.astro";
+import Statement from "../../components/assets/Statement.astro";
+
+# 第6章 畳み込みと近似単位元
+
+## フーリエ変換の相棒——畳み込み
+
+フーリエ変換の演算規則で、いちばん美しく応用が広いのが**畳み込み定理**です。畳み込みという一見ややこしい
+演算が、フーリエの世界では**ただの掛け算**に化ける。信号処理・確率・微分方程式のすべてで使われる、変換の
+真骨頂です。まず畳み込みそのものを直感から導入します。
+
+畳み込みは「ずらしながら重ねて足す」操作。$g$ を「ぼかしフィルター」だと思うと、$f*g$ は $f$ を $g$ の形で
+**ぼかした（平均した）**もの。カメラのボケ、残響、拡散——現実の「なまし」はたいてい畳み込みです。
+
+<Statement kind="definition" title="畳み込み">
+$f,g\in L^1(\mathbb R)$ の<Term>畳み込み</Term>を
+$$
+(f*g)(x)=\int_{-\infty}^{\infty} f(x-t)\,g(t)\,dt
+$$
+で定める。$f*g=g*f$（可換）、$f*g\in L^1$ で $\|f*g\|_1\le\|f\|_1\|g\|_1$。
+</Statement>
+
+第2・3章で見た「核との畳み込み」$S_Nf=f*D_N$、$\sigma_Nf=f*F_N$ は、まさにこの畳み込みでした。核でぼかす＝
+畳み込む。畳み込みは既に主役だったのです。
+
+> 畳み込み $f*g$＝「ずらして重ねて足す」なまし操作。核でぼかすのは畳み込み。フーリエ変換はこれを積に変える。
+
+## 畳み込み定理
+
+<Statement kind="theorem" title="畳み込み定理">
+$f,g\in L^1$ に対し
+$$
+\widehat{f*g}(\xi)=\hat f(\xi)\,\hat g(\xi).
+$$
+畳み込みが**積**に化ける。（逆に、積のフーリエ変換は畳み込み $\widehat{fg}=\frac1{2\pi}\hat f*\hat g$。）
+</Statement>
+
+<Statement kind="proof">
+定義に代入しフビニの定理（[測度論](/measure-theory/9)、$L^1$ なので積分順序交換可）：
+$$
+\widehat{f*g}(\xi)=\int\!\!\int f(x-t)g(t)\,dt\,e^{-i\xi x}dx=\int g(t)e^{-i\xi t}\Big(\int f(x-t)e^{-i\xi(x-t)}dx\Big)dt=\hat g(\xi)\hat f(\xi).
+$$
+（$y=x-t$ の置換で内側が $\hat f(\xi)$。）∎
+</Statement>
+
+この定理の威力は絶大です。畳み込み（積分計算）を、フーリエ変換して**掛け算**にし、逆変換で戻す——という
+迂回路で、難しい畳み込みが易しくなる。フィルタ設計、微分方程式の基本解（第12章）、確率変数の和の分布
+（[確率論](/probability)）——応用は無数にあります。
+
+## 近似単位元——「なまさない極限」
+
+畳み込みには「単位元」がありません。$f*e=f$ となる関数 $e$（つまり掛けても変えない核）は、実は普通の関数では
+存在しない（それは第10章のデルタ関数になる）。でも、**単位元に限りなく近づく核の列**は作れます。それが
+近似単位元。第3章のフェイエール核が周期版の例でした。ここでは実直線上の版を作ります。
+
+<Statement kind="definition" title="近似単位元">
+$L^1$ 関数の族 $\{\varphi_\varepsilon\}_{\varepsilon>0}$ が次をみたすとき<Term>近似単位元</Term>という。
+1. $\displaystyle\int\varphi_\varepsilon=1$（総質量 $1$）。
+2. $\displaystyle\int|\varphi_\varepsilon|\le C$（L¹ ノルム一様有界。非負なら $=1$）。
+3. 各 $\delta>0$ で $\displaystyle\int_{|x|\ge\delta}|\varphi_\varepsilon|\to0$（$\varepsilon\to0$、原点外の質量が消える）。
+</Statement>
+
+典型は、一つの核 $\varphi$（$\int\varphi=1$）を縮めて背を高くした $\varphi_\varepsilon(x)=\frac1\varepsilon\varphi(\frac x\varepsilon)$。
+$\varepsilon\to0$ で原点に集中する尖った山になります。これで畳み込むと、なまし幅が $0$ に縮み、元の関数が
+戻ってきます。
+
+<Statement kind="theorem" title="近似単位元の収束">
+$\{\varphi_\varepsilon\}$ を近似単位元とする。$f$ が連続で有界なら $(f*\varphi_\varepsilon)(x)\to f(x)$（各点、連続点で）。
+$f\in L^p\ (1\le p<\infty)$ なら $\|f*\varphi_\varepsilon-f\|_p\to0$（$L^p$ で収束）。
+</Statement>
+
+<Statement kind="proof">
+$\int\varphi_\varepsilon=1$ より $(f*\varphi_\varepsilon)(x)-f(x)=\int[f(x-t)-f(x)]\varphi_\varepsilon(t)dt$。連続性で
+$|t|<\delta$ の寄与は小、条件 3 で $|t|\ge\delta$ の寄与も小。第3章フェイエールの定理とまったく同じ論法。∎
+</Statement>
+
+<Statement kind="example" title="ガウス近似単位元（熱核）">
+ガウス核 $\varphi_\varepsilon(x)=\frac1{\sqrt{2\pi}\varepsilon}e^{-x^2/(2\varepsilon^2)}$ は近似単位元。$f*\varphi_\varepsilon$ は
+$f$ をガウスでぼかしたもので、$\varepsilon\to0$ で $f$ に戻る。これは実は**熱方程式の解**——時刻 $t=\varepsilon^2/2$ で
+初期分布 $f$ がどう拡散したか（第9章）。「なまし」と「熱の拡散」が同じ畳み込みなのは、深いつながりの現れ。
+$\varphi_\varepsilon$ を使えば、どんな $L^p$ 関数も**滑らかな関数で近似**できる（軟化子）。
+</Statement>
+
+## 反転公式への布石
+
+近似単位元は、反転公式（$\hat f$ から $f$ を復元する $f=\check{\hat f}$）を証明する道具になります。$\hat f\notin L^1$
+（第5章）で逆変換積分が素直に収束しないとき、ガウスで軽く抑えて（正則化して）から極限をとる——という手が
+使えるのです。
+
+<Statement kind="theorem" title="ガウス正則化による反転（次章への橋）">
+$f\in L^1$ かつ $\hat f\in L^1$ なら、反転公式 $f(x)=\frac1{2\pi}\int\hat f(\xi)e^{i\xi x}d\xi$ が成り立つ。一般には、
+逆変換積分にガウス因子 $e^{-\varepsilon\xi^2}$ を挿入して $\varepsilon\to0$ とすると（アーベル総和の連続版）、近似単位元
+との畳み込みに帰着して $f$ が復元できる。
+</Statement>
+
+「悪い積分をガウスで抑えて、極限で外す」——第3章の総和法（発散を平均で飼いならす）と同じ精神が、ここでも
+働きます。次章では、この道具立てで $L^2$ 理論（プランシュレル）を完成させます。
+
+## つまずきポイント
+
+<Statement kind="remark" title="よくある誤解">
+- **畳み込みは「ずらして重ねて足す」。** 単なる積ではない。$f*g$ は $f$ を $g$ でぼかしたもの。フーリエ変換で
+  **積**になる（$\widehat{f*g}=\hat f\hat g$）。
+- **畳み込みの単位元は普通の関数でない。** $f*e=f$ の $e$ は存在せず、近似単位元で“近づく”しかない。極限は
+  デルタ関数（第10章）。
+- **近似単位元は「縮めて背を高く」。** 総質量 $1$ を保ったまま原点集中。フェイエール核・ガウス核が例。非負だと
+  L¹ ノルムが $1$ で安定。
+- **ガウスでぼかす＝熱で拡散。** 軟化・平滑化・熱拡散はすべて同じ畳み込み。なましの幅が時間に対応。
+</Statement>
+
+## この章のまとめ
+
+- **畳み込み** $f*g=\int f(x-t)g(t)dt$＝ずらして重ねるなまし。核でぼかすのは畳み込み（$S_Nf=f*D_N$ 等）。
+- **畳み込み定理** $\widehat{f*g}=\hat f\hat g$：畳み込みが**積**に化ける（証明はフビニ）。難しい畳み込みを変換で易しくする戦略の核。
+- **近似単位元**（総質量 $1$・原点集中）との畳み込みは元の関数に収束（$L^p$ で）。ガウス核＝熱核が典型で、任意の $L^p$ 関数を滑らかに近似（軟化子）。
+- 近似単位元は**反転公式**（悪い積分をガウスで正則化）への道具。次章で $L^2$ 理論プランシュレルを完成させます。
+
+次章では、反転公式を確立し、フーリエ変換が $L^2$ 上のユニタリ作用素になる——プランシュレルの定理を証明します。

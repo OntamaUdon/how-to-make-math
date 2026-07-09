@@ -1,0 +1,109 @@
+---
+layout: ../../layouts/BaseLayout.astro
+title: 第6章 リースの表現定理と随伴作用素
+description: ヒルベルト空間の双対はそれ自身。有界線形汎関数はすべて内積で書ける（リース）。ここから随伴作用素・自己共役・ユニタリを定義する。
+---
+
+import Term from "../../components/assets/Term.astro";
+import Statement from "../../components/assets/Statement.astro";
+
+# 第6章 リースの表現定理と随伴作用素
+
+## 「関数を数にする写像」の正体
+
+ヒルベルト空間 $H$ 上の有界線形汎関数——ベクトルを一つ入れるとスカラーが出る線形写像 $\varphi:H\to\mathbb R$
+——を考えます。いちばん素朴な例は、あるベクトル $y$ を固定して $\varphi(x)=\langle x,y\rangle$ とする「$y$ との
+内積をとる」写像。コーシー–シュワルツより $|\varphi(x)|\le\|y\|\|x\|$ で有界です。
+
+リースが示したのは、その逆——**有界線形汎関数はこの形しかない**。どんな $\varphi$ も、ある $y$ との内積として
+表せる。抽象的な「汎関数」が、具体的な「ベクトル $y$」と一対一に対応する。これがヒルベルト空間論の要石です。
+
+<Statement kind="theorem" title="リースの表現定理">
+$H$ をヒルベルト空間、$\varphi\in H^*$（有界線形汎関数）とする。すると**一意な** $y\in H$ が存在して
+$$
+\varphi(x)=\langle x,y\rangle\quad(\forall x\in H),\qquad \|\varphi\|=\|y\|.
+$$
+</Statement>
+
+<Statement kind="proof">
+$\varphi=0$ なら $y=0$。$\varphi\ne0$ とし $M=\ker\varphi=\{x:\varphi(x)=0\}$。$\varphi$ は有界（連続）なので $M$ は
+**閉部分空間**。$\varphi\ne0$ より $M\ne H$、[前章](/functional-analysis/4)の直交分解 $H=M\oplus M^\perp$ で
+$M^\perp\ne\{0\}$。単位ベクトル $z\in M^\perp$ をとる。任意の $x$ に対し
+$u=\varphi(x)z-\varphi(z)x$ は $\varphi(u)=0$ ゆえ $u\in M$、よって $\langle u,z\rangle=0$。展開すると
+$\varphi(x)\langle z,z\rangle-\varphi(z)\langle x,z\rangle=0$、すなわち $\varphi(x)=\langle x,\ \overline{\varphi(z)}z\rangle$。
+$y=\overline{\varphi(z)}z$ とおけばよい。一意性：$\langle x,y_1\rangle=\langle x,y_2\rangle\ (\forall x)$ なら
+$x=y_1-y_2$ を代入して $y_1=y_2$。$\|\varphi\|=\|y\|$ はコーシー–シュワルツの等号から。∎
+</Statement>
+
+証明の心臓は、前章の**直交分解 $H=M\oplus M^\perp$**。「核 $M$ に垂直な方向 $z$ が一本ある」ことが、汎関数を
+表すベクトルを与えます。射影の幾何が、双対空間の構造をまるごと決めてしまう。
+
+> リースの表現定理：ヒルベルト空間の有界線形汎関数はすべて「あるベクトルとの内積」。$H^*\cong H$（双対はそれ自身）。
+
+<Statement kind="remark" title="ヒルベルト空間は自己双対">
+リースにより、写像 $y\mapsto\langle\cdot,y\rangle$ が $H$ から $H^*$ への（共役線形な）等長同型を与える。
+つまり $H^*\cong H$——**ヒルベルト空間は自分自身が双対**。一般のバナッハ空間では双対は別物で、その解析には
+ハーン–バナッハの定理（第7章）が要る。ヒルベルトでは内積のおかげで双対が“見える”。この差が、ヒルベルト空間を
+桁違いに扱いやすくしている。
+</Statement>
+
+## 随伴作用素
+
+リースの表現定理の最初の果実が、随伴作用素です。有限次元で行列の**転置（共役転置）** $A^*$ を作ったのと同じ操作を、
+無限次元の作用素に対して行います。定義の根拠がリースです。
+
+<Statement kind="definition" title="随伴作用素">
+ヒルベルト空間上の有界作用素 $T$ に対し、
+$$
+\langle Tx,\ y\rangle=\langle x,\ T^*y\rangle\quad(\forall x,y)
+$$
+をみたす有界作用素 $T^*$ が一意に存在する。これを $T$ の<Term>随伴作用素</Term>という。
+</Statement>
+
+<Statement kind="proof">
+$y$ を固定すると $x\mapsto\langle Tx,y\rangle$ は有界線形汎関数（$|\langle Tx,y\rangle|\le\|T\|\|y\|\|x\|$）。
+リースの表現定理より、これを表すベクトル $z_y$ が一意に存在：$\langle Tx,y\rangle=\langle x,z_y\rangle$。
+$T^*y:=z_y$ と定めると線形・有界（$\|T^*\|=\|T\|$）で、定義式をみたす。∎
+</Statement>
+
+随伴の性質：$(T^*)^*=T$、$(ST)^*=T^*S^*$、$\|T^*T\|=\|T\|^2$。有限次元の共役転置の規則がそのまま成り立ちます。
+随伴を使って、特に重要な作用素のクラスを定義します。
+
+<Statement kind="definition" title="自己共役・ユニタリ・正規作用素">
+- $T^*=T$：<Term>自己共役</Term>（エルミート）。実対称行列の一般化。**スペクトルが実**（第12章）。
+- $T^*T=TT^*=I$：<Term>ユニタリ</Term>。内積を保つ（$\langle Tx,Ty\rangle=\langle x,y\rangle$）＝無限次元の回転。
+- $T^*T=TT^*$：<Term>正規作用素</Term>。自己共役・ユニタリを含む。スペクトル分解が効くクラス。
+</Statement>
+
+これらは[線形代数](/linear-algebra)の対称行列・直交行列・正規行列の無限次元版。**自己共役作用素**は量子力学の
+観測量（オブザーバブル）に対応し、その固有値が観測される物理量になります。第12章のスペクトル理論で、これらの
+作用素を「無限次元の対角化」する話へつながります。
+
+<Statement kind="example" title="随伴の計算例">
+- **掛け算作用素** $(M_g f)(x)=g(x)f(x)$（$L^2$ 上）：$\langle M_gf,h\rangle=\int gf\bar h=\int f\overline{\bar g h}$ より
+  $M_g^*=M_{\bar g}$。$g$ が実なら自己共役。
+- **右シフト** $S(x_1,x_2,\dots)=(0,x_1,x_2,\dots)$（$\ell^2$）：随伴は**左シフト** $S^*(x_1,x_2,\dots)=(x_2,x_3,\dots)$。
+  $S^*S=I$ だが $SS^*\ne I$——ユニタリでない（無限次元ならではの現象、第12章で効く）。
+</Statement>
+
+## つまずきポイント
+
+<Statement kind="remark" title="よくある誤解">
+- **リースはヒルベルト空間だけ。** 「汎関数＝内積」は内積があってこそ。一般バナッハ空間の双対はもっと複雑で、
+  ハーン–バナッハ（第7章）が要る。
+- **$H^*\cong H$ は共役線形同型。** 複素の場合、$y\mapsto\langle\cdot,y\rangle$ は共役線形（$\alpha$ が $\bar\alpha$ に）。
+  実なら普通の線形同型。
+- **随伴の存在はリースに依存する。** 定義式をみたす $T^*$ が“ある”のは、リースが表現ベクトルを保証するから。
+  無条件ではない。
+- **右シフトの随伴は左シフト、逆ではない。** $S^*S=I$（等長）だが $SS^*\ne I$。有限次元では等長なら全単射だが、
+  無限次元では片側だけ——後のフレドホルム・スペクトルで本質的。
+</Statement>
+
+## この章のまとめ
+
+- **リースの表現定理**：ヒルベルト空間の有界線形汎関数はすべて「あるベクトル $y$ との内積」$\varphi=\langle\cdot,y\rangle$。証明は直交分解 $H=M\oplus M^\perp$。ゆえに $H^*\cong H$（**自己双対**）。
+- リースから**随伴作用素** $T^*$（$\langle Tx,y\rangle=\langle x,T^*y\rangle$）が一意に定まる。共役転置の無限次元版。
+- $T^*=T$ **自己共役**（実固有値・量子力学の観測量）、$T^*T=TT^*=I$ **ユニタリ**（回転）、$T^*T=TT^*$ **正規**。右シフトの随伴は左シフト（$S^*S=I\ne SS^*$）。
+- Part II（ヒルベルト空間）はここまで。次章から一般のバナッハ空間へ戻り、ヒルベルトでは自明だった双対の存在を保証する——ハーン–バナッハの定理へ。
+
+次章では、一般のバナッハ空間で「有界線形汎関数が十分にある」ことを保証するハーン–バナッハの定理を証明します。

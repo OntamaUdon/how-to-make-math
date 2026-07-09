@@ -1,0 +1,129 @@
+---
+/* FourierProjection.astro — フーリエ部分和＝正規直交系への射影を体感する装置。
+   ターゲット関数（矩形波・のこぎり波・三角波）を、三角関数系 {sin nx, cos nx}（正規直交基底）で展開し、
+   最初の N 項の部分和 S_N を重ねて描く。
+     ・S_N は「最初の N 次元部分空間への直交射影」＝その次元での最良近似（第4章の一般化）
+     ・N を増やすとエネルギー捕捉率 Σ|係数|² が 100% に近づく（パーセバルの等式）
+     ・不連続点では過剰振動が消えない（ギブス現象）
+   状態はメモリ内のみ（storage 不使用）。 */
+---
+
+<figure class="fp" role="group" aria-label="フーリエ部分和と最良近似">
+  <div class="fp-controls">
+    <label class="fp-label">関数
+      <select id="fp-fn" class="fp-sel">
+        <option value="square">矩形波（不連続）</option>
+        <option value="saw">のこぎり波（不連続）</option>
+        <option value="tri">三角波（連続）</option>
+      </select>
+    </label>
+    <label class="fp-label">項数 N ＝ <span id="fp-nval">3</span>
+      <input id="fp-n" type="range" min="1" max="40" value="3" step="1" class="fp-range" />
+    </label>
+  </div>
+  <canvas id="fp-cv" width="380" height="260" class="fp-cv"></canvas>
+  <figcaption id="fp-cap" class="fp-cap"></figcaption>
+</figure>
+
+<script>
+  // 各関数の [-π,π] 上のフーリエ級数。sin/cos 係数を返す（n=1..）。energyAll = ∫f²。
+  type FourierDef = {
+    f: (x: number) => number;
+    // 部分和 S_N(x)
+    partial: (x: number, N: number) => number;
+    // 最初の N 項が持つエネルギー Σ π·coef²（∫f² のうち）
+    energyN: (N: number) => number;
+    energyAll: number; // ∫_{-π}^{π} f² dx
+    name: string;
+  };
+
+  const PI = Math.PI;
+  const defs: Record<string, FourierDef> = {
+    // 矩形波 f=sign(x)：b_n = 4/(nπ)（奇数 n のみ）。∫f²=2π。Σπb_n²=2π。
+    square: {
+      f: (x) => (x >= 0 ? 1 : -1),
+      partial: (x, N) => { let s = 0; for (let n = 1; n <= N; n += 2) s += 4 / (n * PI) * Math.sin(n * x); return s; },
+      energyN: (N) => { let e = 0; for (let n = 1; n <= N; n += 2) e += PI * (4 / (n * PI)) ** 2; return e; },
+      energyAll: 2 * PI,
+      name: "矩形波：不連続点（x=0,±π）で S_N が約 9% 行き過ぎる——ギブス現象。項を増やしても過剰は消えない（幅が狭まるだけ）。",
+    },
+    // のこぎり波 f=x：b_n = 2(-1)^{n+1}/n。∫x²=2π³/3。
+    saw: {
+      f: (x) => x,
+      partial: (x, N) => { let s = 0; for (let n = 1; n <= N; n++) s += 2 * (n % 2 ? 1 : -1) / n * Math.sin(n * x); return s; },
+      energyN: (N) => { let e = 0; for (let n = 1; n <= N; n++) e += PI * (2 / n) ** 2; return e; },
+      energyAll: 2 * PI ** 3 / 3,
+      name: "のこぎり波：端 x=±π の不連続でギブス現象。係数は 1/n で減るのでエネルギー収束はゆっくり。",
+    },
+    // 三角波 f=|x|：a_0=π/2、a_n = -4/(π n²)（奇数 n）。∫|x|²=2π³/3。
+    tri: {
+      f: (x) => Math.abs(x),
+      partial: (x, N) => { let s = PI / 2; for (let n = 1; n <= N; n += 2) s += -4 / (PI * n * n) * Math.cos(n * x); return s; },
+      energyN: (N) => { let e = 2 * PI * (PI / 2) ** 2; for (let n = 1; n <= N; n += 2) e += PI * (4 / (PI * n * n)) ** 2; return e; },
+      energyAll: 2 * PI ** 3 / 3,
+      name: "三角波：連続なのでギブス現象なし。係数が 1/n² で速く減り、数項でぴったり重なる。",
+    },
+  };
+
+  const sel = document.getElementById("fp-fn") as HTMLSelectElement | null;
+  const nIn = document.getElementById("fp-n") as HTMLInputElement | null;
+  const nVal = document.getElementById("fp-nval");
+  const cv = document.getElementById("fp-cv") as HTMLCanvasElement | null;
+  const capEl = document.getElementById("fp-cap");
+
+  if (sel && nIn && nVal && cv && capEl) {
+    const ctx = cv.getContext("2d")!;
+    const W = cv.width, H = cv.height, padL = 24, padB = 20, padT = 12, padR = 8;
+    const css = (v: string) => getComputedStyle(document.documentElement).getPropertyValue(v).trim() || "#888";
+    const YMAX = 3.4;
+    const px = (x: number) => padL + (x + PI) / (2 * PI) * (W - padL - padR);
+    const py = (y: number) => (H - padB) / 2 + padT / 2 - y / YMAX * ((H - padB - padT) / 2);
+
+    const render = () => {
+      const D = defs[sel.value];
+      const N = Number(nIn.value);
+      nVal.textContent = String(N);
+      ctx.clearRect(0, 0, W, H);
+      // 軸
+      ctx.strokeStyle = css("--line"); ctx.lineWidth = 1;
+      ctx.beginPath(); ctx.moveTo(px(-PI), py(0)); ctx.lineTo(px(PI), py(0));
+      ctx.moveTo(px(0), py(-YMAX)); ctx.lineTo(px(0), py(YMAX)); ctx.stroke();
+      // ターゲット関数（灰・太）
+      ctx.strokeStyle = css("--ink-faint"); ctx.lineWidth = 2.4; ctx.globalAlpha = 0.7;
+      ctx.beginPath();
+      let prev: number | null = null;
+      for (let i = 0; i <= 800; i++) {
+        const x = -PI + 2 * PI * i / 800, y = D.f(x);
+        if (prev !== null && Math.abs(y - prev) > 1.2) ctx.moveTo(px(x), py(y)); // 不連続はつながない
+        else i ? ctx.lineTo(px(x), py(y)) : ctx.moveTo(px(x), py(y));
+        prev = y;
+      }
+      ctx.stroke(); ctx.globalAlpha = 1;
+      // 部分和 S_N（朱・細）
+      ctx.strokeStyle = css("--shu"); ctx.lineWidth = 2; ctx.beginPath();
+      for (let i = 0; i <= 800; i++) { const x = -PI + 2 * PI * i / 800; const y = D.partial(x, N); i ? ctx.lineTo(px(x), py(y)) : ctx.moveTo(px(x), py(y)); }
+      ctx.stroke();
+
+      const frac = 100 * D.energyN(N) / D.energyAll;
+      capEl.innerHTML =
+        `<b class="shu">部分和 S_N</b>（朱）が<b>ターゲット</b>（灰）に迫る。S_N は「最初の N 次元部分空間への<b>直交射影</b>」` +
+        `＝その範囲での最良近似。<br>` +
+        `<b>エネルギー捕捉率 ＝ ${frac.toFixed(1)}%</b>（パーセバル：Σ|係数|² が ∫f² に一致していく。N→∞ で 100%）。<br>` +
+        D.name;
+    };
+    sel.addEventListener("change", render); nIn.addEventListener("input", render);
+    render();
+  }
+</script>
+
+<style>
+  .fp { margin: 26px 0; padding: 16px 18px 14px; border: 1px solid var(--line); border-radius: 10px; background: var(--card); }
+  .fp-controls { display: flex; flex-wrap: wrap; gap: 10px 18px; margin-bottom: 12px; align-items: center; }
+  .fp-label { font-size: 13px; font-weight: 600; color: var(--ink); font-family: var(--sans); display: flex; align-items: center; gap: 6px; }
+  .fp-range { width: 180px; accent-color: var(--shu); }
+  .fp-sel { font-family: var(--sans); font-size: 13px; padding: 4px 8px; border: 1px solid var(--line); border-radius: 7px; background: var(--paper-sunk); color: var(--ink); }
+  .fp-cv { display: block; margin: 0 auto; width: 100%; max-width: 380px; height: auto; border: 1px solid var(--line); border-radius: 6px; background: var(--paper-sunk); }
+  .fp-cap { margin-top: 12px; font-size: 13px; line-height: 1.85; color: var(--ink-faint); font-family: var(--sans); }
+  .fp-cap b { color: var(--ink); font-weight: 700; }
+  .fp-cap b.shu { color: var(--shu); }
+</style>

@@ -1,0 +1,87 @@
+---
+/* FourierKernels.astro — ディリクレ核とフェイエール核の対比で「なぜ総和法(フェイエール)が収束を救うか」を体感する装置。
+   フーリエ部分和 S_N は f とディリクレ核 D_N の畳み込み、チェザロ平均 σ_N は f とフェイエール核 F_N の畳み込み。
+     ・D_N は正負に激しく振動し、L¹ノルム(1/2π)∫|D_N| が log N で発散 → 収束が微妙・ギブス現象
+     ・F_N は常に非負で総積分 2π・原点に集中 → 近似単位元 → 連続関数で一様収束(フェイエールの定理)
+   スライダー N で両核を重ねて描く。状態はメモリ内のみ(storage 不使用)。 */
+---
+
+<figure class="fk" role="group" aria-label="ディリクレ核とフェイエール核">
+  <div class="fk-controls">
+    <label class="fk-label">N ＝ <span id="fk-nval">6</span>
+      <input id="fk-n" type="range" min="1" max="30" value="6" step="1" class="fk-range" />
+    </label>
+  </div>
+  <canvas id="fk-cv" width="380" height="260" class="fk-cv"></canvas>
+  <figcaption id="fk-cap" class="fk-cap"></figcaption>
+</figure>
+
+<script>
+  const PI = Math.PI;
+  // ディリクレ核 D_N(t)=1+2Σ_{n=1}^N cos(nt)（ピーク 2N+1、負に振れる）
+  const dirichlet = (t: number, N: number) => { let s = 1; for (let n = 1; n <= N; n++) s += 2 * Math.cos(n * t); return s; };
+  // フェイエール核 F_N(t)=1+2Σ_{n=1}^N (1-n/(N+1))cos(nt)（ピーク N+1、常に ≥0）
+  const fejer = (t: number, N: number) => { let s = 1; for (let n = 1; n <= N; n++) s += 2 * (1 - n / (N + 1)) * Math.cos(n * t); return s; };
+
+  const nIn = document.getElementById("fk-n") as HTMLInputElement | null;
+  const nVal = document.getElementById("fk-nval");
+  const cv = document.getElementById("fk-cv") as HTMLCanvasElement | null;
+  const capEl = document.getElementById("fk-cap");
+
+  if (nIn && nVal && cv && capEl) {
+    const ctx = cv.getContext("2d")!;
+    const W = cv.width, H = cv.height, padL = 26, padB = 22, padT = 12, padR = 8;
+    const css = (v: string) => getComputedStyle(document.documentElement).getPropertyValue(v).trim() || "#888";
+
+    const render = () => {
+      const N = Number(nIn.value);
+      nVal.textContent = String(N);
+      const peak = 2 * N + 1;                 // y スケールは Dirichlet のピークに合わせる
+      const yTop = peak * 1.05, yBot = -peak * 0.35;
+      const px = (t: number) => padL + (t + PI) / (2 * PI) * (W - padL - padR);
+      const py = (y: number) => (H - padB) - (y - yBot) / (yTop - yBot) * (H - padB - padT);
+      ctx.clearRect(0, 0, W, H);
+      // 軸（y=0 線）
+      ctx.strokeStyle = css("--line"); ctx.lineWidth = 1;
+      ctx.beginPath(); ctx.moveTo(px(-PI), py(0)); ctx.lineTo(px(PI), py(0));
+      ctx.moveTo(px(0), py(yBot)); ctx.lineTo(px(0), py(yTop)); ctx.stroke();
+
+      // Fejér（藍・下塗り：非負が一目で分かる）
+      ctx.fillStyle = css("--ai"); ctx.globalAlpha = 0.15;
+      ctx.beginPath(); ctx.moveTo(px(-PI), py(0));
+      for (let i = 0; i <= 800; i++) { const t = -PI + 2 * PI * i / 800; ctx.lineTo(px(t), py(fejer(t, N))); }
+      ctx.lineTo(px(PI), py(0)); ctx.closePath(); ctx.fill(); ctx.globalAlpha = 1;
+      ctx.strokeStyle = css("--ai"); ctx.lineWidth = 2; ctx.beginPath();
+      for (let i = 0; i <= 800; i++) { const t = -PI + 2 * PI * i / 800; i ? ctx.lineTo(px(t), py(fejer(t, N))) : ctx.moveTo(px(t), py(fejer(t, N))); }
+      ctx.stroke();
+      // Dirichlet（朱・線：負に潜る）
+      ctx.strokeStyle = css("--shu"); ctx.lineWidth = 2; ctx.beginPath();
+      for (let i = 0; i <= 1200; i++) { const t = -PI + 2 * PI * i / 1200; i ? ctx.lineTo(px(t), py(dirichlet(t, N))) : ctx.moveTo(px(t), py(dirichlet(t, N))); }
+      ctx.stroke();
+
+      // L¹ノルム（レベーグ定数）と最小値を数値計算
+      let l1D = 0, l1F = 0, minD = Infinity; const M = 4000, dt = 2 * PI / M;
+      for (let i = 0; i < M; i++) { const t = -PI + (i + 0.5) * dt; const d = dirichlet(t, N); l1D += Math.abs(d) * dt; l1F += Math.abs(fejer(t, N)) * dt; minD = Math.min(minD, d); }
+      const LebD = l1D / (2 * PI), LebF = l1F / (2 * PI);
+      capEl.innerHTML =
+        `<b class="shu">ディリクレ核 D_N</b>（朱、部分和 S_N＝f∗D_N）は正負に激しく振動し最小値 ${minD.toFixed(1)}＜0。` +
+        ` L¹ノルム (1/2π)∫|D_N| ＝ <b>${LebD.toFixed(2)}</b>（N とともに log N で発散）→ 収束が微妙・ギブス現象の源。<br>` +
+        `<b class="ai">フェイエール核 F_N</b>（藍、チェザロ平均 σ_N＝f∗F_N）は<b>常に ≥0</b>・総積分 2π・原点に集中。` +
+        ` (1/2π)∫|F_N| ＝ <b>${LebF.toFixed(2)}</b>（つねに 1）＝<b>近似単位元</b>。だから平均をとる（総和法）と連続関数で<b>一様収束</b>する（フェイエールの定理）。`;
+    };
+    nIn.addEventListener("input", render);
+    render();
+  }
+</script>
+
+<style>
+  .fk { margin: 26px 0; padding: 16px 18px 14px; border: 1px solid var(--line); border-radius: 10px; background: var(--card); }
+  .fk-controls { display: flex; flex-wrap: wrap; gap: 10px 18px; margin-bottom: 12px; align-items: center; }
+  .fk-label { font-size: 13px; font-weight: 600; color: var(--ink); font-family: var(--sans); display: flex; align-items: center; gap: 8px; }
+  .fk-range { width: 200px; accent-color: var(--shu); }
+  .fk-cv { display: block; margin: 0 auto; width: 100%; max-width: 380px; height: auto; border: 1px solid var(--line); border-radius: 6px; background: var(--paper-sunk); }
+  .fk-cap { margin-top: 12px; font-size: 13px; line-height: 1.85; color: var(--ink-faint); font-family: var(--sans); }
+  .fk-cap b { color: var(--ink); font-weight: 700; }
+  .fk-cap b.shu { color: var(--shu); }
+  .fk-cap b.ai { color: var(--ai); }
+</style>
