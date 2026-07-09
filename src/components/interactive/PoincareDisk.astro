@@ -1,0 +1,138 @@
+---
+/* PoincareDisk.astro — 双曲平面（負曲率 K=−1）のポアンカレ円盤モデルを体感する装置。
+   ・測地線＝境界（単位円）に直交する円弧（中心を通れば直径）。
+   ・測地三角形の内角の和は 180°未満。角の欠損 π−(α+β+γ) がちょうど面積（ガウス–ボンネ K=−1）。
+   ・三角形を境界に近づける（大きくする）ほど内角和→0、面積→π。
+   モデルは等角なので、双曲角＝ユークリッド角として弧の接線から測れる。
+   スライダーで三角形の大きさ（頂点の半径）を変える。状態はメモリ内のみ（storage 不使用）。 */
+---
+
+<figure class="pd" role="group" aria-label="双曲平面のポアンカレ円盤モデル">
+  <div class="pd-controls">
+    <label class="pd-label">三角形の大きさ ＝ <span id="pd-rval">0.55</span>
+      <input id="pd-r" type="range" min="10" max="92" value="55" step="1" class="pd-range" />
+    </label>
+  </div>
+  <canvas id="pd-cv" width="300" height="300" class="pd-cv"></canvas>
+  <figcaption id="pd-cap" class="pd-cap"></figcaption>
+</figure>
+
+<script>
+  type P = { x: number; y: number };
+  const sub = (a: P, b: P): P => ({ x: a.x - b.x, y: a.y - b.y });
+  const dot = (a: P, b: P) => a.x * b.x + a.y * b.y;
+  const norm = (a: P) => Math.hypot(a.x, a.y);
+
+  const rIn = document.getElementById("pd-r") as HTMLInputElement | null;
+  const rVal = document.getElementById("pd-rval");
+  const cv = document.getElementById("pd-cv") as HTMLCanvasElement | null;
+  const capEl = document.getElementById("pd-cap");
+
+  if (rIn && rVal && cv && capEl) {
+    const ctx = cv.getContext("2d")!;
+    const W = cv.width, H = cv.height, cx = W / 2, cy = H / 2, R = 132;
+    const css = (v: string) => getComputedStyle(document.documentElement).getPropertyValue(v).trim() || "#888";
+    const sx = (p: P) => cx + p.x * R, sy = (p: P) => cy - p.y * R;
+
+    // 測地線を結ぶ円（境界に直交）の中心 c と半径 rho を求める。
+    // 条件：c·A=(1+|A|²)/2, c·B=(1+|B|²)/2 → 線形連立。ほぼ直径なら null。
+    const geodesicCircle = (A: P, B: P): { c: P; rho: number } | null => {
+      const a1 = (1 + dot(A, A)) / 2, a2 = (1 + dot(B, B)) / 2;
+      const det = A.x * B.y - A.y * B.x;
+      if (Math.abs(det) < 1e-9) return null; // 原点と共線＝直径
+      const cxp = (a1 * B.y - a2 * A.y) / det;
+      const cyp = (A.x * a2 - B.x * a1) / det;
+      const c = { x: cxp, y: cyp };
+      const rho2 = dot(c, c) - 1;
+      if (rho2 <= 1e-9) return null;
+      return { c, rho: Math.sqrt(rho2) };
+    };
+
+    // A における測地線 A→B の接線方向（B 側へ向かう単位ベクトル）
+    const tangentAt = (A: P, B: P): P => {
+      const g = geodesicCircle(A, B);
+      if (!g) { const d = sub(B, A); const n = norm(d); return { x: d.x / n, y: d.y / n }; } // 直径：まっすぐ
+      // 接線は (A−c) に直交。B 側の向きを選ぶ。
+      const rad = sub(A, g.c);
+      let t1 = { x: -rad.y, y: rad.x };
+      const n = norm(t1); t1 = { x: t1.x / n, y: t1.y / n };
+      // B へ向かう向きへ（弧に沿って B の方向）
+      const toB = sub(B, A);
+      if (dot(t1, toB) < 0) t1 = { x: -t1.x, y: -t1.y };
+      return t1;
+    };
+
+    // A における内角（辺 A→B と 辺 A→C のなす角）
+    const angleAt = (A: P, B: P, C: P) => {
+      const u = tangentAt(A, B), v = tangentAt(A, C);
+      return Math.acos(Math.max(-1, Math.min(1, dot(u, v))));
+    };
+
+    // 測地線の弧を描く（A→B）
+    const drawGeodesic = (A: P, B: P, color: string, width: number) => {
+      const g = geodesicCircle(A, B);
+      ctx.strokeStyle = color; ctx.lineWidth = width;
+      if (!g) { ctx.beginPath(); ctx.moveTo(sx(A), sy(A)); ctx.lineTo(sx(B), sy(B)); ctx.stroke(); return; }
+      const aA = Math.atan2(A.y - g.c.y, A.x - g.c.x);
+      const aB = Math.atan2(B.y - g.c.y, B.x - g.c.x);
+      // 短い側の弧を描く
+      let d = aB - aA;
+      while (d > Math.PI) d -= 2 * Math.PI;
+      while (d < -Math.PI) d += 2 * Math.PI;
+      ctx.beginPath();
+      const nseg = 60;
+      for (let i = 0; i <= nseg; i++) {
+        const a = aA + d * i / nseg;
+        const p = { x: g.c.x + g.rho * Math.cos(a), y: g.c.y + g.rho * Math.sin(a) };
+        i ? ctx.lineTo(sx(p), sy(p)) : ctx.moveTo(sx(p), sy(p));
+      }
+      ctx.stroke();
+    };
+
+    const render = () => {
+      const rho = Number(rIn.value) / 100;
+      rVal.textContent = rho.toFixed(2);
+      ctx.clearRect(0, 0, W, H);
+      // 境界（無限遠）
+      ctx.strokeStyle = css("--line"); ctx.lineWidth = 1.6;
+      ctx.beginPath(); ctx.arc(cx, cy, R, 0, 2 * Math.PI); ctx.stroke();
+
+      // 三角形の3頂点（半径 rho、角 90°/210°/330°）
+      const angs = [90, 210, 330].map((d) => d * Math.PI / 180);
+      const V: P[] = angs.map((a) => ({ x: rho * Math.cos(a), y: rho * Math.sin(a) }));
+
+      // 参考：頂点を通る測地線を薄く延長（境界まで）は省略、辺のみ描く
+      drawGeodesic(V[0], V[1], css("--shu"), 2.4);
+      drawGeodesic(V[1], V[2], css("--shu"), 2.4);
+      drawGeodesic(V[2], V[0], css("--shu"), 2.4);
+      // 頂点
+      for (const v of V) { ctx.fillStyle = css("--shu"); ctx.beginPath(); ctx.arc(sx(v), sy(v), 4, 0, 2 * Math.PI); ctx.fill(); }
+
+      // 内角
+      const a = angleAt(V[0], V[1], V[2]);
+      const b = angleAt(V[1], V[2], V[0]);
+      const c = angleAt(V[2], V[0], V[1]);
+      const sum = a + b + c;
+      const defect = Math.PI - sum; // ＝面積（K=−1）
+      const deg = (x: number) => (x * 180 / Math.PI).toFixed(1);
+      capEl.innerHTML =
+        `<b>双曲平面（負曲率 K=−1）</b>のポアンカレ円盤。外周は<b>無限遠</b>、<b class="shu">測地線</b>は境界に直交する円弧。<br>` +
+        `測地三角形の内角の和 ＝ <b>${deg(sum)}°</b>（平らな面なら 180°）。` +
+        `<b>角の欠損 π−(α+β+γ) ＝ ${deg(defect)}°</b> がちょうど<b>面積</b>（ガウス–ボンネ K=−1）。` +
+        ` 三角形を境界へ近づけるほど内角和→0・面積→π。正曲率（球面）とは逆——負曲率では三角形は“やせる”。`;
+    };
+    rIn.addEventListener("input", render);
+    render();
+  }
+</script>
+
+<style>
+  .pd { margin: 26px 0; padding: 16px 18px 14px; border: 1px solid var(--line); border-radius: 10px; background: var(--card); }
+  .pd-controls { display: flex; flex-wrap: wrap; gap: 10px 18px; margin-bottom: 12px; align-items: center; }
+  .pd-label { font-size: 13px; font-weight: 600; color: var(--ink); font-family: var(--sans); display: flex; align-items: center; gap: 8px; }
+  .pd-range { width: 200px; accent-color: var(--shu); }
+  .pd-cv { display: block; margin: 0 auto; width: 100%; max-width: 300px; height: auto; border: 1px solid var(--line); border-radius: 6px; background: var(--paper-sunk); }
+  .pd-cap { margin-top: 12px; font-size: 13px; line-height: 1.85; color: var(--ink-faint); font-family: var(--sans); }
+  .pd-cap b { color: var(--ink); font-weight: 700; }
+  .pd-cap b.shu { color: var(--shu); }
+</style>

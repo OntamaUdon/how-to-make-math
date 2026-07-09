@@ -1,0 +1,114 @@
+---
+/* JacobiField.astro — 「曲率が測地線の広がりを支配する」を体感する装置（ヤコビ方程式）。
+   1点から出る近接した測地線の間の隔たり J(t) は、断面曲率 K に対しヤコビ方程式 J''+KJ=0 に従う
+   （J(0)=0, J'(0)=1）。解は
+     ・K>0：J=sin(√K t)/√K —— 収束して t=π/√K で再交差（共役点、測地線が最短でなくなる）
+     ・K=0：J=t —— 線形に広がる（ユークリッド）
+     ・K<0：J=sinh(√|K| t)/√|K| —— 指数的に発散（共役点なし）
+   中央の測地線（水平線）と、その上下 ±J(t) にある近接測地線の「束」を描く。K をスライダーで変える。
+   状態はメモリ内のみ（storage 不使用）。 */
+---
+
+<figure class="jf" role="group" aria-label="曲率と測地線の広がり（ヤコビ場）">
+  <div class="jf-controls">
+    <label class="jf-label">断面曲率 K ＝ <span id="jf-kval">1.00</span>
+      <input id="jf-k" type="range" min="-200" max="200" value="100" step="1" class="jf-range" />
+    </label>
+  </div>
+  <canvas id="jf-cv" width="380" height="250" class="jf-cv"></canvas>
+  <figcaption id="jf-cap" class="jf-cap"></figcaption>
+</figure>
+
+<script>
+  const kIn = document.getElementById("jf-k") as HTMLInputElement | null;
+  const kVal = document.getElementById("jf-kval");
+  const cv = document.getElementById("jf-cv") as HTMLCanvasElement | null;
+  const capEl = document.getElementById("jf-cap");
+
+  if (kIn && kVal && cv && capEl) {
+    const ctx = cv.getContext("2d")!;
+    const W = cv.width, H = cv.height, padL = 30, padR = 12, padT = 10, padB = 22;
+    const css = (v: string) => getComputedStyle(document.documentElement).getPropertyValue(v).trim() || "#888";
+    const midY = (H - padB + padT) / 2;
+    const TMAX = 6;
+    const vScale = 22; // J → px（縦）
+
+    // J(t): J''+KJ=0, J(0)=0, J'(0)=1
+    const jacobi = (K: number, t: number) => {
+      if (K > 1e-6) { const w = Math.sqrt(K); return Math.sin(w * t) / w; }
+      if (K < -1e-6) { const w = Math.sqrt(-K); return Math.sinh(w * t) / w; }
+      return t;
+    };
+
+    const render = () => {
+      const K = Number(kIn.value) / 100;
+      kVal.textContent = K.toFixed(2);
+      ctx.clearRect(0, 0, W, H);
+      const px = (t: number) => padL + t / TMAX * (W - padL - padR);
+      const clamp = (y: number) => Math.max(padT, Math.min(H - padB, y));
+
+      // 軸（中央の測地線＝基準）
+      ctx.strokeStyle = css("--line"); ctx.lineWidth = 1;
+      ctx.beginPath(); ctx.moveTo(padL, H - padB); ctx.lineTo(padL, padT); ctx.stroke();
+      // 中央測地線
+      ctx.strokeStyle = css("--ai"); ctx.lineWidth = 2;
+      ctx.beginPath(); ctx.moveTo(px(0), midY); ctx.lineTo(px(TMAX), midY); ctx.stroke();
+
+      // 近接測地線の束（±J(t)）＋塗り
+      const upper: [number, number][] = [], lower: [number, number][] = [];
+      let conj = -1; // 共役点（K>0 で J が再び 0）
+      for (let i = 0; i <= 600; i++) {
+        const t = TMAX * i / 600, J = jacobi(K, t);
+        upper.push([px(t), midY - J * vScale]);
+        lower.push([px(t), midY + J * vScale]);
+        if (K > 1e-6 && conj < 0 && t > 0.05 && J <= 0) conj = t;
+      }
+      // 塗り（束の内側）
+      ctx.fillStyle = css("--shu"); ctx.globalAlpha = 0.13;
+      ctx.beginPath();
+      upper.forEach(([x, y], i) => (i ? ctx.lineTo(x, clamp(y)) : ctx.moveTo(x, clamp(y))));
+      for (let i = lower.length - 1; i >= 0; i--) ctx.lineTo(lower[i][0], clamp(lower[i][1]));
+      ctx.closePath(); ctx.fill(); ctx.globalAlpha = 1;
+      // 近接測地線の線
+      ctx.strokeStyle = css("--shu"); ctx.lineWidth = 2;
+      for (const arr of [upper, lower]) { ctx.beginPath(); arr.forEach(([x, y], i) => (i ? ctx.lineTo(x, clamp(y)) : ctx.moveTo(x, clamp(y)))); ctx.stroke(); }
+      // 出発点
+      ctx.fillStyle = css("--ink"); ctx.beginPath(); ctx.arc(px(0), midY, 4, 0, 2 * Math.PI); ctx.fill();
+
+      // 共役点マーク
+      if (conj > 0) {
+        ctx.strokeStyle = css("--ink-faint"); ctx.lineWidth = 1; ctx.setLineDash([3, 3]);
+        ctx.beginPath(); ctx.moveTo(px(conj), padT); ctx.lineTo(px(conj), H - padB); ctx.stroke(); ctx.setLineDash([]);
+        ctx.fillStyle = css("--shu"); ctx.beginPath(); ctx.arc(px(conj), midY, 4, 0, 2 * Math.PI); ctx.fill();
+      }
+
+      let msg: string;
+      if (K > 1e-6) {
+        msg = `<b>K &gt; 0（正曲率・球面型）</b>：J＝sin(√K·t)/√K。測地線どうしが<b>収束</b>し、` +
+          `t＝π/√K＝<b>${(Math.PI / Math.sqrt(K)).toFixed(2)}</b> で再び交わる（<b>共役点</b>）。そこから先、測地線は最短でなくなる` +
+          `——<b>ボンネ–マイヤー</b>（正曲率なら空間は有界・コンパクト）の芽。`;
+      } else if (K < -1e-6) {
+        msg = `<b>K &lt; 0（負曲率・双曲型）</b>：J＝sinh(√|K|·t)/√|K|。測地線どうしが<b>指数的に発散</b>し、` +
+          `二度と交わらない（共役点なし）——<b>カルタン–アダマール</b>（非正曲率なら ℝⁿ に微分同相）の芽。`;
+      } else {
+        msg = `<b>K ＝ 0（平坦・ユークリッド）</b>：J＝t。測地線は<b>線形に</b>広がる（平行線は平行のまま）。`;
+      }
+      capEl.innerHTML =
+        `1点から出た近接測地線の隔たり <b class="shu">J(t)</b> は、断面曲率 K に対し<b>ヤコビ方程式 J″＋K·J＝0</b>に従う。<br>` + msg;
+    };
+    kIn.addEventListener("input", render);
+    render();
+  }
+</script>
+
+<style>
+  .jf { margin: 26px 0; padding: 16px 18px 14px; border: 1px solid var(--line); border-radius: 10px; background: var(--card); }
+  .jf-controls { display: flex; flex-wrap: wrap; gap: 10px 18px; margin-bottom: 12px; align-items: center; }
+  .jf-label { font-size: 13px; font-weight: 600; color: var(--ink); font-family: var(--sans); display: flex; align-items: center; gap: 8px; }
+  .jf-range { width: 240px; accent-color: var(--shu); }
+  .jf-cv { display: block; margin: 0 auto; width: 100%; max-width: 380px; height: auto; border: 1px solid var(--line); border-radius: 6px; background: var(--paper-sunk); }
+  .jf-cap { margin-top: 12px; font-size: 13px; line-height: 1.85; color: var(--ink-faint); font-family: var(--sans); }
+  .jf-cap b { color: var(--ink); font-weight: 700; }
+  .jf-cap b.shu { color: var(--shu); }
+  .jf-cap b.ai { color: var(--ai); }
+</style>
