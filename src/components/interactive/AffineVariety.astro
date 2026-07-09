@@ -1,0 +1,106 @@
+---
+/* AffineVariety.astro — 多項式の零点集合 V(f)＝アフィン代数的集合を体感する装置。
+   f(x,y) を選ぶと、その実零点集合を平面に描く（マーチングスクエア法で f=0 の等高線を追う）。
+   ・「方程式（代数）↔ 図形（幾何）」の対応
+   ・可約：V(f·g)=V(f)∪V(g)（二直線 xy=0 など）
+   ・特異点：f=0 かつ ∂f/∂x=∂f/∂y=0 の点（節点・尖点）。勾配が消える＝滑らかでない。
+   状態はメモリ内のみ（storage 不使用）。 */
+---
+
+<figure class="av" role="group" aria-label="多項式の零点集合 V(f)">
+  <div class="av-controls">
+    <label class="av-label">f(x, y) ＝
+      <select id="av-sel" class="av-sel">
+        <option value="circle">x² + y² − 1（円）</option>
+        <option value="parab">y − x²（放物線）</option>
+        <option value="lines">x·y（二直線＝可約）</option>
+        <option value="node">y² − x²(x+1)（節点をもつ三次曲線）</option>
+        <option value="cusp">y² − x³（尖点をもつ三次曲線）</option>
+        <option value="ell">y² − (x³ − x)（滑らかな楕円曲線）</option>
+      </select>
+    </label>
+  </div>
+  <canvas id="av-cv" width="320" height="320" class="av-cv"></canvas>
+  <figcaption id="av-cap" class="av-cap"></figcaption>
+</figure>
+
+<script>
+  type Def = { f: (x: number, y: number) => number; sing: [number, number][]; note: string };
+  const defs: Record<string, Def> = {
+    circle: { f: (x, y) => x * x + y * y - 1, sing: [], note: "円 x²+y²=1。既約で滑らか（特異点なし）。方程式ひとつが図形ひとつを定める。" },
+    parab: { f: (x, y) => y - x * x, sing: [], note: "放物線 y=x²。既約で滑らか。多項式のグラフも零点集合の一種。" },
+    lines: { f: (x, y) => x * y, sing: [[0, 0]], note: "xy=0 は x=0 と y=0 の和集合＝V(xy)=V(x)∪V(y)。可約（積に分解）。二直線の交点 (0,0) は特異点。" },
+    node: { f: (x, y) => y * y - x * x * (x + 1), sing: [[0, 0]], note: "節点（ノード）をもつ三次曲線。原点で曲線が自分自身と交わる＝勾配が消える特異点。" },
+    cusp: { f: (x, y) => y * y - x * x * x, sing: [[0, 0]], note: "尖点（カスプ）をもつ三次曲線 y²=x³。原点で尖る＝特異点。節点とは別種の特異性。" },
+    ell: { f: (x, y) => y * y - (x * x * x - x), sing: [], note: "滑らかな楕円曲線 y²=x³−x。特異点なし。三点が一直線に乗る和が群構造を与える（数論の主役）。" },
+  };
+
+  const sel = document.getElementById("av-sel") as HTMLSelectElement | null;
+  const cv = document.getElementById("av-cv") as HTMLCanvasElement | null;
+  const capEl = document.getElementById("av-cap");
+
+  if (sel && cv && capEl) {
+    const ctx = cv.getContext("2d")!;
+    const W = cv.width, H = cv.height, R = 2.6; // 表示範囲 [-R,R]
+    const css = (v: string) => getComputedStyle(document.documentElement).getPropertyValue(v).trim() || "#888";
+    const px = (x: number) => W / 2 + x / R * (W / 2);
+    const py = (y: number) => H / 2 - y / R * (H / 2);
+
+    const render = () => {
+      const { f, sing, note } = defs[sel.value];
+      ctx.clearRect(0, 0, W, H);
+      // 座標軸
+      ctx.strokeStyle = css("--line"); ctx.lineWidth = 1;
+      ctx.beginPath(); ctx.moveTo(0, H / 2); ctx.lineTo(W, H / 2); ctx.moveTo(W / 2, 0); ctx.lineTo(W / 2, H); ctx.stroke();
+      // マーチングスクエアで f=0 の等高線を描く
+      const N = 220, h = 2 * R / N;
+      ctx.strokeStyle = css("--shu"); ctx.lineWidth = 2.2;
+      ctx.beginPath();
+      for (let i = 0; i < N; i++) {
+        for (let j = 0; j < N; j++) {
+          const x0 = -R + i * h, y0 = -R + j * h, x1 = x0 + h, y1 = y0 + h;
+          const v00 = f(x0, y0), v10 = f(x1, y0), v11 = f(x1, y1), v01 = f(x0, y1);
+          // 各辺で符号変化する点（線形補間）
+          const pts: [number, number][] = [];
+          const edge = (xa: number, ya: number, va: number, xb: number, yb: number, vb: number) => {
+            if ((va <= 0 && vb > 0) || (va > 0 && vb <= 0)) {
+              const t = va / (va - vb);
+              pts.push([xa + t * (xb - xa), ya + t * (yb - ya)]);
+            }
+          };
+          edge(x0, y0, v00, x1, y0, v10); // 下辺
+          edge(x1, y0, v10, x1, y1, v11); // 右辺
+          edge(x1, y1, v11, x0, y1, v01); // 上辺
+          edge(x0, y1, v01, x0, y0, v00); // 左辺
+          if (pts.length >= 2) {
+            ctx.moveTo(px(pts[0][0]), py(pts[0][1]));
+            ctx.lineTo(px(pts[1][0]), py(pts[1][1]));
+            if (pts.length === 4) { ctx.moveTo(px(pts[2][0]), py(pts[2][1])); ctx.lineTo(px(pts[3][0]), py(pts[3][1])); }
+          }
+        }
+      }
+      ctx.stroke();
+      // 特異点
+      for (const [sx, sy] of sing) {
+        ctx.fillStyle = css("--ai"); ctx.beginPath(); ctx.arc(px(sx), py(sy), 5, 0, 2 * Math.PI); ctx.fill();
+        ctx.strokeStyle = css("--ai"); ctx.lineWidth = 1.5; ctx.beginPath(); ctx.arc(px(sx), py(sy), 10, 0, 2 * Math.PI); ctx.stroke();
+      }
+      const singTxt = sing.length ? `<b class="ai">特異点</b>（勾配が消える点）を ● で表示。` : `特異点なし（全点で滑らか）。`;
+      capEl.innerHTML = `<b class="shu">零点集合 V(f)</b>＝f(x,y)=0 をみたす点の全体。${note}<br>${singTxt}`;
+    };
+    sel.addEventListener("change", render);
+    render();
+  }
+</script>
+
+<style>
+  .av { margin: 26px 0; padding: 16px 18px 14px; border: 1px solid var(--line); border-radius: 10px; background: var(--card); }
+  .av-controls { display: flex; flex-wrap: wrap; gap: 10px 18px; margin-bottom: 12px; align-items: center; }
+  .av-label { font-size: 13px; font-weight: 600; color: var(--ink); font-family: var(--sans); display: flex; align-items: center; gap: 6px; }
+  .av-sel { font-family: var(--sans); font-size: 13px; padding: 4px 8px; border: 1px solid var(--line); border-radius: 7px; background: var(--paper-sunk); color: var(--ink); }
+  .av-cv { display: block; margin: 0 auto; width: 100%; max-width: 320px; height: auto; border: 1px solid var(--line); border-radius: 6px; background: var(--paper-sunk); }
+  .av-cap { margin-top: 12px; font-size: 13px; line-height: 1.85; color: var(--ink-faint); font-family: var(--sans); }
+  .av-cap b { color: var(--ink); font-weight: 700; }
+  .av-cap b.shu { color: var(--shu); }
+  .av-cap b.ai { color: var(--ai); }
+</style>

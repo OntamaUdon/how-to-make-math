@@ -1,0 +1,111 @@
+---
+layout: ../../layouts/BaseLayout.astro
+title: 第10章 Spec — 任意の環に図形を
+description: どんな環にも「図形」を対応させる Spec。素イデアルを点とみなし、ザリスキ位相と構造層を載せる。アフィンスキームの誕生。
+---
+
+import Term from "../../components/assets/Term.astro";
+import Statement from "../../components/assets/Statement.astro";
+
+# 第10章 Spec — 任意の環に図形を
+
+## 環同値を、任意の環へ
+
+第4章で「アフィン多様体 ↔ 被約有限生成 $k$ 代数」の反変圏同値を得ました。そこで自然な問いが湧きました——
+右辺の環を、**任意の可換環**に広げたら、左辺の“図形”はどうなるか。グロタンディークの答えが $\operatorname{Spec}$
+（素スペクトル）です。どんな環にも幾何的な“図形”を対応させる。この一手が、代数幾何を数論まで統一する
+現代的な地平を開きます。
+
+鍵は「点とは何か」の再定義です。第3章で「点 ↔ 極大イデアル」と見ました。$\operatorname{Spec}$ では、これを
+**素イデアル**まで広げ、素イデアルを点とみなします。極大でない素イデアルは「もっと大きな図形（既約部分多様体）を
+一点に凝縮した点」——生成点になります。
+
+> $\operatorname{Spec} R$＝環 $R$ の**素イデアル**を点とする空間。任意の環に図形を対応させ、圏同値を一般化する。
+
+## 素スペクトルとザリスキ位相
+
+<Statement kind="definition" title="素スペクトル・ザリスキ位相">
+可換環 $R$ の<Term>素スペクトル</Term> $\operatorname{Spec} R$ を、$R$ の[素イデアル](/ring-theory)全体の集合と定める
+（点 ＝ 素イデアル $\mathfrak p$）。イデアル $I\subseteq R$ に対し
+$$
+V(I)=\{\,\mathfrak p\in\operatorname{Spec} R : \mathfrak p\supseteq I\,\}
+$$
+を閉集合とする<Term>ザリスキ位相</Term>を入れる。
+</Statement>
+
+古典の $V(S)$（[第1章](/algebraic-geometry/1)）と同じ記号・同じ発想です。ただし「点」が座標の組でなく素イデアル
+になった。$\mathbb A^n$ の古典的な点（座標 $(a_i)$）は極大イデアル $(x_1-a_1,\dots,x_n-a_n)$（[第3章](/algebraic-geometry/3)）に
+対応し、それらは $\operatorname{Spec}$ の点の一部。極大でない素イデアルが新しい住人です。
+
+<Statement kind="example" title="Spec の点たち">
+- **$\operatorname{Spec}\mathbb Z$**：素イデアルは $(0)$ と $(p)$（$p$ 素数）。点は「各素数 $p$」＋「生成点 $(0)$」。
+  **整数の素因数が、図形の点になる**——数論と幾何の統一の出発点。
+- **$\operatorname{Spec} k[x]$**：点は $(0)$（生成点）と $(x-a)$（各値 $a$）と既約多項式 $(f)$。$\mathbb A^1$ の“太った”版。
+- **$\operatorname{Spec} k[x,y]$**：極大イデアル（点）＋高さ $1$ の素イデアル（既約曲線＝その**生成点**）＋$(0)$（平面全体の
+  生成点）。素イデアルの階層が、点・曲線・面の階層に対応。
+</Statement>
+
+$\operatorname{Spec}\mathbb Z$ が決定的です。素数 $p$ が「点」、$(0)$ が「生成点」——**整数論が幾何になる**。
+$\operatorname{Spec}\mathbb Z$ は「$1$ 次元の図形（数直線の算術版）」とみなせ、各素数が点。これがフェルマーの最終定理の
+証明（第12章）の舞台の入り口です。
+
+<Statement kind="remark" title="生成点——非閉な点">
+極大でない素イデアル $\mathfrak p$ に対応する点は**閉じていない**：その閉包 $\overline{\{\mathfrak p\}}=V(\mathfrak p)$ が
+$\mathfrak p$ を含む既約閉集合（部分多様体）全体になる。つまり $\mathfrak p$ は「その既約部分多様体を一点に凝縮した
+**生成点**」で、閉包をとると本来の図形に広がる。$\operatorname{Spec} k[x,y]$ の $(y-x^2)$ は放物線の生成点——一点だが
+閉包は放物線全体。古典では見えなかった“太った点”が、環の素イデアルとして自然に現れる。
+</Statement>
+
+## 構造層——Spec 上の関数
+
+$\operatorname{Spec} R$ を「図形」にする最後の一手が、その上の関数の層（構造層）です。局所化（[環論](/ring-theory)）で
+「各開集合上の関数」を定めます。
+
+<Statement kind="definition" title="構造層">
+$\operatorname{Spec} R$ 上の<Term>構造層</Term> $\mathcal O_{\operatorname{Spec} R}$ を、基本開集合 $D(f)=\{\mathfrak p:f\notin\mathfrak p\}$
+（$f$ が消えない所）上で
+$$
+\mathcal O(D(f))=R_f\quad(R\ \text{を }f\ \text{で局所化した環})
+$$
+と定め、貼り合わせて得る層。点 $\mathfrak p$ での**茎**は局所環 $R_\mathfrak p$（$\mathfrak p$ で局所化）。
+</Statement>
+
+「$f$ が消えない開集合 $D(f)$ では、$1/f$ を許した関数 $R_f$ が使える」——[環論](/ring-theory)の局所化が、
+そのまま「開集合上の正則関数」になります。茎が局所環 $R_\mathfrak p$ になるのが要で、**各点の近くの関数の芽が、
+その素イデアルでの局所環**。層（第8・9章）と局所化（環論）が、ここで一つに結びつきます。
+
+<Statement kind="definition" title="アフィンスキーム">
+局所環付き空間 $(\operatorname{Spec} R,\ \mathcal O_{\operatorname{Spec} R})$——素スペクトルに構造層を載せたもの——を
+<Term>アフィンスキーム</Term>という。対応 $R\mapsto\operatorname{Spec} R$ は反変関手で、$\operatorname{Spec}$ と
+「大域切断 $\Gamma$」が随伴をなす。
+</Statement>
+
+これで第4章の圏同値が完全に一般化されます。**任意の可換環 $R$ に、幾何的対象 $\operatorname{Spec} R$ が対応**し、
+環準同型が逆向きの射に対応する。被約・有限生成という制限が消え、$\mathbb Z$ でも、べき零元をもつ環でも、
+何でも“図形”になる。
+
+<Statement kind="remark" title="べき零元＝無限小の厚み">
+$\operatorname{Spec}$ は被約でない環も許す。$\operatorname{Spec} k[x]/(x^2)$ は、点は一つ（$(x)$）だが構造層に
+べき零元 $x\ne0$（$x^2=0$）をもつ——「一点だが無限小の厚みをもつ」図形。古典では見えなかった**無限小近傍・
+重複度**が、スキームでは環の構造として正式に扱える。$V(x^2)$ と $V(x)$ を区別できる（[第3章](/algebraic-geometry/3)で
+零点定理が潰した情報が、スキームで復活）。微分・接ベクトル・変形理論が、この無限小の厚みで自然に語れる。
+</Statement>
+
+## つまずきポイント
+
+<Statement kind="remark" title="よくある誤解">
+- **$\operatorname{Spec}$ の点は素イデアル。** 座標の組でなく素イデアル。極大イデアルが古典的な点、極大でない素イデアルが
+  **生成点**（部分多様体を凝縮）。
+- **生成点は閉じていない。** 閉包が既約部分多様体全体。$(0)$ は空間全体の生成点。古典の“点”のイメージを広げる。
+- **構造層の茎は局所環 $R_\mathfrak p$。** 局所化（環論）が「開集合上の関数」。$D(f)$ 上で $R_f$。
+- **被約でない環も図形になる。** べき零元＝無限小の厚み。$V(x^2)\ne V(x)$ を区別。古典で潰れた情報が復活。
+</Statement>
+
+## この章のまとめ
+
+- **$\operatorname{Spec} R$**＝環 $R$ の**素イデアル**を点とする空間（ザリスキ位相 $V(I)$）。極大イデアル＝古典的な点、極大でない素イデアル＝**生成点**（部分多様体を凝縮、非閉）。$\operatorname{Spec}\mathbb Z$ は素数が点＝数論と幾何の統一。
+- **構造層** $\mathcal O$：$D(f)$ 上で局所化 $R_f$、茎は局所環 $R_\mathfrak p$。局所化（[環論](/ring-theory)）が正則関数になる。
+- **アフィンスキーム** $(\operatorname{Spec} R,\mathcal O)$＝局所環付き空間。第4章の圏同値を**任意の環**へ一般化。べき零元＝**無限小の厚み**（$V(x^2)\ne V(x)$）。
+- アフィンスキームができた。次章では、それを貼り合わせて一般のスキームを定義し、なぜスキームが必要かを総括します。
+
+次章では、アフィンスキームを貼り合わせた一般のスキームを定義し、スキームがもたらす統一（数論・無限小・族）を見ます。

@@ -1,0 +1,110 @@
+---
+/* ProjectiveLines.astro — 「平行線は無限遠点で交わる」＝射影完備化を体感する装置。
+   アフィン平面に、傾き m_A（固定）の線 A と、傾き m_B（スライダー）の線 B を描く。
+   ・m_A ≠ m_B：二直線は一点で交わる。m_B を m_A に近づけると交点が遠くへ逃げる。
+   ・m_A = m_B（平行）：アフィン平面では交わらない → 射影平面では「無限遠点」で交わる。
+   同じ傾きの平行線の束が、すべて同じ方向＝同じ無限遠点を共有することも示す。
+   「方向ひとつ＝無限遠点ひとつ」「相異なる二直線は ℙ² でちょうど一点で交わる」を掴む。
+   状態はメモリ内のみ（storage 不使用）。 */
+---
+
+<figure class="pl" role="group" aria-label="平行線と無限遠点">
+  <div class="pl-controls">
+    <label class="pl-label">線 B の傾き ＝ <span id="pl-mval">1.20</span>
+      <input id="pl-m" type="range" min="-30" max="140" value="120" step="1" class="pl-range" />
+    </label>
+    <span class="pl-hint">線 A の傾きは 0.50 に固定</span>
+  </div>
+  <canvas id="pl-cv" width="340" height="300" class="pl-cv"></canvas>
+  <figcaption id="pl-cap" class="pl-cap"></figcaption>
+</figure>
+
+<script>
+  const mIn = document.getElementById("pl-m") as HTMLInputElement | null;
+  const mVal = document.getElementById("pl-mval");
+  const cv = document.getElementById("pl-cv") as HTMLCanvasElement | null;
+  const capEl = document.getElementById("pl-cap");
+
+  if (mIn && mVal && cv && capEl) {
+    const ctx = cv.getContext("2d")!;
+    const W = cv.width, H = cv.height, R = 4; // 表示範囲 [-R,R]
+    const css = (v: string) => getComputedStyle(document.documentElement).getPropertyValue(v).trim() || "#888";
+    const px = (x: number) => W / 2 + x / R * (W / 2);
+    const py = (y: number) => H / 2 - y / R * (H / 2);
+    const mA = 0.5, bA = 0.6;      // 線 A: y = mA x + bA
+    const bB = -1.2;               // 線 B の切片
+
+    const drawLine = (m: number, b: number, color: string, width: number, alpha = 1) => {
+      ctx.strokeStyle = color; ctx.lineWidth = width; ctx.globalAlpha = alpha;
+      ctx.beginPath(); ctx.moveTo(px(-R), py(m * -R + b)); ctx.lineTo(px(R), py(m * R + b)); ctx.stroke();
+      ctx.globalAlpha = 1;
+    };
+
+    const render = () => {
+      const mB = Number(mIn.value) / 100;
+      mVal.textContent = mB.toFixed(2);
+      ctx.clearRect(0, 0, W, H);
+      // 軸
+      ctx.strokeStyle = css("--line"); ctx.lineWidth = 1;
+      ctx.beginPath(); ctx.moveTo(0, H / 2); ctx.lineTo(W, H / 2); ctx.moveTo(W / 2, 0); ctx.lineTo(W / 2, H); ctx.stroke();
+
+      // 傾き mB の平行線の束（薄く）＝同じ無限遠点を共有
+      for (let k = -6; k <= 6; k++) drawLine(mB, bB + k * 1.3, css("--ink-faint"), 0.8, 0.28);
+
+      // 線 A（藍）と線 B（朱）
+      drawLine(mA, bA, css("--ai"), 2.4);
+      drawLine(mB, bB, css("--shu"), 2.4);
+
+      const parallel = Math.abs(mB - mA) < 1e-3;
+      // 方向（無限遠点）を示す矢印（傾き mA の向き）
+      const dirArrow = (m: number) => {
+        const L = R * 0.9, ux = 1 / Math.hypot(1, m), uy = m / Math.hypot(1, m);
+        ctx.strokeStyle = css("--ink"); ctx.fillStyle = css("--ink"); ctx.lineWidth = 1.5; ctx.setLineDash([4, 3]);
+        ctx.beginPath(); ctx.moveTo(px(0), py(0)); ctx.lineTo(px(L * ux), py(L * uy)); ctx.stroke(); ctx.setLineDash([]);
+        const a = Math.atan2(-uy, ux), hh = 8;
+        ctx.beginPath(); ctx.moveTo(px(L * ux), py(L * uy));
+        ctx.lineTo(px(L * ux) - hh * Math.cos(a - 0.4), py(L * uy) + hh * Math.sin(a - 0.4));
+        ctx.lineTo(px(L * ux) - hh * Math.cos(a + 0.4), py(L * uy) + hh * Math.sin(a + 0.4));
+        ctx.closePath(); ctx.fill();
+      };
+
+      let msg: string;
+      if (parallel) {
+        dirArrow(mA);
+        msg = `<b>線 A と線 B は平行</b>（同じ傾き 0.50）。アフィン平面では<b>交わらない</b>——だが射影平面 ℙ² では、` +
+          `この向き（点線の矢印）に対応する<b class="shu">無限遠点</b>でちょうど交わる。薄い平行線の束はすべて` +
+          `この同じ無限遠点を共有する（<b>方向ひとつ＝無限遠点ひとつ</b>）。`;
+      } else {
+        // 交点 x: mA x + bA = mB x + bB
+        const xi = (bB - bA) / (mA - mB), yi = mA * xi + bA;
+        if (Math.abs(xi) <= R && Math.abs(yi) <= R) {
+          ctx.fillStyle = css("--ink"); ctx.beginPath(); ctx.arc(px(xi), py(yi), 5, 0, 2 * Math.PI); ctx.fill();
+          msg = `二直線は一点 (${xi.toFixed(1)}, ${yi.toFixed(1)}) で交わる。傾きを 0.50 に近づけると、この交点は<b>遠くへ逃げていく</b>——` +
+            `平行になる瞬間、交点は無限遠へ。`;
+        } else {
+          // 画面外へ逃げた：方向を矢印で
+          const s = xi > 0 ? 1 : -1; dirArrow(mA * 0 + (yi > 0 ? 1 : -1) * 0 + (xi >= 0 ? 0.5 : -0.5));
+          msg = `交点は画面の外（(${xi.toFixed(1)}, ${yi.toFixed(1)}) 付近）へ<b>逃げていく</b>。平行に近いほど交点は遠い。` +
+            `平行になれば交点は<b class="shu">無限遠点</b>に達する。`;
+        }
+      }
+      capEl.innerHTML =
+        `射影平面 ℙ² では<b>相異なる二直線はちょうど一点で交わる</b>（例外なし）。その秘密が無限遠点。<br>${msg}`;
+    };
+    mIn.addEventListener("input", render);
+    render();
+  }
+</script>
+
+<style>
+  .pl { margin: 26px 0; padding: 16px 18px 14px; border: 1px solid var(--line); border-radius: 10px; background: var(--card); }
+  .pl-controls { display: flex; flex-wrap: wrap; gap: 8px 16px; margin-bottom: 12px; align-items: center; }
+  .pl-label { font-size: 13px; font-weight: 600; color: var(--ink); font-family: var(--sans); display: flex; align-items: center; gap: 8px; }
+  .pl-range { width: 190px; accent-color: var(--shu); }
+  .pl-hint { font-size: 11px; color: var(--ink-faint); font-family: var(--sans); }
+  .pl-cv { display: block; margin: 0 auto; width: 100%; max-width: 340px; height: auto; border: 1px solid var(--line); border-radius: 6px; background: var(--paper-sunk); }
+  .pl-cap { margin-top: 12px; font-size: 13px; line-height: 1.85; color: var(--ink-faint); font-family: var(--sans); }
+  .pl-cap b { color: var(--ink); font-weight: 700; }
+  .pl-cap b.shu { color: var(--shu); }
+  .pl-cap b.ai { color: var(--ai); }
+</style>
