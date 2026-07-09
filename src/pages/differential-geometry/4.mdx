@@ -1,0 +1,127 @@
+---
+layout: ../../layouts/BaseLayout.astro
+title: 第4章 曲面と第一基本形式
+description: 曲面をパラメータ表示し、接平面を張る。面の上で長さ・角度・面積を測る物差し——第一基本形式（計量）を導入する。
+---
+
+import Term from "../../components/assets/Term.astro";
+import Statement from "../../components/assets/Statement.astro";
+
+# 第4章 曲面と第一基本形式
+
+## 曲線から曲面へ：パラメータが2つになる
+
+曲線は $1$ 本のパラメータ $t$ で動く点でした。曲面は**$2$ 本のパラメータ** $(u,v)$ で動く点——地図の緯度・経度の
+ように、二つの数で面上の位置を指定します。地球儀に緯線・経線を引くのと同じ発想です。
+
+<Statement kind="definition" title="正則曲面（パラメータ表示）">
+開集合 $D\subseteq\mathbb R^2$ から $\mathbb R^3$ への $C^\infty$ 写像 $\bm x(u,v)$ が、各点で
+偏微分 $\bm x_u=\partial\bm x/\partial u$ と $\bm x_v=\partial\bm x/\partial v$ が**一次独立**（$\bm x_u\times\bm x_v\ne\bm 0$）
+であるとき、その像を<Term>正則曲面片</Term>という。$\bm x$ を<Term>局所座標（パラメータ表示）</Term>という。
+</Statement>
+
+$\bm x_u,\bm x_v$ は「$u$ を動かす向き」「$v$ を動かす向き」の速度ベクトル。これらが一次独立であることが、
+面がその点で $2$ 次元的に広がっている（つぶれていない）条件です。曲線の「正則性 $\gamma'\ne0$」の曲面版。
+
+<Statement kind="example" title="はじめの曲面">
+- **平面** $\bm x(u,v)=\bm p+u\bm a+v\bm b$（$\bm a,\bm b$ 一次独立）。
+- **球面** $\bm x(u,v)=(\cos u\cos v,\ \cos u\sin v,\ \sin u)$（$u$ が緯度、$v$ が経度）。
+- **グラフ曲面** $\bm x(u,v)=(u,v,f(u,v))$：関数 $f$ のグラフ。$\bm x_u=(1,0,f_u),\bm x_v=(0,1,f_v)$ は常に一次独立。
+</Statement>
+
+## 接平面：曲面を「その点で平らに近似する」
+
+曲線に接線があったように、曲面には**接平面**があります。$\bm x_u,\bm x_v$ が張る平面が、その点で曲面に
+ぴったり寄り添う $2$ 次元の平面です。
+
+<Statement kind="definition" title="接平面・法線">
+点 $p=\bm x(u_0,v_0)$ での<Term>接平面</Term> $T_pS$ は $\bm x_u,\bm x_v$ の張る $2$ 次元部分空間。これに直交する
+単位ベクトル
+$$
+\bm n=\frac{\bm x_u\times\bm x_v}{|\bm x_u\times\bm x_v|}
+$$
+を<Term>単位法線ベクトル</Term>という。
+</Statement>
+
+接平面上のベクトル（接ベクトル）は、すべて $a\bm x_u+b\bm x_v$ の形。面の上を動く曲線の速度は必ず接平面に
+乗ります。だから「面の上の幾何」は、この接平面上のベクトルの長さや角度をどう測るかで決まる——それが次の
+第一基本形式です。
+
+## 第一基本形式：面の上の物差し
+
+面の上に住むアリになったつもりで考えましょう。アリは $3$ 次元空間を見ず、面の上の距離しか測れない。
+パラメータ $(u,v)$ が少し $(du,dv)$ 動いたとき、面上で実際に進む距離はいくらか。接ベクトル
+$d\bm x=\bm x_u\,du+\bm x_v\,dv$ の長さの $2$ 乗を計算すると、
+
+$$
+|d\bm x|^2=(\bm x_u\,du+\bm x_v\,dv)\cdot(\bm x_u\,du+\bm x_v\,dv)=E\,du^2+2F\,du\,dv+G\,dv^2.
+$$
+
+この $E,F,G$ が、面の上のすべての測定（長さ・角度・面積）を司ります。
+
+<Statement kind="definition" title="第一基本形式">
+$$
+E=\bm x_u\cdot\bm x_u,\quad F=\bm x_u\cdot\bm x_v,\quad G=\bm x_v\cdot\bm x_v
+$$
+を第一基本量、$\mathrm I=E\,du^2+2F\,du\,dv+G\,dv^2$ を<Term>第一基本形式</Term>（<Term>計量</Term>）という。
+これは接平面上の内積 $\langle\bm a,\bm b\rangle=\bm a\cdot\bm b$ を $(u,v)$ 座標で表した係数（対称行列
+$\begin{pmatrix}E&F\\F&G\end{pmatrix}$）にほかならない。
+</Statement>
+
+第一基本形式さえ分かれば、面の上の幾何がすべて計算できます。
+
+<Statement kind="theorem" title="第一基本形式で測れるもの">
+- **曲線の長さ**：面上の曲線 $(u(t),v(t))$ の長さは $\displaystyle\int\sqrt{E u'^2+2F u'v'+G v'^2}\,dt$。
+- **交わる角度**：二つの接ベクトルのなす角は $\cos\theta=\dfrac{\langle\bm a,\bm b\rangle}{|\bm a||\bm b|}$ を $E,F,G$ で表して計算。
+- **面積**：$\displaystyle\iint_D |\bm x_u\times\bm x_v|\,du\,dv=\iint_D\sqrt{EG-F^2}\,du\,dv$。
+</Statement>
+
+<Statement kind="proof">
+面積の式だけ確認する。ラグランジュの恒等式 $|\bm x_u\times\bm x_v|^2=|\bm x_u|^2|\bm x_v|^2-(\bm x_u\cdot\bm x_v)^2
+=EG-F^2$。よって面積要素は $\sqrt{EG-F^2}\,du\,dv$。長さ・角は内積 $\langle\cdot,\cdot\rangle$ の定義から直ちに。∎
+</Statement>
+
+<Statement kind="example" title="球面の計量">
+半径 $1$ の球面 $\bm x=(\cos u\cos v,\cos u\sin v,\sin u)$ で計算すると $E=1,\ F=0,\ G=\cos^2 u$。
+第一基本形式は $\mathrm I=du^2+\cos^2u\,dv^2$。緯度 $u$ が高い（極に近い）ほど $\cos^2u$ が小さく、経度方向の
+実距離が縮む——地図で極付近が引き伸ばされる理由がこの計量に表れている。
+</Statement>
+
+## 内在的量という考え方——ここが微分幾何の分水嶺
+
+第一基本形式は「面の上のアリが測れる量」だけで決まっています。$3$ 次元空間にどう埋まっているかを見なくても、
+面の上の距離を測るだけで $E,F,G$ が分かる。こういう量を<Term>内在的</Term>（intrinsic）といいます。逆に、面が
+空間の中でどう曲がって埋まっているかに依存する量を<Term>外在的</Term>（extrinsic）といいます。
+
+<Statement kind="remark" title="内在的 vs 外在的——第7章への伏線">
+第一基本形式 $E,F,G$ は**内在的**。一方、次章の第二基本形式（法線方向への曲がり）は、面が空間でどう反るかを
+見るので**外在的**に見える。ところが第7章で衝撃の事実が待つ——曲がり具合の本質（ガウス曲率）は、外在的に
+定義したのに実は**内在的に決まる**（ガウスの驚異の定理）。「アリは自分の世界の距離を測るだけで、宇宙から見た
+曲がりを知る」。この対比を今から意識しておくと、驚異の定理の衝撃が倍になる。
+</Statement>
+
+平面を筒（円柱）に丸めても、紙の上の距離は変わりません（破らず曲げただけ）。だから平面と円柱は第一基本形式が
+同じ＝内在的には同一。でも空間での見た目（外在的な曲がり）は違う。第一基本形式は「破らずに曲げても変わらない
+情報」を捉えているのです。
+
+## つまずきポイント
+
+<Statement kind="remark" title="よくある誤解">
+- **第一基本形式は「計量＝内積の座標表示」。** 新しい謎の量ではなく、接平面の内積を $(u,v)$ 座標で書いた
+  $\begin{pmatrix}E&F\\F&G\end{pmatrix}$。長さ・角度・面積の全部の源。
+- **$E,F,G$ はパラメータの取り方に依存する。** 座標を変えれば $E,F,G$ は変わる。でも「長さ」など測定結果は不変。
+  座標依存の係数と、座標によらない幾何を区別する。
+- **$EG-F^2>0$ が正則性。** これは $\bm x_u\times\bm x_v\ne0$ と同値（面がつぶれていない）。面積要素 $\sqrt{EG-F^2}$ が
+  正であることを保証。
+- **内在的と外在的を混同しない。** 第一基本形式は内在的（面上で測れる）。空間への埋め込み方に依らない情報だけを
+  持つ。次章の第二基本形式は逆。
+</Statement>
+
+## この章のまとめ
+
+- 曲面は $2$ パラメータ $\bm x(u,v)$ で表し、$\bm x_u,\bm x_v$ が一次独立（**正則**）で**接平面**を張る。法線は $\bm n=\bm x_u\times\bm x_v/|\cdots|$。
+- **第一基本形式** $\mathrm I=E\,du^2+2F\,du\,dv+G\,dv^2$（$E,F,G=\bm x_u\!\cdot\!\bm x_u,\ \bm x_u\!\cdot\!\bm x_v,\ \bm x_v\!\cdot\!\bm x_v$）は接平面の内積の座標表示。これだけで面上の**長さ・角度・面積**が測れる。
+- 第一基本形式は**内在的**（面上で測れる、破らず曲げても不変）。空間での埋まり方を見る**外在的**な量との対比が、驚異の定理（第7章）の伏線。
+- 次章では、面が空間の中でどう反り返るかを測る**第二基本形式**（法線方向への曲がり）を導入し、法曲率を定義します。
+
+次章では、単位法線の動き（ガウス写像）を通して、面の外在的な曲がり——第二基本形式と法曲率——を捉えます。

@@ -1,0 +1,177 @@
+---
+/* LebesgueVsRiemann.astro — リーマン積分とルベーグ積分の「刻み方の違い」を体感する装置。
+   同じ関数 f を、
+     ・リーマン＝定義域を縦に刻み、各短冊の高さ f(x) を足す
+     ・ルベーグ＝値域を横に刻み、「値がこの帯に入る x の集まり（原像）」を測って足す
+   として近似する様子を並べて描く。刻み数 N をスライダーで動かすと、両者とも真の面積に収束する。
+   ルベーグ側では「注目する値の帯」を選ぶと、その原像 {x : f(x)∈帯} が x 軸上に赤く点灯し、
+   『横に刻む＝値の帯の“原像を測る”』という発想が見える。
+   状態はメモリ内のみ（storage 不使用）。 */
+---
+
+<figure class="lr" role="group" aria-label="リーマン積分とルベーグ積分の刻み方">
+  <div class="lr-controls">
+    <div class="lr-modeswitch" role="tablist" aria-label="刻み方">
+      <button id="lr-riemann" type="button" class="lr-mode is-on" role="tab">縦に刻む（リーマン）</button>
+      <button id="lr-lebesgue" type="button" class="lr-mode" role="tab">横に刻む（ルベーグ）</button>
+    </div>
+    <label class="lr-label">刻み数 N ＝ <span id="lr-nval">8</span>
+      <input id="lr-n" type="range" min="2" max="40" value="8" step="1" class="lr-range" />
+    </label>
+    <label class="lr-label" id="lr-bandwrap">注目する値の帯 ＝ <span id="lr-bval">3</span>
+      <input id="lr-band" type="range" min="0" max="7" value="3" step="1" class="lr-range" />
+    </label>
+  </div>
+  <canvas id="lr-cv" width="380" height="300" class="lr-cv"></canvas>
+  <figcaption id="lr-cap" class="lr-cap"></figcaption>
+</figure>
+
+<script>
+  // 例に使う関数 f（定義域 [0,6]、値はおよそ [0.1, 2.9]。非単調にして「値の帯の原像が複数区間」になる様子を見せる）
+  const f = (x: number) => 1.45 + 0.9 * Math.sin(x) + 0.45 * Math.sin(2.1 * x + 0.6);
+  const X0 = 0, X1 = 6, Y0 = 0, Y1 = 3;
+
+  const cv = document.getElementById("lr-cv") as HTMLCanvasElement | null;
+  const capEl = document.getElementById("lr-cap");
+  const nEl = document.getElementById("lr-n") as HTMLInputElement | null;
+  const bandEl = document.getElementById("lr-band") as HTMLInputElement | null;
+  const nVal = document.getElementById("lr-nval");
+  const bVal = document.getElementById("lr-bval");
+  const bandWrap = document.getElementById("lr-bandwrap");
+  const btnR = document.getElementById("lr-riemann");
+  const btnL = document.getElementById("lr-lebesgue");
+
+  if (cv && capEl && nEl && bandEl && nVal && bVal && bandWrap && btnR && btnL) {
+    const ctx = cv.getContext("2d")!;
+    const W = cv.width, H = cv.height;
+    const padL = 26, padB = 22, padT = 10, padR = 8;
+    const css = (v: string) => getComputedStyle(document.documentElement).getPropertyValue(v).trim() || "#888";
+    const px = (x: number) => padL + (x - X0) / (X1 - X0) * (W - padL - padR);
+    const py = (y: number) => (H - padB) - (y - Y0) / (Y1 - Y0) * (H - padB - padT);
+
+    let mode: "riemann" | "lebesgue" = "riemann";
+
+    const trueArea = (() => {
+      let s = 0; const M = 4000, dx = (X1 - X0) / M;
+      for (let i = 0; i < M; i++) s += f(X0 + (i + 0.5) * dx) * dx;
+      return s;
+    })();
+
+    const axes = () => {
+      ctx.strokeStyle = css("--line"); ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.moveTo(px(X0), py(Y0)); ctx.lineTo(px(X1), py(Y0));
+      ctx.moveTo(px(X0), py(Y0)); ctx.lineTo(px(X0), py(Y1));
+      ctx.stroke();
+    };
+    const graph = () => {
+      ctx.strokeStyle = css("--ink"); ctx.lineWidth = 2; ctx.beginPath();
+      for (let i = 0; i <= 400; i++) {
+        const x = X0 + (X1 - X0) * i / 400;
+        i ? ctx.lineTo(px(x), py(f(x))) : ctx.moveTo(px(x), py(f(x)));
+      }
+      ctx.stroke();
+    };
+    const hex = (v: string, a: number) => { // tone helper: fill with alpha via globalAlpha
+      ctx.save(); ctx.globalAlpha = a; ctx.fillStyle = css(v); return () => ctx.restore();
+    };
+
+    const renderRiemann = (N: number) => {
+      const dx = (X1 - X0) / N; let sum = 0;
+      for (let k = 0; k < N; k++) {
+        const xm = X0 + (k + 0.5) * dx, h = f(xm);
+        const done = hex("--ai", 0.20);
+        ctx.fillRect(px(X0 + k * dx), py(h), (W - padL - padR) / N, py(Y0) - py(h)); done();
+        ctx.strokeStyle = css("--ai"); ctx.lineWidth = 0.6;
+        ctx.strokeRect(px(X0 + k * dx), py(h), (W - padL - padR) / N, py(Y0) - py(h));
+        sum += h * dx;
+      }
+      axes(); graph();
+      capEl.innerHTML =
+        `<b>縦に刻む（リーマン）。</b>定義域 [0,6] を ${N} 本の短冊に分け、各短冊の高さ f(中点) を足す。` +
+        ` 近似値 ＝ <b>${sum.toFixed(3)}</b>（真の面積 ${trueArea.toFixed(3)}）。` +
+        ` 高さがバラつく所は短冊が段差だらけ——だから連続でないと苦しくなる。`;
+    };
+
+    const renderLebesgue = (N: number, band: number) => {
+      const dy = (Y1 - Y0) / N;
+      // f を「値域 dy 刻みの床値」で下から近似する単関数 s(x)=⌊f/dy⌋·dy を作り、その下を横帯で塗る。
+      // 塗った面積 ＝ Σ(値 k·dy)×(原像 E_k の測度) ＝ 単関数の積分（真の面積へ下から収束）。
+      let sum = 0;
+      const M = 1200, dx = (X1 - X0) / M, colW = (W - padL - padR) / M + 1.2;
+      for (let i = 0; i < M; i++) {
+        const x = X0 + (i + 0.5) * dx, fx = f(x);
+        const m = Math.min(Math.floor((fx - Y0) / dy), N); // 何段目まで階段が登ったか
+        for (let j = 0; j < m; j++) {                       // 各横帯を交互色で積む
+          const done = hex(j % 2 === 0 ? "--shu" : "--ai", 0.20);
+          ctx.fillRect(px(x) - 0.6, py(Y0 + (j + 1) * dy), colW, py(Y0) - py(Y0 + dy));
+          done();
+        }
+        sum += m * dy * dx; // s(x)=m·dy の積分
+      }
+      // 水平の区切り線
+      ctx.strokeStyle = css("--line"); ctx.lineWidth = 0.6;
+      for (let k = 1; k < N; k++) { ctx.beginPath(); ctx.moveTo(px(X0), py(Y0 + k * dy)); ctx.lineTo(px(X1), py(Y0 + k * dy)); ctx.stroke(); }
+      axes(); graph();
+      // 注目する帯の原像 {x : f(x)∈帯} を x 軸上に点灯
+      const b = Math.min(band, N - 1);
+      const tLo = Y0 + b * dy, tHi = tLo + dy;
+      // 帯そのものを縁取り
+      ctx.strokeStyle = css("--shu"); ctx.lineWidth = 1.6;
+      ctx.strokeRect(px(X0), py(tHi), px(X1) - px(X0), py(tLo) - py(tHi));
+      // 原像（x 軸上の太い赤線分）
+      ctx.strokeStyle = css("--shu"); ctx.lineWidth = 5;
+      let mset = 0;
+      for (let i = 0; i < M; i++) {
+        const x = X0 + (i + 0.5) * dx, fx = f(x);
+        if (fx >= tLo && fx < tHi) {
+          ctx.beginPath(); ctx.moveTo(px(x) - 0.7, py(Y0) + 3); ctx.lineTo(px(x) + 0.7, py(Y0) + 3); ctx.stroke();
+          mset += dx;
+        }
+      }
+      capEl.innerHTML =
+        `<b>横に刻む（ルベーグ）。</b>値域を ${N} 段に刻み、f を「値の床」で下から近似する階段（単関数）の下を横帯で塗った。` +
+        ` 塗った面積 ＝ Σ(値)×(原像の幅) ＝ <b>${sum.toFixed(3)}</b>（下から真の面積 ${trueArea.toFixed(3)} へ。N を増やすと迫る）。` +
+        ` 赤枠は値が [${tLo.toFixed(2)}, ${tHi.toFixed(2)}) に入る帯、<b class="shu">x 軸の赤線</b>がその原像 {x : f(x)∈帯}` +
+        `（幅＝測度 ≈ ${mset.toFixed(2)}）。値の帯ごとに“その原像を測って足す”——これがルベーグの発想。`;
+    };
+
+    const render = () => {
+      ctx.clearRect(0, 0, W, H);
+      const N = Number(nEl.value);
+      nVal.textContent = String(N);
+      bandEl.max = String(N - 1);
+      if (Number(bandEl.value) > N - 1) bandEl.value = String(N - 1);
+      bVal.textContent = bandEl.value;
+      bandWrap.style.display = mode === "lebesgue" ? "" : "none";
+      if (mode === "riemann") renderRiemann(N);
+      else renderLebesgue(N, Number(bandEl.value));
+    };
+
+    const setMode = (m: "riemann" | "lebesgue") => {
+      mode = m;
+      btnR.classList.toggle("is-on", m === "riemann");
+      btnL.classList.toggle("is-on", m === "lebesgue");
+      render();
+    };
+    btnR.addEventListener("click", () => setMode("riemann"));
+    btnL.addEventListener("click", () => setMode("lebesgue"));
+    nEl.addEventListener("input", render);
+    bandEl.addEventListener("input", render);
+    render();
+  }
+</script>
+
+<style>
+  .lr { margin: 26px 0; padding: 16px 18px 14px; border: 1px solid var(--line); border-radius: 10px; background: var(--card); }
+  .lr-controls { display: flex; flex-direction: column; gap: 10px; margin-bottom: 12px; }
+  .lr-modeswitch { display: inline-flex; gap: 4px; padding: 3px; border: 1px solid var(--line); border-radius: 9px; background: var(--paper-sunk); width: fit-content; }
+  .lr-mode { appearance: none; border: none; background: transparent; color: var(--ink-faint); font-family: var(--sans); font-size: 12.5px; font-weight: 600; padding: 5px 12px; border-radius: 7px; cursor: pointer; }
+  .lr-mode.is-on { background: var(--card); color: var(--shu); box-shadow: 0 1px 2px rgba(0,0,0,.08); }
+  .lr-label { font-size: 13px; font-weight: 600; color: var(--ink); font-family: var(--sans); display: flex; align-items: center; gap: 8px; }
+  .lr-range { flex: 1; max-width: 220px; accent-color: var(--shu); }
+  .lr-cv { display: block; margin: 0 auto; width: 100%; max-width: 380px; height: auto; border: 1px solid var(--line); border-radius: 6px; background: var(--paper-sunk); }
+  .lr-cap { margin-top: 12px; font-size: 13px; line-height: 1.85; color: var(--ink-faint); font-family: var(--sans); }
+  .lr-cap b { color: var(--ink); font-weight: 700; }
+  .lr-cap b.shu { color: var(--shu); }
+</style>

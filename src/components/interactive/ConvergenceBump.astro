@@ -1,0 +1,132 @@
+---
+/* ConvergenceBump.astro — 「lim∫ ≠ ∫lim」を体感する装置。
+   関数列 fₙ をスライダー n で動かす。各点では fₙ→0 に収束するのに、∫fₙ は 0 に落ちない例を並べる。
+     ・逃げる山：高さ1・幅1の山が右へ n だけ移動。各点で最後は 0、でも ∫fₙ=1 一定（質量が無限遠へ逃げる）。
+     ・尖る山：底辺 1/n・高さ n の三角。各点で 0、∫fₙ=1/2 一定（質量が一点へ集中）。
+     ・広がる板：高さ 1/n・幅 n の板。各点 0、∫fₙ=1 一定（質量が薄く広がって逃げる）。
+   優収束定理の「みんなをまとめて抑える可積分な g」がこれらでは作れない＝仮定が本質、を示す。
+   状態はメモリ内のみ（storage 不使用）。 */
+---
+
+<figure class="cb" role="group" aria-label="関数列の収束と積分の交換">
+  <div class="cb-controls">
+    <div class="cb-modeswitch" role="tablist" aria-label="関数列の型">
+      <button id="cb-move" type="button" class="cb-mode is-on" role="tab">逃げる山</button>
+      <button id="cb-spike" type="button" class="cb-mode" role="tab">尖る山</button>
+      <button id="cb-spread" type="button" class="cb-mode" role="tab">広がる板</button>
+    </div>
+    <label class="cb-label">n ＝ <span id="cb-nval">1</span>
+      <input id="cb-n" type="range" min="1" max="16" value="1" step="1" class="cb-range" />
+    </label>
+  </div>
+  <canvas id="cb-cv" width="380" height="260" class="cb-cv"></canvas>
+  <figcaption id="cb-cap" class="cb-cap"></figcaption>
+</figure>
+
+<script>
+  type Mode = "move" | "spike" | "spread";
+  const X0 = 0, X1 = 8, Y0 = 0, Y1 = 3.4;
+
+  // fₙ(x) と ∫fₙ、そして各点極限の説明
+  const bumps: Record<Mode, {
+    f: (n: number, x: number) => number;
+    integ: (n: number) => number;
+    name: string; note: string;
+  }> = {
+    move: {
+      f: (n, x) => (x >= n && x <= n + 1 ? 1 : 0),
+      integ: () => 1,
+      name: "逃げる山",
+      note: "高さ1・幅1の山が右へ移動。どの点 x でも、n を十分大きくすれば山は通り過ぎて fₙ(x)=0。だから各点極限は 0。でも面積（質量）はずっと 1 のまま右へ逃げる。",
+    },
+    spike: {
+      f: (n, x) => (x <= 1 / n ? n * (1 - n * x) * 2 : 0),
+      integ: () => 1,
+      name: "尖る山",
+      note: "底辺 1/n・高さ 2n の三角。原点以外のどの x でも、n を大きくすれば台の外になって 0。各点極限は 0。でも面積は 1 のまま一点に集中していく。",
+    },
+    spread: {
+      f: (n, x) => (x <= n ? 1 / n : 0),
+      integ: () => 1,
+      name: "広がる板",
+      note: "高さ 1/n・幅 n の板。どの点でも高さは 1/n→0 で各点極限は 0。でも面積は 1 のまま薄く広がって逃げる。",
+    },
+  };
+
+  const cv = document.getElementById("cb-cv") as HTMLCanvasElement | null;
+  const capEl = document.getElementById("cb-cap");
+  const nEl = document.getElementById("cb-n") as HTMLInputElement | null;
+  const nVal = document.getElementById("cb-nval");
+  const btnMove = document.getElementById("cb-move");
+  const btnSpike = document.getElementById("cb-spike");
+  const btnSpread = document.getElementById("cb-spread");
+
+  if (cv && capEl && nEl && nVal && btnMove && btnSpike && btnSpread) {
+    const ctx = cv.getContext("2d")!;
+    const W = cv.width, H = cv.height;
+    const padL = 24, padB = 24, padT = 12, padR = 8;
+    const css = (v: string) => getComputedStyle(document.documentElement).getPropertyValue(v).trim() || "#888";
+    const px = (x: number) => padL + (x - X0) / (X1 - X0) * (W - padL - padR);
+    const py = (y: number) => (H - padB) - (y - Y0) / (Y1 - Y0) * (H - padB - padT);
+    let mode: Mode = "move";
+
+    const render = () => {
+      ctx.clearRect(0, 0, W, H);
+      const n = Number(nEl.value);
+      nVal.textContent = String(n);
+      const { f, integ, name, note } = bumps[mode];
+      // 軸
+      ctx.strokeStyle = css("--line"); ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.moveTo(px(X0), py(Y0)); ctx.lineTo(px(X1), py(Y0));
+      ctx.moveTo(px(X0), py(Y0)); ctx.lineTo(px(X0), py(Y1));
+      ctx.stroke();
+      // fₙ の下を塗る（＝面積）
+      ctx.save(); ctx.globalAlpha = 0.20; ctx.fillStyle = css("--shu");
+      ctx.beginPath(); ctx.moveTo(px(X0), py(0));
+      for (let i = 0; i <= 800; i++) { const x = X0 + (X1 - X0) * i / 800; ctx.lineTo(px(x), py(Math.min(f(n, x), Y1))); }
+      ctx.lineTo(px(X1), py(0)); ctx.closePath(); ctx.fill(); ctx.restore();
+      // fₙ のグラフ
+      ctx.strokeStyle = css("--shu"); ctx.lineWidth = 2; ctx.beginPath();
+      for (let i = 0; i <= 800; i++) { const x = X0 + (X1 - X0) * i / 800; const y = Math.min(f(n, x), Y1); i ? ctx.lineTo(px(x), py(y)) : ctx.moveTo(px(x), py(y)); }
+      ctx.stroke();
+      // 各点極限 f=0（藍の点線）
+      ctx.strokeStyle = css("--ai"); ctx.lineWidth = 2; ctx.setLineDash([5, 4]);
+      ctx.beginPath(); ctx.moveTo(px(X0), py(0.02)); ctx.lineTo(px(X1), py(0.02)); ctx.stroke(); ctx.setLineDash([]);
+      capEl.innerHTML =
+        `<b>${name}。</b>${note}<br>` +
+        `<b class="shu">∫fₙ dx ＝ ${integ(n).toFixed(1)}</b>（n を動かしても一定）　vs　` +
+        `<b class="ai">各点極限 lim fₙ ＝ 0</b>（藍の点線）。<br>` +
+        `だから <b>lim ∫fₙ ＝ ${integ(n).toFixed(1)} ≠ 0 ＝ ∫ lim fₙ</b>。` +
+        ` 質量が「外へ逃げる／一点に集まる」ので交換が破れる。全員をまとめて抑える可積分な優関数 g が作れない——優収束定理の仮定が効かない例。`;
+    };
+
+    const setMode = (m: Mode) => {
+      mode = m;
+      btnMove.classList.toggle("is-on", m === "move");
+      btnSpike.classList.toggle("is-on", m === "spike");
+      btnSpread.classList.toggle("is-on", m === "spread");
+      render();
+    };
+    btnMove.addEventListener("click", () => setMode("move"));
+    btnSpike.addEventListener("click", () => setMode("spike"));
+    btnSpread.addEventListener("click", () => setMode("spread"));
+    nEl.addEventListener("input", render);
+    render();
+  }
+</script>
+
+<style>
+  .cb { margin: 26px 0; padding: 16px 18px 14px; border: 1px solid var(--line); border-radius: 10px; background: var(--card); }
+  .cb-controls { display: flex; flex-direction: column; gap: 10px; margin-bottom: 12px; }
+  .cb-modeswitch { display: inline-flex; gap: 4px; padding: 3px; border: 1px solid var(--line); border-radius: 9px; background: var(--paper-sunk); width: fit-content; }
+  .cb-mode { appearance: none; border: none; background: transparent; color: var(--ink-faint); font-family: var(--sans); font-size: 12.5px; font-weight: 600; padding: 5px 12px; border-radius: 7px; cursor: pointer; }
+  .cb-mode.is-on { background: var(--card); color: var(--shu); box-shadow: 0 1px 2px rgba(0,0,0,.08); }
+  .cb-label { font-size: 13px; font-weight: 600; color: var(--ink); font-family: var(--sans); display: flex; align-items: center; gap: 8px; }
+  .cb-range { flex: 1; max-width: 260px; accent-color: var(--shu); }
+  .cb-cv { display: block; margin: 0 auto; width: 100%; max-width: 380px; height: auto; border: 1px solid var(--line); border-radius: 6px; background: var(--paper-sunk); }
+  .cb-cap { margin-top: 12px; font-size: 13px; line-height: 1.85; color: var(--ink-faint); font-family: var(--sans); }
+  .cb-cap b { color: var(--ink); font-weight: 700; }
+  .cb-cap b.shu { color: var(--shu); }
+  .cb-cap b.ai { color: var(--ai); }
+</style>

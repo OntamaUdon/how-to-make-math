@@ -1,0 +1,152 @@
+---
+/* SphericalTriangle.astro — ガウス–ボンネ／驚異の定理を球面の測地三角形で体感する装置。
+   球面上の3点を測地線（大円の弧）で結んだ三角形を描く。スライダーで三角形を大きくすると、
+     ・内角の和が 180°（π）を超えていく
+     ・その超過分（球面過剰）＝ 三角形の面積 × ガウス曲率 K
+   が成り立つ様子が見える。K=1/R² の球なので、単位球では 超過＝面積。
+   「曲がった面では三角形の内角和が 180°でない」＝曲率が内在的に測れる（驚異の定理）を掴む。
+   状態はメモリ内のみ（storage 不使用）。 */
+---
+
+<figure class="st" role="group" aria-label="球面の測地三角形と角の過剰">
+  <div class="st-controls">
+    <label class="st-label">三角形の大きさ
+      <input id="st-size" type="range" min="12" max="80" value="35" step="1" class="st-range" />
+    </label>
+    <label class="st-label">見る向き
+      <input id="st-rot" type="range" min="0" max="628" value="60" step="1" class="st-range" />
+    </label>
+  </div>
+  <canvas id="st-cv" width="320" height="320" class="st-cv"></canvas>
+  <figcaption id="st-cap" class="st-cap"></figcaption>
+</figure>
+
+<script>
+  type V3 = [number, number, number];
+  const dot = (a: V3, b: V3) => a[0] * b[0] + a[1] * b[1] + a[2] * b[2];
+  const sub = (a: V3, b: V3): V3 => [a[0] - b[0], a[1] - b[1], a[2] - b[2]];
+  const scl = (a: V3, s: number): V3 => [a[0] * s, a[1] * s, a[2] * s];
+  const norm = (a: V3): V3 => { const m = Math.hypot(a[0], a[1], a[2]) || 1; return [a[0] / m, a[1] / m, a[2] / m]; };
+  const cross = (a: V3, b: V3): V3 => [a[1] * b[2] - a[2] * b[1], a[2] * b[0] - a[0] * b[2], a[0] * b[1] - a[1] * b[0]];
+
+  const sizeIn = document.getElementById("st-size") as HTMLInputElement | null;
+  const rotIn = document.getElementById("st-rot") as HTMLInputElement | null;
+  const cv = document.getElementById("st-cv") as HTMLCanvasElement | null;
+  const capEl = document.getElementById("st-cap");
+
+  if (sizeIn && rotIn && cv && capEl) {
+    const ctx = cv.getContext("2d")!;
+    const W = cv.width, H = cv.height, cxp = W / 2, cyp = H / 2, Rr = 138;
+    const css = (v: string) => getComputedStyle(document.documentElement).getPropertyValue(v).trim() || "#888";
+
+    // 視点回転：x軸まわり tilt（極を手前へ）＋ z軸まわり spin
+    const project = (p: V3, tilt: number, spin: number) => {
+      // spin about z
+      const x1 = p[0] * Math.cos(spin) - p[1] * Math.sin(spin);
+      const y1 = p[0] * Math.sin(spin) + p[1] * Math.cos(spin);
+      const z1 = p[2];
+      // tilt about x
+      const x2 = x1;
+      const y2 = y1 * Math.cos(tilt) - z1 * Math.sin(tilt);
+      const z2 = y1 * Math.sin(tilt) + z1 * Math.cos(tilt);
+      // 視線は +y 方向（depth=y2）。画面は (x2, z2)
+      return { sx: cxp + x2 * Rr, sy: cyp - z2 * Rr, depth: y2 };
+    };
+    // 大円の弧 A→B を測地線として描く（球面上を補間）
+    const geoArc = (A: V3, B: V3, tilt: number, spin: number, color: string) => {
+      const nSeg = 60;
+      const ang = Math.acos(Math.max(-1, Math.min(1, dot(A, B))));
+      const axis = norm(cross(A, B));
+      for (let i = 0; i < nSeg; i++) {
+        const p0 = rotAround(A, axis, ang * i / nSeg);
+        const p1 = rotAround(A, axis, ang * (i + 1) / nSeg);
+        const q0 = project(p0, tilt, spin), q1 = project(p1, tilt, spin);
+        const front = (q0.depth + q1.depth) / 2 > 0;
+        ctx.strokeStyle = color; ctx.lineWidth = front ? 2.4 : 1; ctx.globalAlpha = front ? 1 : 0.25;
+        ctx.beginPath(); ctx.moveTo(q0.sx, q0.sy); ctx.lineTo(q1.sx, q1.sy); ctx.stroke();
+      }
+      ctx.globalAlpha = 1;
+    };
+    // ロドリゲスの回転公式：v を axis まわり th 回す
+    const rotAround = (v: V3, k: V3, th: number): V3 => {
+      const c = Math.cos(th), s = Math.sin(th);
+      const kv = cross(k, v), kd = dot(k, v);
+      return [
+        v[0] * c + kv[0] * s + k[0] * kd * (1 - c),
+        v[1] * c + kv[1] * s + k[1] * kd * (1 - c),
+        v[2] * c + kv[2] * s + k[2] * kd * (1 - c),
+      ];
+    };
+    // 頂点 A における内角（弧AB と 弧AC のなす角）
+    const vertexAngle = (A: V3, B: V3, C: V3) => {
+      const tB = norm(sub(B, scl(A, dot(A, B)))); // A で AB 方向の接ベクトル
+      const tC = norm(sub(C, scl(A, dot(A, C))));
+      return Math.acos(Math.max(-1, Math.min(1, dot(tB, tC))));
+    };
+
+    const render = () => {
+      const th = Number(sizeIn.value) * Math.PI / 180; // 極からの余緯度
+      const spin = Number(rotIn.value) / 100;
+      const tilt = -1.05;
+      ctx.clearRect(0, 0, W, H);
+      // 球の輪郭
+      ctx.strokeStyle = css("--line"); ctx.lineWidth = 1.4;
+      ctx.beginPath(); ctx.arc(cxp, cyp, Rr, 0, 2 * Math.PI); ctx.stroke();
+      // 緯経線（薄く）
+      ctx.strokeStyle = css("--ink-faint"); ctx.globalAlpha = 0.25; ctx.lineWidth = 0.8;
+      for (let la = -60; la <= 60; la += 30) {
+        ctx.beginPath();
+        for (let lo = 0; lo <= 360; lo += 6) {
+          const r = la * Math.PI / 180, o = lo * Math.PI / 180;
+          const p: V3 = [Math.cos(r) * Math.cos(o), Math.cos(r) * Math.sin(o), Math.sin(r)];
+          const q = project(p, tilt, spin); if (q.depth < -0.02) continue;
+          lo === 0 ? ctx.moveTo(q.sx, q.sy) : ctx.lineTo(q.sx, q.sy);
+        }
+        ctx.stroke();
+      }
+      ctx.globalAlpha = 1;
+
+      // 三角形の3頂点：北極(z軸)まわり余緯度 th、経度 0,120,240°
+      const verts: V3[] = [0, 120, 240].map((d) => {
+        const o = d * Math.PI / 180;
+        return [Math.sin(th) * Math.cos(o), Math.sin(th) * Math.sin(o), Math.cos(th)] as V3;
+      });
+      // 測地辺
+      geoArc(verts[0], verts[1], tilt, spin, css("--shu"));
+      geoArc(verts[1], verts[2], tilt, spin, css("--shu"));
+      geoArc(verts[2], verts[0], tilt, spin, css("--shu"));
+      // 頂点
+      for (const v of verts) { const q = project(v, tilt, spin); if (q.depth < -0.02) continue; ctx.fillStyle = css("--shu"); ctx.beginPath(); ctx.arc(q.sx, q.sy, 4, 0, 2 * Math.PI); ctx.fill(); }
+
+      // 内角と過剰・面積（単位球 K=1：面積＝球面過剰）
+      const a = vertexAngle(verts[0], verts[1], verts[2]);
+      const b = vertexAngle(verts[1], verts[2], verts[0]);
+      const c = vertexAngle(verts[2], verts[0], verts[1]);
+      const sum = a + b + c;
+      const excess = sum - Math.PI;              // 球面過剰
+      const area = excess;                       // 単位球：Area = 過剰 / K, K=1
+      const deg = (x: number) => (x * 180 / Math.PI).toFixed(1);
+
+      capEl.innerHTML =
+        `球面の<b class="shu">測地三角形</b>（辺は大円＝最短線）。内角の和 ＝ <b>${deg(sum)}°</b>` +
+        `（平らな三角形なら必ず 180°）。<br>` +
+        `<b>角の過剰 ＝ 内角和 − 180° ＝ ${deg(excess)}°</b>。これがちょうど ` +
+        `<b>面積 × ガウス曲率 K</b>（単位球 K=1 なので 面積＝過剰＝${area.toFixed(3)}）。` +
+        ` 三角形を大きくすると過剰も増える——<b>ガウス–ボンネの定理</b>。` +
+        ` 面の上で角を測るだけで曲率が分かる＝曲率は内在的（<b>驚異の定理</b>）。`;
+    };
+    sizeIn.addEventListener("input", render); rotIn.addEventListener("input", render);
+    render();
+  }
+</script>
+
+<style>
+  .st { margin: 26px 0; padding: 16px 18px 14px; border: 1px solid var(--line); border-radius: 10px; background: var(--card); }
+  .st-controls { display: flex; flex-wrap: wrap; gap: 10px 18px; margin-bottom: 12px; align-items: center; }
+  .st-label { font-size: 13px; font-weight: 600; color: var(--ink); font-family: var(--sans); display: flex; align-items: center; gap: 6px; }
+  .st-range { width: 150px; accent-color: var(--shu); }
+  .st-cv { display: block; margin: 0 auto; width: 100%; max-width: 320px; height: auto; border: 1px solid var(--line); border-radius: 6px; background: var(--paper-sunk); }
+  .st-cap { margin-top: 12px; font-size: 13px; line-height: 1.85; color: var(--ink-faint); font-family: var(--sans); }
+  .st-cap b { color: var(--ink); font-weight: 700; }
+  .st-cap b.shu { color: var(--shu); }
+</style>

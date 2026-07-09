@@ -1,0 +1,138 @@
+---
+/* OsculatingCircle.astro — 曲率を「接触円（最もよくフィットする円）」で体感する装置。
+   平面曲線を選び、スライダーで点 P を動かすと、
+     ・単位接ベクトル T（進む向き）と主法線 N（曲がる向き）＝フルネ標構
+     ・P での接触円（曲率円）：半径 R=1/|κ|、中心 P+(1/κ)N
+   が追従する。曲率 κ が大きいほど円は小さく、まっすぐな所では円は巨大（半径→∞）。
+   「曲率＝どれだけ急に向きを変えるか＝接触円の半径の逆数」を目で掴む。
+   状態はメモリ内のみ（storage 不使用）。 */
+---
+
+<figure class="oc" role="group" aria-label="接触円と曲率">
+  <div class="oc-controls">
+    <label class="oc-label">曲線
+      <select id="oc-curve" class="oc-sel">
+        <option value="ellipse">楕円</option>
+        <option value="sine">サインカーブ</option>
+        <option value="parabola">放物線</option>
+        <option value="spiral">渦巻き（曲率が単調変化）</option>
+      </select>
+    </label>
+    <label class="oc-label">点 P の位置
+      <input id="oc-t" type="range" min="0" max="1000" value="120" step="1" class="oc-range" />
+    </label>
+  </div>
+  <canvas id="oc-cv" width="380" height="300" class="oc-cv"></canvas>
+  <figcaption id="oc-cap" class="oc-cap"></figcaption>
+</figure>
+
+<script>
+  type Curve = { r: (t: number) => [number, number]; d1: (t: number) => [number, number]; d2: (t: number) => [number, number]; t0: number; t1: number; name: string };
+  const curves: Record<string, Curve> = {
+    ellipse: {
+      r: (t) => [2.3 * Math.cos(t), 1.3 * Math.sin(t)],
+      d1: (t) => [-2.3 * Math.sin(t), 1.3 * Math.cos(t)],
+      d2: (t) => [-2.3 * Math.cos(t), -1.3 * Math.sin(t)],
+      t0: 0, t1: 2 * Math.PI, name: "楕円：頂点（両端）で曲率最大＝接触円が最小、側面で最小。",
+    },
+    sine: {
+      r: (t) => [t, 1.4 * Math.sin(t)],
+      d1: (t) => [1, 1.4 * Math.cos(t)],
+      d2: (t) => [0, -1.4 * Math.sin(t)],
+      t0: -3.1, t1: 3.1, name: "サインカーブ：山と谷（変曲点の外）で曲率最大、変曲点で κ=0＝接触円が消える（半径→∞）。",
+    },
+    parabola: {
+      r: (t) => [t, 0.45 * t * t],
+      d1: (t) => [1, 0.9 * t],
+      d2: (t) => [0, 0.9],
+      t0: -2.6, t1: 2.6, name: "放物線：頂点で曲率最大、離れるほどまっすぐ＝接触円が急に膨らむ。",
+    },
+    spiral: {
+      r: (t) => [0.35 * t * Math.cos(t), 0.35 * t * Math.sin(t)],
+      d1: (t) => [0.35 * (Math.cos(t) - t * Math.sin(t)), 0.35 * (Math.sin(t) + t * Math.cos(t))],
+      d2: (t) => [0.35 * (-2 * Math.sin(t) - t * Math.cos(t)), 0.35 * (2 * Math.cos(t) - t * Math.sin(t))],
+      t0: 0.6, t1: 7.5, name: "アルキメデスの渦巻き：中心ほど急カーブ（曲率大）、外ほど緩やか。曲率が単調に変わる。",
+    },
+  };
+
+  const sel = document.getElementById("oc-curve") as HTMLSelectElement | null;
+  const tIn = document.getElementById("oc-t") as HTMLInputElement | null;
+  const cv = document.getElementById("oc-cv") as HTMLCanvasElement | null;
+  const capEl = document.getElementById("oc-cap");
+
+  if (sel && tIn && cv && capEl) {
+    const ctx = cv.getContext("2d")!;
+    const W = cv.width, H = cv.height, cx = W / 2, cy = H / 2, S = 52; // world→px スケール
+    const css = (v: string) => getComputedStyle(document.documentElement).getPropertyValue(v).trim() || "#888";
+    const px = (x: number) => cx + x * S, py = (y: number) => cy - y * S;
+    const arrow = (x0: number, y0: number, x1: number, y1: number, color: string) => {
+      ctx.strokeStyle = color; ctx.fillStyle = color; ctx.lineWidth = 2;
+      ctx.beginPath(); ctx.moveTo(px(x0), py(y0)); ctx.lineTo(px(x1), py(y1)); ctx.stroke();
+      const a = Math.atan2(-(y1 - y0), x1 - x0), h = 7;
+      ctx.beginPath(); ctx.moveTo(px(x1), py(y1));
+      ctx.lineTo(px(x1) - h * Math.cos(a - 0.4), py(y1) + h * Math.sin(a - 0.4));
+      ctx.lineTo(px(x1) - h * Math.cos(a + 0.4), py(y1) + h * Math.sin(a + 0.4));
+      ctx.closePath(); ctx.fill();
+    };
+
+    const render = () => {
+      const C = curves[sel.value];
+      const t = C.t0 + (C.t1 - C.t0) * Number(tIn.value) / 1000;
+      ctx.clearRect(0, 0, W, H);
+      // 軸
+      ctx.strokeStyle = css("--line"); ctx.lineWidth = 1;
+      ctx.beginPath(); ctx.moveTo(0, cy); ctx.lineTo(W, cy); ctx.moveTo(cx, 0); ctx.lineTo(cx, H); ctx.stroke();
+      // 曲線
+      ctx.strokeStyle = css("--ink"); ctx.lineWidth = 2; ctx.beginPath();
+      const NP = 600;
+      for (let i = 0; i <= NP; i++) { const tt = C.t0 + (C.t1 - C.t0) * i / NP; const [x, y] = C.r(tt); i ? ctx.lineTo(px(x), py(y)) : ctx.moveTo(px(x), py(y)); }
+      ctx.stroke();
+
+      const [x, y] = C.r(t), [dx, dy] = C.d1(t), [ddx, ddy] = C.d2(t);
+      const sp = Math.hypot(dx, dy) || 1e-9;
+      const Tx = dx / sp, Ty = dy / sp;           // 単位接ベクトル
+      const Nx = -Ty, Ny = Tx;                    // 左法線（+90°回転）
+      const kappaS = (dx * ddy - dy * ddx) / (sp * sp * sp); // 符号つき曲率
+      const kappa = Math.abs(kappaS);
+
+      // 接触円（曲率が十分あるときだけ）
+      if (kappa > 1e-3) {
+        const R = 1 / kappa;
+        const ccx = x + (1 / kappaS) * Nx, ccy = y + (1 / kappaS) * Ny; // 中心 = P + (1/κ)N
+        ctx.strokeStyle = css("--ai"); ctx.lineWidth = 1.6; ctx.globalAlpha = 0.9;
+        ctx.beginPath(); ctx.arc(px(ccx), py(ccy), R * S, 0, 2 * Math.PI); ctx.stroke(); ctx.globalAlpha = 1;
+        // 中心点
+        ctx.fillStyle = css("--ai"); ctx.beginPath(); ctx.arc(px(ccx), py(ccy), 2.5, 0, 2 * Math.PI); ctx.fill();
+      }
+      // フルネ標構 T, N
+      arrow(x, y, x + Tx * 0.9, y + Ty * 0.9, css("--shu"));                 // T
+      const nsign = kappaS >= 0 ? 1 : -1;                                    // N は曲がる側（接触円中心向き）
+      arrow(x, y, x + nsign * Nx * 0.7, y + nsign * Ny * 0.7, css("--ai"));  // N
+      // 点 P
+      ctx.fillStyle = css("--shu"); ctx.beginPath(); ctx.arc(px(x), py(y), 4, 0, 2 * Math.PI); ctx.fill();
+
+      const Rtxt = kappa > 1e-3 ? (1 / kappa).toFixed(2) : "∞";
+      capEl.innerHTML =
+        `${C.name}<br>` +
+        `点 P での<b class="shu">接ベクトル T</b>（進む向き）と<b class="ai">主法線 N</b>（曲がる向き）＝フルネ標構、` +
+        `<b class="ai">接触円</b>（P で曲線に最もフィットする円）。` +
+        `いま <b>曲率 κ ＝ ${kappa.toFixed(3)}</b>、<b>曲率半径 R ＝ 1/κ ＝ ${Rtxt}</b>。` +
+        ` κ が大きい所ほど円は小さく（急カーブ）、まっすぐな所では円が巨大に膨らむ（κ→0 で半径→∞）。`;
+    };
+    sel.addEventListener("change", render); tIn.addEventListener("input", render);
+    render();
+  }
+</script>
+
+<style>
+  .oc { margin: 26px 0; padding: 16px 18px 14px; border: 1px solid var(--line); border-radius: 10px; background: var(--card); }
+  .oc-controls { display: flex; flex-wrap: wrap; gap: 10px 18px; margin-bottom: 12px; align-items: center; }
+  .oc-label { font-size: 13px; font-weight: 600; color: var(--ink); font-family: var(--sans); display: flex; align-items: center; gap: 6px; }
+  .oc-range { width: 180px; accent-color: var(--shu); }
+  .oc-sel { font-family: var(--sans); font-size: 13px; padding: 4px 8px; border: 1px solid var(--line); border-radius: 7px; background: var(--paper-sunk); color: var(--ink); }
+  .oc-cv { display: block; margin: 0 auto; width: 100%; max-width: 380px; height: auto; border: 1px solid var(--line); border-radius: 6px; background: var(--paper-sunk); }
+  .oc-cap { margin-top: 12px; font-size: 13px; line-height: 1.85; color: var(--ink-faint); font-family: var(--sans); }
+  .oc-cap b { color: var(--ink); font-weight: 700; }
+  .oc-cap b.shu { color: var(--shu); }
+  .oc-cap b.ai { color: var(--ai); }
+</style>
