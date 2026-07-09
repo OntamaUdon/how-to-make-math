@@ -1,0 +1,124 @@
+---
+layout: ../../layouts/BaseLayout.astro
+title: 第8章 テンソル積
+description: 二つの加群から「双線形写像を線形にする」最も普遍的な加群＝テンソル積。構成と普遍性、計算、そして係数を広げる係数拡大。
+---
+
+import Term from "../../components/assets/Term.astro";
+import Statement from "../../components/assets/Statement.astro";
+
+# 第8章 テンソル積
+
+## 双線形を線形に変える
+
+加群を組み合わせる演算に、直和（[第3章](/module-theory/3)）とは別の、もう一つの重要なものがあります——
+テンソル積。直和が「並べる」演算なら、テンソル積は「掛け合わせる」演算。その本質は**双線形写像を線形写像に
+変換する**ことにあります。
+
+双線形写像——二つの引数それぞれについて線形な写像 $f(x,y)$——は、線形代数（内積・行列式・[線形代数](/linear-algebra)）に
+頻出しますが、線形写像より扱いにくい。テンソル積は、双線形写像 $M\times N\to P$ を、線形写像
+$M\otimes N\to P$ に一対一に翻訳する“万能の受け皿”です。この普遍性が、係数拡大・微分幾何のテンソル・
+[代数幾何](/algebraic-geometry)の連接層まで、あらゆる場面で効きます。
+
+> テンソル積 $M\otimes_R N$＝双線形写像を線形写像に変える最も普遍的な加群。「掛け合わせ」の演算。
+
+## テンソル積の構成と普遍性
+
+テンソル積は、普遍性で定義するのが本筋です。「双線形写像を一意に因子分解する加群」——[圏論](/category-theory/4)の
+普遍対象として特徴づけます。
+
+<Statement kind="definition" title="テンソル積（普遍性）">
+$R$ 加群 $M,N$ の<Term>テンソル積</Term>とは、$R$ 加群 $M\otimes_R N$ と双線形写像
+$\otimes:M\times N\to M\otimes_R N,\ (x,y)\mapsto x\otimes y$ の組で、次の**普遍性**をみたすもの：任意の $R$ 加群 $P$ と
+双線形写像 $f:M\times N\to P$ に対し、$f=\tilde f\circ\otimes$ をみたす線形写像 $\tilde f:M\otimes_R N\to P$ が
+**ただ一つ**存在する。
+</Statement>
+
+<Statement kind="theorem" title="構成と関係式">
+$M\otimes_R N$ は、記号 $x\otimes y$（$x\in M,y\in N$）で生成される自由加群を、双線形の関係
+$$
+(x+x')\otimes y=x\otimes y+x'\otimes y,\quad x\otimes(y+y')=x\otimes y+x\otimes y',\quad (rx)\otimes y=x\otimes(ry)=r(x\otimes y)
+$$
+で割った加群として構成できる。一般の元は $\sum_i x_i\otimes y_i$（<Term>単純テンソル</Term>の和）。
+</Statement>
+
+構成は「$x\otimes y$ という記号を、双線形の規則を課して割った」もの（[第3章](/module-theory/3)の「生成元と
+関係」）。$(rx)\otimes y=r(x\otimes y)=x\otimes(ry)$ が要——スカラーを $\otimes$ の左右に自由に動かせる。
+普遍性が本質で、構成は一つの実現にすぎません。「双線形写像 $M\times N\to P$」と「線形写像 $M\otimes N\to P$」が
+一対一——これが $\otimes$ を使う理由のすべてです。
+
+## テンソル積の計算
+
+普遍性から計算規則が出ます。とくに $\mathbb Z$ 加群のテンソル積は、直感を裏切ることがあり注意が要ります。
+
+<Statement kind="theorem" title="テンソル積の計算規則">
+1. $R\otimes_R M\cong M$（$R$ は単位元）。
+2. $R^m\otimes_R R^n\cong R^{mn}$（自由加群のテンソルは自由）。
+3. $(\bigoplus_i M_i)\otimes N\cong\bigoplus_i(M_i\otimes N)$（直和と交換）。
+4. $\mathbb Z/m\otimes_{\mathbb Z}\mathbb Z/n\cong\mathbb Z/\gcd(m,n)$。
+</Statement>
+
+<Statement kind="proof">
+**(4)** $\mathbb Z/m\otimes\mathbb Z/n$ で、$1\otimes1$ が生成元。$m(1\otimes1)=(m\cdot1)\otimes1=0$ かつ
+$n(1\otimes1)=1\otimes(n\cdot1)=0$ なので $\gcd(m,n)\cdot(1\otimes1)=0$。逆に $\mathbb Z/\gcd$ が実現でき、
+$\cong\mathbb Z/\gcd(m,n)$。∎
+</Statement>
+
+規則 (4) が示唆的です。$\mathbb Z/2\otimes\mathbb Z/3\cong\mathbb Z/\gcd(2,3)=\mathbb Z/1=0$——ゼロになる！
+互いに素な巡回群のテンソル積は消えます。「掛け合わせたら消える」——テンソル積が直和とはまったく違う、
+繊細な演算であることの証拠です。この繊細さ（テンソルが情報を潰しうる）が、第9・10章の「テンソルは完全性を
+壊す」につながります。
+
+## 係数拡大
+
+テンソル積の重要な応用が係数拡大——加群の係数環を、より大きな環へ広げる操作です。実加群を複素化する、
+局所環へ移す、などに使います。
+
+<Statement kind="definition" title="係数拡大">
+環準同型 $R\to S$ があるとき、$R$ 加群 $M$ に対し
+$$
+M_S=S\otimes_R M
+$$
+は $S$ 加群になる（<Term>係数拡大</Term>）。$M$ を「$S$ の上で考え直した」もの。
+</Statement>
+
+<Statement kind="example" title="係数拡大の例">
+- **複素化** $\mathbb R\to\mathbb C$：実ベクトル空間 $V$ に対し $\mathbb C\otimes_{\mathbb R}V=V_{\mathbb C}$（複素化）。
+  次元は保たれ、実の対象を複素で扱える（[線形代数](/linear-algebra)）。
+- **自由加群** $R^n$ の係数拡大は $S^n$（階数を保つ）。
+- **局所化** $R\to R_\mathfrak p$：$M_\mathfrak p=R_\mathfrak p\otimes_R M$（[代数幾何](/algebraic-geometry/10)の茎、
+  局所的な情報の取り出し）。
+</Statement>
+
+係数拡大は「体を大きくすると見えるものが増える」という発想の代数版です。実行列を複素で対角化する
+（複素固有値が見える）、多様体を局所で調べる——すべて $S\otimes_R M$ という一つの操作。テンソル積が、
+係数環を自在に取り替える道具になります。
+
+<Statement kind="remark" title="テンソルは「掛け算」・随伴の左側">
+テンソル積は加群の圏に「掛け算」を入れる（$\otimes$ でモノイダル圏になる）。そして次章・第10章で見るように、
+$-\otimes_R N$ は $\operatorname{Hom}_R(N,-)$ の**左随伴**（[圏論](/category-theory/8)のテンソル⊣Hom）。
+「掛けてから写す」と「写してから受け取る」が一致する——カリー化 $\operatorname{Hom}(M\otimes N,P)\cong\operatorname{Hom}(M,\operatorname{Hom}(N,P))$ が
+その正体。左随伴だからテンソルは余極限（直和・余核）を保つが、極限（核）は保たない——これが完全性の破れ
+（第9章）と $\mathrm{Tor}$（第12章）を生む。
+</Statement>
+
+## つまずきポイント
+
+<Statement kind="remark" title="よくある誤解">
+- **テンソル積は双線形を線形にする普遍対象。** 構成（記号を関係で割る）は一実現。本質は普遍性
+  （双線形↔線形が一対一）。
+- **一般の元は単純テンソルの和 $\sum x_i\otimes y_i$。** $x\otimes y$ 一個とは限らない。$x\otimes y$ で全部を
+  代表できない。
+- **$\mathbb Z/m\otimes\mathbb Z/n=\mathbb Z/\gcd$、互いに素なら $0$。** テンソルは情報を潰しうる。直和と全く違う繊細な
+  演算。
+- **係数拡大 $S\otimes_R M$ で環を広げる。** 複素化・局所化。テンソルが係数環を取り替える道具。
+</Statement>
+
+## この章のまとめ
+
+- **テンソル積** $M\otimes_R N$＝**双線形写像を線形写像に変える**最も普遍的な加群（[圏論](/category-theory/4)の普遍対象）。構成は「$x\otimes y$ を双線形の関係で割る」。
+- 計算：$R\otimes M\cong M$、自由×自由は自由、直和と交換、**$\mathbb Z/m\otimes\mathbb Z/n\cong\mathbb Z/\gcd(m,n)$**（互いに素なら $0$＝情報を潰す繊細さ）。
+- **係数拡大** $M_S=S\otimes_R M$：複素化・局所化など、係数環を広げる操作。
+- $-\otimes N$ は $\operatorname{Hom}(N,-)$ の**左随伴**——余極限は保つが極限（核）は保たない。次章では、この「完全性を保つ/壊す」を短完全系列で精密に調べます。
+
+次章では、短完全系列と分裂、Hom・テンソルがそれをどこまで保つか（左完全・右完全）、蛇の補題・五項補題を扱います。

@@ -1,0 +1,123 @@
+---
+layout: ../../layouts/BaseLayout.astro
+title: 第12章 Tor・Extと総まとめ
+description: 関手が壊した完全性を測る導来関手 Tor・Ext。ねじれと拡大を検出する。加群論の全体像と、ホモロジー代数・代数幾何への射程。
+---
+
+import Term from "../../components/assets/Term.astro";
+import Statement from "../../components/assets/Statement.astro";
+
+# 第12章 Tor・Extと総まとめ
+
+## 壊れた完全性を測る
+
+第9章で、テンソルとHomが完全性を片側で壊すのを見ました。ここで発想を転換します——壊れを嘆くのでなく、
+**壊れ具合を測る新しい不変量を作る**。それが導来関手 $\mathrm{Tor}\cdot\mathrm{Ext}$ です。テンソルの右完全性の
+破れが $\mathrm{Tor}$、Homの左完全性の破れが $\mathrm{Ext}$。前章の射影加群による「良い分解」を使って計算します。
+
+これは[圏論](/category-theory/12)・[ホモロジー代数](/commutative-homological)で一般的に学ぶ導来関手の、加群論に
+おける原型です。$\mathrm{Tor}$ は「ねじれ」を、$\mathrm{Ext}$ は「拡大」を検出する——名前どおりの幾何的意味を
+もちます。
+
+> 導来関手＝関手が壊した完全性を測る。テンソルの破れが $\mathrm{Tor}$（ねじれ）、Homの破れが $\mathrm{Ext}$（拡大）。
+
+## Tor と Ext
+
+作り方は共通です。加群 $M$ を射影加群で分解（射影分解）し、関手を当ててからホモロジー（像と核のずれ）をとる。
+分解の取り方によらず一意に定まります。
+
+<Statement kind="definition" title="Tor と Ext">
+$M$ の**射影分解** $\cdots\to P_1\to P_0\to M\to0$（$P_i$ 射影、[第11章](/module-theory/11)）をとる。
+- <Term>$\mathrm{Tor}_i^R(M,N)$</Term>＝複体 $\cdots\to P_1\otimes N\to P_0\otimes N\to0$ の第 $i$ ホモロジー
+  （$-\otimes N$ の左導来関手）。
+- <Term>$\mathrm{Ext}^i_R(M,N)$</Term>＝複体 $0\to\operatorname{Hom}(P_0,N)\to\operatorname{Hom}(P_1,N)\to\cdots$ の第 $i$
+  コホモロジー（$\operatorname{Hom}(-,N)$ の右導来関手）。
+
+$\mathrm{Tor}_0=\otimes$、$\mathrm{Ext}^0=\operatorname{Hom}$ で、高次が完全性の破れを測る。
+</Statement>
+
+$0$ 次は元の関手（$\otimes$・$\operatorname{Hom}$）に戻り、高次 $\mathrm{Tor}_i,\ \mathrm{Ext}^i$ が破れを段階的に
+捉えます。**$M$ が射影（や平坦）なら高次はすべて消える**——完全性が壊れないから。だから $\mathrm{Tor}\cdot\mathrm{Ext}$ の
+非消滅が、加群の“非自由さ”の証拠になります。
+
+## Tor はねじれを、Ext は拡大を検出する
+
+導来関手の名前は伊達ではありません。それぞれ具体的な幾何的意味をもちます。
+
+<Statement kind="theorem" title="Tor はねじれを測る">
+$\mathrm{Tor}_1^{\mathbb Z}(\mathbb Z/m,\mathbb Z/n)\cong\mathbb Z/\gcd(m,n)$。より一般に、$\mathrm{Tor}_1^R(R/aR,M)\cong\{x\in M:ax=0\}$（$M$ の $a$-<Term>ねじれ</Term>）。$M$ が平坦なら $\mathrm{Tor}_1=0$。
+</Statement>
+
+<Statement kind="theorem" title="Ext は拡大を分類する">
+$\mathrm{Ext}^1_R(C,A)$ は、短完全系列 $0\to A\to B\to C\to0$（**拡大**）の同値類全体と一対一に対応する。
+$\mathrm{Ext}^1(C,A)=0$ $\iff$ すべての拡大が分裂（$B\cong A\oplus C$ しかない）。
+</Statement>
+
+$\mathrm{Tor}_1(\mathbb Z/2,\mathbb Z/2)=\mathbb Z/2$ は、[第9章](/module-theory/9)で $-\otimes\mathbb Z/2$ が
+単射を壊した“傷”そのもの——ねじれの検出です。$\mathrm{Ext}^1$ は「$A,C$ から $B$ がどう組み上がるか」の分類
+（[第9章](/module-theory/9)の分裂しない拡大）。$\mathrm{Ext}^1(\mathbb Z/2,\mathbb Z)\ne0$ が、
+$0\to\mathbb Z\xrightarrow{2}\mathbb Z\to\mathbb Z/2\to0$ が分裂しない理由を数値化します。関手が壊した完全性の
+破れが、こうして「ねじれ」「拡大」という意味ある不変量に転じます。
+
+<Statement kind="theorem" title="短完全系列は長完全系列を生む">
+短完全系列 $0\to A\to B\to C\to0$ に導来関手を施すと、**長完全系列**
+$$
+\cdots\to\mathrm{Tor}_1(C,N)\to A\otimes N\to B\otimes N\to C\otimes N\to0
+$$
+（連結準同型で接続、[第9章](/module-theory/9)の蛇の補題の一般化）が得られる。$\mathrm{Ext}$ も同様。
+</Statement>
+
+長完全系列——短完全系列に $\mathrm{Tor}\cdot\mathrm{Ext}$ を接続したもの——が、導来関手の計算の要です。
+[位相幾何](/algebraic-topology)のホモロジー長完全系列とまったく同じ構造で、連結準同型が破れを次の段へ
+繰り越します。これで、一つの完全系列から芋づる式に $\mathrm{Tor}\cdot\mathrm{Ext}$ が計算できます。
+
+## 加群論の全体像
+
+長い旅を振り返ります。一貫していたのは[第1章](/module-theory/1)の一言——「**加群＝環の上のベクトル空間**、
+係数を体から環へ広げると線形代数と群論が統一される」——の展開でした。
+
+<Statement kind="remark" title="この分野の地図">
+- **加群の基本**（1〜4章）：加群（$\mathbb Z$ 加群＝アーベル群、$K[x]$ 加群＝線形変換つき空間）、部分/剰余/準同型定理、
+  直和・自由加群・普遍性、階数・ねじれ・表示行列。
+- **構造定理**（5〜7章）：スミス標準形、**PID上有限生成加群の構造定理**（単因子形・初等因子形）、二つの顔
+  （有限アーベル群の分類 ＝ ジョルダン標準形）。
+- **テンソルと完全性**（8〜10章）：テンソル積（双線形を線形に）、完全系列・分裂、**テンソル ⊣ Hom**（完全性の左右）。
+- **加群の特殊類**（11〜12章）：射影・入射・平坦、導来関手 **$\mathrm{Tor}\cdot\mathrm{Ext}$**（ねじれ・拡大）。
+</Statement>
+
+三つの果実：**(1)** 係数環を変えるだけで線形代数・群論・線形変換論が統一される（構造定理）、**(2)** テンソル・Hom・
+随伴が加群の圏の基本構造をなす、**(3)** 完全性の破れさえ不変量になる（$\mathrm{Tor}\cdot\mathrm{Ext}$）。
+
+## 他分野とのつながり
+
+<Statement kind="remark" title="回収と展望">
+- **回収**：[線形代数](/linear-algebra)（ベクトル空間・ジョルダン標準形）、[群論](/group-theory)（アーベル群）、[環論](/ring-theory)（イデアル・
+  PID・局所化・中国剰余定理）、[圏論](/category-theory)（普遍性・随伴・完全系列）を横断・統一した。
+- **展望**：[可換環論・ホモロジー代数](/commutative-homological)（導来関手の一般論・スペクトル系列）、[表現論](/representation-theory)（群環上の
+  加群＝表現）、[代数幾何](/algebraic-geometry)（連接層＝局所的に加群、平坦射）、[代数的整数論](/algebraic-number-theory)（デデキント環上の
+  加群）。加群は、現代代数のあらゆる分野の共通言語。
+</Statement>
+
+「ベクトル空間の係数を体から環へ広げる」という素朴な一般化が、構造定理による二大定理の統一、テンソルと随伴、
+そして $\mathrm{Tor}\cdot\mathrm{Ext}$ を経て、現代代数の基盤言語にまで届きました。線形代数と群論を一つにまとめ、
+表現論・代数幾何・数論の土台になる——それが加群論のもつ射程です。
+
+## つまずきポイント
+
+<Statement kind="remark" title="よくある誤解">
+- **導来関手＝完全性の破れの測定。** $\mathrm{Tor}_0=\otimes$、$\mathrm{Ext}^0=\operatorname{Hom}$ に戻り、高次が破れ。
+  射影/平坦なら高次消滅。
+- **$\mathrm{Tor}$ はねじれ、$\mathrm{Ext}$ は拡大。** $\mathrm{Tor}_1(\mathbb Z/m,\mathbb Z/n)=\mathbb Z/\gcd$、
+  $\mathrm{Ext}^1(C,A)$＝拡大の分類。名前どおりの意味。
+- **射影分解の取り方によらず一意。** 導来関手は well-defined。分解は計算手段。
+- **長完全系列が計算の要。** 短完全系列＋連結準同型。[位相幾何](/algebraic-topology)のホモロジーと同じ構造。
+</Statement>
+
+## この章のまとめ
+
+- **導来関手**：射影分解に関手を当ててホモロジーをとり、**完全性の破れを測る**。$\mathrm{Tor}_i$（$-\otimes N$ の破れ）・$\mathrm{Ext}^i$（$\operatorname{Hom}(-,N)$ の破れ）。射影/平坦なら高次消滅。
+- **$\mathrm{Tor}$ はねじれ**（$\mathrm{Tor}_1(\mathbb Z/m,\mathbb Z/n)=\mathbb Z/\gcd$）、**$\mathrm{Ext}$ は拡大を分類**（$\mathrm{Ext}^1$＝拡大の同値類、分裂の判定）。短完全系列は**長完全系列**を生む。
+- 加群論の精神は「係数を体から環へ広げ、線形代数と群論を統一」。構造定理（二大定理の統一）・テンソルと随伴・$\mathrm{Tor}\cdot\mathrm{Ext}$ を柱に、[表現論](/representation-theory)・[代数幾何](/algebraic-geometry)・[数論](/algebraic-number-theory)の共通言語。
+- 加群論（全12章）はこれで完結。ベクトル空間の素朴な一般化から、現代代数の基盤まで一本でつながりました。
+
+お疲れさまでした。「環の上のベクトル空間」の旅は、構造定理による二大定理の統一、テンソルと随伴、そして完全性の破れを測る $\mathrm{Tor}\cdot\mathrm{Ext}$ まで辿り着きました。

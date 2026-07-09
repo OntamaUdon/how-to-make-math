@@ -1,0 +1,125 @@
+---
+layout: ../../layouts/BaseLayout.astro
+title: 第9章 完全系列と完全性
+description: 短完全系列と分裂、そして Hom・テンソルがそれをどこまで保つか。左完全・右完全という「関手の質」と、蛇の補題・五項補題。
+---
+
+import Term from "../../components/assets/Term.astro";
+import Statement from "../../components/assets/Statement.astro";
+
+# 第9章 完全系列と完全性
+
+## 加群を「つなぐ」言葉
+
+加群を組み立てる状況を精密に記述するのが完全系列です。「$B$ が部分加群 $A$ をもち、商が $C$」という状況を
+$0\to A\to B\to C\to0$ と書く。この言葉で、加群の拡大・分解・関手の振る舞いが統一的に語れます。
+[位相幾何](/algebraic-topology)や[ホモロジー代数](/commutative-homological)で出会った完全系列を、加群論の
+文脈で整えます。
+
+核心の問いは「関手（Hom・テンソル）は完全系列をどこまで保つか」。前章で予告したとおり、テンソルは完全性を
+壊す。その破れ具合が、関手の“質”を測り、後の $\mathrm{Tor}\cdot\mathrm{Ext}$（第12章）を生みます。
+
+> 完全系列＝各点で「像＝核」。短完全系列 $0\to A\to B\to C\to0$ は「部分加群と商」。関手がこれを保つ度合いが完全性。
+
+## 完全系列と分裂
+
+<Statement kind="definition" title="完全系列・短完全系列">
+加群準同型の列 $A\xrightarrow{f}B\xrightarrow{g}C$ が $B$ で<Term>完全</Term>とは $\operatorname{im}f=\ker g$。
+$$
+0\to A\xrightarrow{f}B\xrightarrow{g}C\to0
+$$
+が<Term>短完全系列</Term>とは、$f$ 単射・$g$ 全射・$\operatorname{im}f=\ker g$——すなわち $A\cong f(A)$ が $B$ の
+部分加群で $C\cong B/A$。
+</Statement>
+
+<Statement kind="definition" title="分裂">
+短完全系列 $0\to A\to B\to C\to0$ が<Term>分裂</Term>するとは、$B\cong A\oplus C$（$C$ から $B$ への切断、または
+$B$ から $A$ への引き戻しが存在）となること。
+</Statement>
+
+分裂は「$B$ がきれいに $A\oplus C$ に分かれる」こと。分裂しない完全系列は「$A$ と $C$ が絡み合って $B$ を作る」
+非自明な拡大です。たとえば $0\to\mathbb Z\xrightarrow{\times2}\mathbb Z\to\mathbb Z/2\to0$ は**分裂しない**
+（$\mathbb Z\not\cong\mathbb Z\oplus\mathbb Z/2$、右はねじれをもつ）。「$A,C$ から $B$ がどう組み上がるか」の分類が
+$\mathrm{Ext}$（第12章）です。
+
+<Statement kind="theorem" title="分裂の判定">
+短完全系列 $0\to A\to B\xrightarrow{g}C\to0$ について、次は同値：$B\cong A\oplus C$（分裂）$\iff$ $g$ に切断
+$s:C\to B$（$g\circ s=\mathrm{id}_C$）がある $\iff$ $f$ に引き戻し $r:B\to A$（$r\circ f=\mathrm{id}_A$）がある。
+とくに $C$ が**自由（射影的、第11章）**なら常に分裂する。
+</Statement>
+
+## Hom とテンソルの完全性
+
+関手を短完全系列に施すと、完全性が**片側で壊れます**。どちら側を保つかが、関手の性格（左完全・右完全）を
+決めます。[圏論](/category-theory/9)・[ホモロジー代数](/commutative-homological)の完全性の階層の、加群での
+具体形です。
+
+<Statement kind="theorem" title="Hom は左完全、テンソルは右完全">
+短完全系列 $0\to A\to B\to C\to0$ に対し、
+- $\operatorname{Hom}_R(N,-)$：$0\to\operatorname{Hom}(N,A)\to\operatorname{Hom}(N,B)\to\operatorname{Hom}(N,C)$ は完全（**左完全**）。右端の全射性は一般に崩れる。
+- $\operatorname{Hom}_R(-,N)$（反変）：$0\to\operatorname{Hom}(C,N)\to\operatorname{Hom}(B,N)\to\operatorname{Hom}(A,N)$ が完全（**左完全**）。
+- $-\otimes_R N$：$A\otimes N\to B\otimes N\to C\otimes N\to0$ は完全（**右完全**）。左端の単射性は一般に崩れる。
+</Statement>
+
+Hom が左完全・テンソルが右完全なのは、[圏論](/category-theory/9)の「右随伴は極限を保つ（左完全）、左随伴は
+余極限を保つ（右完全）」の帰結です（テンソル ⊣ Hom、[第8章](/module-theory/8)）。どちらも**完全ではない**
+——保たれない端があります。その破れが具体的に見えるのが次の例です。
+
+<Statement kind="example" title="テンソルが単射を壊す">
+分裂しない完全系列 $0\to\mathbb Z\xrightarrow{\times2}\mathbb Z\to\mathbb Z/2\to0$ に $-\otimes\mathbb Z/2$ を施すと、
+$$
+\mathbb Z/2\xrightarrow{\times2=0}\mathbb Z/2\to\mathbb Z/2\to0.
+$$
+右端は完全（右完全）だが、左端の $\times2$ が $\mathbb Z/2$ 上では**ゼロ写像＝単射でない**——完全性が壊れた。
+この破れの大きさ $\ker(\times2)=\mathbb Z/2$ が $\mathrm{Tor}_1(\mathbb Z/2,\mathbb Z/2)=\mathbb Z/2$（第12章）。
+関手が壊した完全性の“傷”が、新しい不変量を生む。
+</Statement>
+
+## 蛇の補題と五項補題
+
+完全系列を操る二つの基本技。**蛇の補題**は核・余核をつなぐ長い完全系列を作り（第12章の長完全系列の原型）、
+**五項補題**は「両端が同型なら真ん中も同型」を保証します。図式追跡（ダイアグラム・チェイシング）の代表です。
+
+<Statement kind="theorem" title="蛇の補題">
+行が完全な可換図式（縦の射 $a,b,c$）
+$$
+\begin{array}{ccccccccc}
+0&\to&A&\to&B&\to&C&\to&0\\
+&&\downarrow a&&\downarrow b&&\downarrow c&&\\
+0&\to&A'&\to&B'&\to&C'&\to&0
+\end{array}
+$$
+から、核と余核をつなぐ完全系列
+$$
+0\to\ker a\to\ker b\to\ker c\xrightarrow{\ \delta\ }\operatorname{coker}a\to\operatorname{coker}b\to\operatorname{coker}c\to0
+$$
+が得られる（$\delta$ は<Term>連結準同型</Term>）。
+</Statement>
+
+<Statement kind="theorem" title="五項補題">
+行が完全な可換図式で、縦の射のうち両脇の四つ（$1,2,4,5$ 番目）が同型なら、真ん中（$3$ 番目）も同型。
+</Statement>
+
+蛇の補題の連結準同型 $\delta:\ker c\to\operatorname{coker}a$ が“蛇”の胴体——図式を対角にたどって、完全性の破れを
+次の段へ繰り越します。証明はすべて「元を追う」（[アーベル圏](/category-theory/10)でも[フレイド–ミッチェル](/category-theory/10)で
+正当化される）。これらは[位相幾何](/algebraic-topology)のホモロジー長完全系列や、第12章の導来関手の
+長完全系列で本質的に使われます。
+
+## つまずきポイント
+
+<Statement kind="remark" title="よくある誤解">
+- **完全系列は「像＝核」。** 「像⊆核」（合成が $0$、複体）では不足。一致して完全。ずれ＝ホモロジー。
+- **分裂 ⟺ $B\cong A\oplus C$。** 分裂しない拡大（$\mathbb Z\xrightarrow{2}\mathbb Z\to\mathbb Z/2$）がある。分類が
+  $\mathrm{Ext}$。
+- **Hom は左完全、テンソルは右完全。** 保つ端が違う。随伴の左右（テンソル⊣Hom）と対応。どちらも完全ではない。
+- **完全性の破れが $\mathrm{Tor}/\mathrm{Ext}$。** 傷は欠陥でなく新しい情報。連結準同型 $\delta$ が破れを繰り越す。
+</Statement>
+
+## この章のまとめ
+
+- **短完全系列** $0\to A\to B\to C\to0$＝「部分加群と商」。**分裂**なら $B\cong A\oplus C$（分裂しない拡大もある）。
+- 関手の完全性：**$\operatorname{Hom}(N,-)$・$\operatorname{Hom}(-,N)$ は左完全、$-\otimes N$ は右完全**（テンソル⊣Homの左右）。どちらも完全でなく、破れが $\mathrm{Tor}\cdot\mathrm{Ext}$（テンソルが単射を壊す例）。
+- **蛇の補題**（核・余核をつなぐ完全系列、連結準同型 $\delta$）・**五項補題**（両端同型⇒中央同型）——図式追跡の基本技。
+- 次章では、Hom とテンソルの関係を随伴として精密化し、左完全・右完全の由来を[圏論](/category-theory/8)の言葉で捉えます。
+
+次章では、テンソル ⊣ Hom の随伴（カリー化）を確立し、それが完全性の左右をどう決めるかを整理します。

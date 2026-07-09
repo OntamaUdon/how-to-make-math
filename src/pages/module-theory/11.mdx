@@ -1,0 +1,117 @@
+---
+layout: ../../layouts/BaseLayout.astro
+title: 第11章 射影・入射・平坦加群
+description: 関手の完全性を回復する三つの特殊加群。射影（Hom(P,-)を完全に）・入射（Hom(-,I)を完全に）・平坦（テンソルを完全に）。自由加群のさまざまな一般化。
+---
+
+import Term from "../../components/assets/Term.astro";
+import Statement from "../../components/assets/Statement.astro";
+
+# 第11章 射影・入射・平坦加群
+
+## 「良い加群」の三つの型
+
+前章の随伴の視点で、加群の三つの重要な特殊類を導入します。関手（Hom・テンソル）は一般に完全性を壊しますが、
+相手の加群が特別なら壊れない——**射影加群**（$\operatorname{Hom}(P,-)$ を完全に）、**入射加群**（$\operatorname{Hom}(-,I)$ を
+完全に）、**平坦加群**（$-\otimes F$ を完全に）です。どれも自由加群のさまざまな一般化で、次章の導来関手
+（$\mathrm{Tor}\cdot\mathrm{Ext}$）を計算する道具になります。
+
+三つは、テンソル–Hom随伴（[第10章](/module-theory/10)）のもとで互いに関係します。射影と入射は矢印を逆に
+した双対、平坦は射影の親戚。「完全性を回復する加群」という一つの発想の、三つの現れです。
+
+> 射影・入射・平坦＝関手の完全性を回復する加群。自由加群の一般化で、導来関手の計算の土台。
+
+## 射影加群
+
+自由加群は、写像が生成元の行き先で決まる自由さをもちました（[第3章](/module-theory/3)）。その自由さの一部
+——「全射を通して持ち上げられる」——だけを取り出したのが射影加群です。
+
+<Statement kind="definition" title="射影加群（同値な特徴づけ）">
+$R$ 加群 $P$ について次は同値。これをみたす $P$ を<Term>射影加群</Term>という。
+1. $\operatorname{Hom}_R(P,-)$ が**完全**（全射 $B\twoheadrightarrow C$ に対し $\operatorname{Hom}(P,B)\to\operatorname{Hom}(P,C)$ も全射）。
+2. 全射 $B\twoheadrightarrow C$ と写像 $P\to C$ に対し、**持ち上げ** $P\to B$ が存在する。
+3. $P$ を含む短完全系列 $0\to A\to B\to P\to0$ が**必ず分裂**する。
+4. $P$ はある自由加群の**直和因子**（$P\oplus Q\cong$ 自由）。
+</Statement>
+
+条件 2「持ち上げ」が直感的です——$C$ への写像を、全射 $B\to C$ を通して $B$ へ持ち上げられる。自由加群は
+生成元を自由に送れるので持ち上げ可能＝射影的。条件 4 が構造を明かします——**射影加群＝自由加群の直和因子**。
+だから射影加群は「ほぼ自由」。PID上では射影＝自由ですが、一般の環では自由でない射影加群が存在します。
+
+<Statement kind="example" title="射影だが自由でない例">
+$R=\mathbb Z/6\cong\mathbb Z/2\times\mathbb Z/3$（[中国剰余定理](/ring-theory)）で、$\mathbb Z/2$ は $R$ 加群として
+射影的（$R\cong\mathbb Z/2\oplus\mathbb Z/3$ の直和因子）だが**自由でない**（自由なら位数が $6$ の倍数）。
+「射影＝ほぼ自由だが自由とは限らない」の典型。PID・局所環では射影＝自由（自由でない射影は現れない）。
+</Statement>
+
+## 入射加群
+
+射影加群の矢印をすべて逆にすると入射加群になります（[圏論](/category-theory/5)の双対）。「単射を通して
+拡張できる」加群です。
+
+<Statement kind="definition" title="入射加群">
+$R$ 加群 $I$ が<Term>入射加群</Term>であるとは、$\operatorname{Hom}_R(-,I)$ が**完全**であること。同値に、単射
+$A\hookrightarrow B$ と写像 $A\to I$ に対し、**拡張** $B\to I$ が存在する（射影の持ち上げの双対）。
+</Statement>
+
+<Statement kind="theorem" title="入射加群の判定（ベーアの判定法）">
+$R$ 加群 $I$ が入射的 $\iff$ 任意のイデアル $J\subseteq R$ と写像 $J\to I$ が $R\to I$ に拡張できる
+（イデアルだけ調べればよい）。$\mathbb Z$ 加群では、**可除群**（$\mathbb Q,\ \mathbb Q/\mathbb Z$ など、任意の $n$ で
+割れる群）がちょうど入射的。
+</Statement>
+
+入射加群は射影の双対ですが、姿はかなり違います。$\mathbb Z$ 加群では、入射的＝**可除**（$\mathbb Q$ や
+$\mathbb Q/\mathbb Z$——どんな $n$ で割っても元がある群）。射影（自由の直和因子）が「下から生成」の感覚なのに対し、
+入射（可除）は「上へ拡張・割り切れる」感覚。任意の加群は入射加群に埋め込める（入射的包絡）——この双対性が、
+第12章の $\mathrm{Ext}$ を入射分解でも計算できることの根拠です。
+
+## 平坦加群
+
+テンソルを完全にする加群が平坦加群。テンソルは右完全でしたが、左端の単射も保つ（完全になる）相手が平坦
+加群です。
+
+<Statement kind="definition" title="平坦加群">
+$R$ 加群 $F$ が<Term>平坦</Term>であるとは、$-\otimes_R F$ が**完全**（単射 $A\hookrightarrow B$ に対し
+$A\otimes F\to B\otimes F$ も単射）であること。すなわちテンソルしても完全性が壊れない加群。
+</Statement>
+
+<Statement kind="theorem" title="包含関係">
+$$
+\text{自由}\ \Rightarrow\ \text{射影}\ \Rightarrow\ \text{平坦}.
+$$
+（自由は射影の特別な場合、射影は平坦。）逆は一般に成り立たない。$\mathbb Q$ は $\mathbb Z$ 加群として平坦だが
+射影でない（自由でない）。
+</Statement>
+
+平坦加群は「テンソルしても情報を壊さない」加群です。[第8章](/module-theory/8)で $-\otimes\mathbb Z/2$ が単射を
+壊した（$\times2$ がゼロに）のは $\mathbb Z/2$ が平坦でないから。$\mathbb Q$ や自由加群は平坦——テンソルで完全性を
+保ちます。平坦性は[代数幾何](/algebraic-geometry)で決定的です（平坦射＝ファイバーが連続的に変化する“良い”族）。
+包含 自由 ⊂ 射影 ⊂ 平坦 が、加群の“良さ”の階層をなします。
+
+<Statement kind="remark" title="なぜ三つの特殊類が要るのか——導来関手の材料">
+射影・入射・平坦は、次章の導来関手（$\mathrm{Tor}\cdot\mathrm{Ext}$）を計算するための「良い分解」の材料になる。
+一般の加群 $M$ を射影加群で分解（射影分解 $\cdots\to P_1\to P_0\to M\to0$）し、関手を当ててホモロジーを
+とると導来関手が出る（[圏論](/category-theory/12)・[ホモロジー代数](/commutative-homological)）。射影・入射・平坦は
+「関手が完全にふるまう良い加群」なので、分解の各段で関手の破れを制御できる。だから三つの特殊類は、
+完全性の破れ（$\mathrm{Tor}\cdot\mathrm{Ext}$）を測る道具立ての中心。
+</Statement>
+
+## つまずきポイント
+
+<Statement kind="remark" title="よくある誤解">
+- **射影＝自由の直和因子（ほぼ自由）。** 自由とは限らない（$\mathbb Z/6$ 上の $\mathbb Z/2$）。PID・局所環では射影＝自由。
+- **入射は射影の双対（可除）。** 矢印を逆に。$\mathbb Z$ 加群では入射＝可除（$\mathbb Q,\mathbb Q/\mathbb Z$）。射影とは
+  見た目が違う。
+- **平坦＝テンソルを完全にする。** 自由⇒射影⇒平坦だが逆は偽（$\mathbb Q$ は平坦だが射影でない）。[代数幾何](/algebraic-geometry)で
+  重要。
+- **三つとも「関手を完全にする加群」。** 射影（Hom(P,-)）・入射（Hom(-,I)）・平坦（-⊗F）。導来関手の材料。
+</Statement>
+
+## この章のまとめ
+
+- **射影加群**＝$\operatorname{Hom}(P,-)$ を完全に＝全射を通して**持ち上げ可能**＝**自由加群の直和因子**（ほぼ自由、PIDでは自由）。
+- **入射加群**＝$\operatorname{Hom}(-,I)$ を完全に＝単射を通して**拡張可能**（射影の双対）。$\mathbb Z$ 加群では**可除群**（$\mathbb Q,\mathbb Q/\mathbb Z$、ベーアの判定）。
+- **平坦加群**＝$-\otimes F$ を完全に＝テンソルで情報を壊さない。包含 **自由 ⊂ 射影 ⊂ 平坦**（逆は偽、$\mathbb Q$ は平坦だが射影でない）。[代数幾何](/algebraic-geometry)で重要。
+- 三つは導来関手の「良い分解」の材料。最終章では、これらを使って完全性の破れを測る $\mathrm{Tor}\cdot\mathrm{Ext}$ を導入し、加群論を総括します。
+
+次章では、射影分解による導来関手 $\mathrm{Tor}\cdot\mathrm{Ext}$ を導入し、ホモロジー代数への橋を架けて分野を総括します。

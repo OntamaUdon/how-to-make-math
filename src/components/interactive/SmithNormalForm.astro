@@ -1,0 +1,168 @@
+---
+/* SmithNormalForm.astro — PID上有限生成加群の構造定理を「手順」で体感する装置。
+   整数行列 A（加群 Z^n/im(A) の関係行列＝列が関係）を、行/列の基本変形でスミス標準形
+   （対角 d₁|d₂|…|dₖ）へ段階的に対角化する。各ステップで行列がどう変わるかを見せ、
+   完了時に単因子 dᵢ と加群の分解 Z^n/im(A) ≅ ⊕ Z/dᵢ ⊕ Z^(自由部分) を表示する。
+   「構造定理＝行列を対角化して単因子を読む」という計算の中身を目で追う。
+   状態はメモリ内のみ（storage 不使用）。 */
+---
+
+<figure class="snf" role="group" aria-label="スミス標準形と加群の構造定理">
+  <div class="snf-controls">
+    <label class="snf-label">関係行列 A
+      <select id="snf-sel" class="snf-sel">
+        <option value="0">[[2,4],[6,8]]</option>
+        <option value="1">[[6,4],[4,6]]</option>
+        <option value="2">[[2,0],[0,0]]（自由部分あり）</option>
+        <option value="3">3×3（大きい例）</option>
+      </select>
+    </label>
+    <button id="snf-step" type="button" class="snf-btn">次のステップ ▶</button>
+    <button id="snf-end" type="button" class="snf-btn">最後まで ⏭</button>
+    <button id="snf-reset" type="button" class="snf-btn">リセット ↺</button>
+  </div>
+  <div id="snf-mat" class="snf-mat"></div>
+  <figcaption id="snf-cap" class="snf-cap"></figcaption>
+</figure>
+
+<script>
+  type M = number[][];
+  const presets: M[] = [
+    [[2, 4], [6, 8]],
+    [[6, 4], [4, 6]],
+    [[2, 0], [0, 0]],
+    [[2, 4, 4], [-6, 6, 12], [10, 4, 16]],
+  ];
+
+  const clone = (A: M): M => A.map((r) => r.slice());
+
+  // スミス標準形へ簡約。各ステップ {M, op} を記録して返す。
+  const snf = (A0: M) => {
+    const A = clone(A0), m = A.length, n = A[0].length;
+    const steps: { M: M; op: string; piv: [number, number] | null }[] = [];
+    const rec = (op: string, piv: [number, number] | null = null) => steps.push({ M: clone(A), op, piv });
+    rec("開始（この行列で表される加群を調べる）");
+    const swapRows = (a: number, b: number) => { [A[a], A[b]] = [A[b], A[a]]; };
+    const swapCols = (a: number, b: number) => { for (let i = 0; i < m; i++)[A[i][a], A[i][b]] = [A[i][b], A[i][a]]; };
+    const addRow = (d: number, s: number, k: number) => { for (let j = 0; j < n; j++) A[d][j] += k * A[s][j]; };
+    const addCol = (d: number, s: number, k: number) => { for (let i = 0; i < m; i++) A[i][d] += k * A[i][s]; };
+    let t = 0;
+    while (t < Math.min(m, n)) {
+      while (true) {
+        let bi = -1, bj = -1, bv = Infinity;
+        for (let i = t; i < m; i++) for (let j = t; j < n; j++) if (A[i][j] !== 0 && Math.abs(A[i][j]) < bv) { bv = Math.abs(A[i][j]); bi = i; bj = j; }
+        if (bi < 0) break;
+        if (bi !== t) { swapRows(bi, t); rec(`行 ${bi + 1} ↔ 行 ${t + 1}（小さい成分を軸へ）`, [t, t]); }
+        if (bj !== t) { swapCols(bj, t); rec(`列 ${bj + 1} ↔ 列 ${t + 1}`, [t, t]); }
+        let changed = false;
+        for (let i = t + 1; i < m; i++) if (A[i][t] !== 0) {
+          const q = Math.floor(A[i][t] / A[t][t]);
+          if (q !== 0) { addRow(i, t, -q); rec(`行 ${i + 1} −= ${q}·行 ${t + 1}（軸で消す）`, [t, t]); changed = true; }
+          if (A[i][t] !== 0) { swapRows(i, t); rec(`行 ${i + 1} ↔ 行 ${t + 1}（余りが小さい軸に）`, [t, t]); changed = true; }
+        }
+        for (let j = t + 1; j < n; j++) if (A[t][j] !== 0) {
+          const q = Math.floor(A[t][j] / A[t][t]);
+          if (q !== 0) { addCol(j, t, -q); rec(`列 ${j + 1} −= ${q}·列 ${t + 1}（軸で消す）`, [t, t]); changed = true; }
+          if (A[t][j] !== 0) { swapCols(j, t); rec(`列 ${j + 1} ↔ 列 ${t + 1}`, [t, t]); changed = true; }
+        }
+        let clean = true;
+        for (let i = t + 1; i < m; i++) if (A[i][t] !== 0) clean = false;
+        for (let j = t + 1; j < n; j++) if (A[t][j] !== 0) clean = false;
+        if (clean && !changed) break;
+      }
+      if (A[t][t] < 0) { for (let j = 0; j < n; j++) A[t][j] *= -1; rec(`行 ${t + 1} 符号調整（正に）`, [t, t]); }
+      let ok = true;
+      outer:
+      for (let i = t + 1; i < m; i++) for (let j = t + 1; j < n; j++) if (A[t][t] !== 0 && A[i][j] % A[t][t] !== 0) { addRow(t, i, 1); rec(`行 ${t + 1} += 行 ${i + 1}（d${t + 1} が割り切るように）`, [t, t]); ok = false; break outer; }
+      if (!ok) continue;
+      t++;
+    }
+    rec("スミス標準形が完成（対角に単因子 d₁|d₂|…）", null);
+    return steps;
+  };
+
+  const groupOf = (A: M): string => {
+    const m = A.length, n = A[0].length, parts: string[] = [];
+    let free = m - Math.min(m, n);
+    for (let t = 0; t < Math.min(m, n); t++) {
+      const d = Math.abs(A[t][t]);
+      if (d === 0) free++;
+      else if (d > 1) parts.push(`ℤ/${d}`);
+      // d===1 は ℤ/1=0 なので無視
+    }
+    for (let i = 0; i < free; i++) parts.push("ℤ");
+    return parts.length ? parts.join(" ⊕ ") : "0";
+  };
+
+  const sel = document.getElementById("snf-sel") as HTMLSelectElement | null;
+  const matEl = document.getElementById("snf-mat");
+  const capEl = document.getElementById("snf-cap");
+  const stepBtn = document.getElementById("snf-step");
+  const endBtn = document.getElementById("snf-end");
+  const resetBtn = document.getElementById("snf-reset");
+
+  if (sel && matEl && capEl && stepBtn && endBtn && resetBtn) {
+    let steps = snf(presets[0]);
+    let idx = 0;
+
+    const renderMatrix = (A: M, piv: [number, number] | null) => {
+      const m = A.length, n = A[0].length;
+      let html = '<table class="snf-tbl"><tbody>';
+      for (let i = 0; i < m; i++) {
+        html += "<tr>";
+        for (let j = 0; j < n; j++) {
+          const isPiv = piv && piv[0] === i && piv[1] === j;
+          const isDiag = i === j;
+          const cls = isPiv ? "snf-piv" : isDiag ? "snf-diag" : "";
+          html += `<td class="${cls}">${A[i][j]}</td>`;
+        }
+        html += "</tr>";
+      }
+      html += "</tbody></table>";
+      matEl.innerHTML = html;
+    };
+
+    const show = () => {
+      const s = steps[idx];
+      renderMatrix(s.M, s.piv);
+      const done = idx === steps.length - 1;
+      let cap = `<b>ステップ ${idx} / ${steps.length - 1}</b>：${s.op}`;
+      if (done) {
+        const diag: number[] = [];
+        const A = s.M; for (let t = 0; t < Math.min(A.length, A[0].length); t++) diag.push(Math.abs(A[t][t]));
+        cap += `<br><b class="shu">単因子</b>：${diag.join(" | ")}（d₁|d₂|… と順に割り切る）。` +
+          `<br>この加群は <b class="ai">ℤⁿ/im(A) ≅ ${groupOf(A)}</b>。` +
+          ` 対角の各 dᵢ&gt;1 が巡回成分 ℤ/dᵢ、0 が自由成分 ℤ、1 は消える（ℤ/1=0）。`;
+      }
+      capEl.innerHTML = cap;
+      (stepBtn as HTMLButtonElement).disabled = done;
+      (endBtn as HTMLButtonElement).disabled = done;
+    };
+
+    const reset = () => { steps = snf(presets[Number(sel.value)]); idx = 0; show(); };
+    stepBtn.addEventListener("click", () => { if (idx < steps.length - 1) { idx++; show(); } });
+    endBtn.addEventListener("click", () => { idx = steps.length - 1; show(); });
+    resetBtn.addEventListener("click", reset);
+    sel.addEventListener("change", reset);
+    reset();
+  }
+</script>
+
+<style>
+  .snf { margin: 26px 0; padding: 16px 18px 14px; border: 1px solid var(--line); border-radius: 10px; background: var(--card); }
+  .snf-controls { display: flex; flex-wrap: wrap; gap: 8px 12px; margin-bottom: 14px; align-items: center; }
+  .snf-label { font-size: 13px; font-weight: 600; color: var(--ink); font-family: var(--sans); display: flex; align-items: center; gap: 6px; }
+  .snf-sel { font-family: var(--sans); font-size: 13px; padding: 4px 8px; border: 1px solid var(--line); border-radius: 7px; background: var(--paper-sunk); color: var(--ink); }
+  .snf-btn { appearance: none; border: 1px solid var(--line); background: var(--paper-sunk); color: var(--ink); font-family: var(--sans); font-size: 12px; padding: 5px 11px; border-radius: 7px; cursor: pointer; }
+  .snf-btn:hover:not(:disabled) { border-color: var(--shu); color: var(--shu); }
+  .snf-btn:disabled { opacity: 0.4; cursor: default; }
+  .snf-mat { display: flex; justify-content: center; margin: 6px 0 4px; }
+  .snf-tbl { border-collapse: collapse; font-family: var(--serif); }
+  .snf-tbl td { width: 46px; height: 40px; text-align: center; font-size: 16px; color: var(--ink); border: 1px solid var(--line); background: var(--paper-sunk); }
+  .snf-tbl td.snf-diag { background: var(--ai-wash); }
+  .snf-tbl td.snf-piv { background: var(--shu); color: #fff; font-weight: 700; }
+  .snf-cap { margin-top: 12px; font-size: 13px; line-height: 1.85; color: var(--ink-faint); font-family: var(--sans); }
+  .snf-cap b { color: var(--ink); font-weight: 700; }
+  .snf-cap b.shu { color: var(--shu); }
+  .snf-cap b.ai { color: var(--ai); }
+</style>

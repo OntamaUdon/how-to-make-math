@@ -1,0 +1,101 @@
+---
+layout: ../../layouts/BaseLayout.astro
+title: 第10章 Homとテンソルの随伴
+description: 「掛けてから写す」と「写してから受け取る」は同じ。テンソル ⊣ Hom の随伴（カリー化）が、完全性の左右と加群の特殊類を統一的に説明する。
+---
+
+import Term from "../../components/assets/Term.astro";
+import Statement from "../../components/assets/Statement.astro";
+
+# 第10章 Homとテンソルの随伴
+
+## テンソルとHomは対になっている
+
+前二章で、テンソル積（右完全）とHom（左完全）が対照的にふるまうのを見ました。この対照は偶然ではありません。
+テンソルとHomは**随伴**という深い関係で結ばれています。[圏論](/category-theory/8)の随伴を、加群論で最も
+基本的かつ有用な形で見る章です。
+
+随伴の中身は、プログラミングでいう**カリー化**——「二つの引数をとる関数」を「一つの引数をとって、
+関数を返す関数」に変換する操作の代数版です。$\operatorname{Hom}(M\otimes N,P)\cong\operatorname{Hom}(M,\operatorname{Hom}(N,P))$。
+この一つの同型が、完全性の左右も、加群の特殊類（次章）も、統一的に説明します。
+
+> テンソル ⊣ Hom：$\operatorname{Hom}(M\otimes N,P)\cong\operatorname{Hom}(M,\operatorname{Hom}(N,P))$。カリー化の代数版。完全性の左右を決める。
+
+## テンソル–Hom随伴
+
+<Statement kind="theorem" title="テンソル–Hom随伴">
+$R$ 加群 $M,N,P$ に対し、自然な同型
+$$
+\operatorname{Hom}_R(M\otimes_R N,\ P)\ \cong\ \operatorname{Hom}_R\big(M,\ \operatorname{Hom}_R(N,P)\big)
+$$
+が成り立つ。すなわち $-\otimes_R N$ は $\operatorname{Hom}_R(N,-)$ の**左随伴**（$-\otimes N\dashv\operatorname{Hom}(N,-)$、[圏論](/category-theory/8)）。
+</Statement>
+
+<Statement kind="proof">
+左辺の $\varphi:M\otimes N\to P$ に、$m\mapsto(n\mapsto\varphi(m\otimes n))$ を対応させると右辺の元。
+逆に右辺の $\psi:M\to\operatorname{Hom}(N,P)$ から、双線形写像 $(m,n)\mapsto\psi(m)(n)$ が定まり、テンソルの普遍性
+（[第8章](/module-theory/8)）で $M\otimes N\to P$ が一意に対応。両者は互いに逆で自然。∎
+</Statement>
+
+証明の心臓は「双線形写像 $M\times N\to P$」を二通りに読むこと——「$M\otimes N$ からの線形写像」（テンソルの
+普遍性）とも、「$M$ から $\operatorname{Hom}(N,P)$ への線形写像」（引数を一つずつ食べる）とも見える。両者が一致
+するのがカリー化。この同型が**自然**（[圏論](/category-theory/3)）であることが、随伴 $-\otimes N\dashv\operatorname{Hom}(N,-)$ の
+定義そのものです。
+
+## 随伴が完全性の左右を決める
+
+前章で「テンソルは右完全、Homは左完全」と天下りに述べましたが、随伴がその理由を与えます。[圏論](/category-theory/9)の
+保存定理——**左随伴は余極限を保存、右随伴は極限を保存**——の直接の帰結です。
+
+<Statement kind="theorem" title="随伴から完全性が従う">
+$-\otimes_R N$ は左随伴だから**余極限（直和・余核・全射）を保存**——ゆえに**右完全**。$\operatorname{Hom}_R(N,-)$ は
+右随伴だから**極限（積・核・単射）を保存**——ゆえに**左完全**。完全性の左右は、随伴の左右で決まる。
+</Statement>
+
+これで前章がすっきり整理されます。「なぜテンソルは右完全でHomは左完全か」——それは「テンソルが左随伴、
+Homが右随伴だから」。[圏論](/category-theory/9)で証明した一般定理（右随伴は極限保存・左随伴は余極限保存）を、
+加群に当てはめただけ。抽象的な随伴が、具体的な完全性を予言します。個別に確かめる代わりに、随伴の左右を
+見れば完全性が分かる——これが圏論的視点の御利益です。
+
+<Statement kind="remark" title="随伴のもう一つの顔——Hom-Hom">
+テンソル–Hom随伴のほかに、$\operatorname{Hom}$ どうしの結合則
+$\operatorname{Hom}(M,\operatorname{Hom}(N,P))\cong\operatorname{Hom}(N,\operatorname{Hom}(M,P))$ もある。これらの同型は、
+加群の圏が**閉モノイダル圏**（テンソルという「掛け算」と、その随伴 Hom という「内部Hom」をもつ）である
+ことの現れ。[圏論](/category-theory)の言葉で言えば、加群の圏 $R\text{-Mod}$ は最も基本的な閉モノイダル
+アーベル圏。テンソル・Hom・完全系列という加群論の道具立ては、この構造の各側面。
+</Statement>
+
+## 随伴と加群の特殊類——次章への橋
+
+随伴の視点は、次章の加群の特殊類（射影・入射・平坦）を統一的に導きます。「ある関手を完全にする加群」として
+定義できるのです。
+
+<Statement kind="remark" title="完全性を回復する加群（第11章の予告）">
+関手は一般に完全性を壊すが、相手の加群が特別なら壊れない——
+- $-\otimes_R N$ が**完全**（左端の単射も保つ）になる $N$＝<Term>平坦加群</Term>。
+- $\operatorname{Hom}_R(P,-)$ が**完全**（右端の全射も保つ）になる $P$＝<Term>射影加群</Term>。
+- $\operatorname{Hom}_R(-,I)$ が**完全**になる $I$＝<Term>入射加群</Term>。
+テンソル–Hom随伴のもとで、これらは互いに双対的に関係する（射影と入射は矢印を逆にした双対、平坦は射影に近い）。
+「関手の完全性を回復する加群」という一つの発想が、三つの特殊類を統一する。
+</Statement>
+
+## つまずきポイント
+
+<Statement kind="remark" title="よくある誤解">
+- **テンソル ⊣ Hom（テンソルが左）。** $\operatorname{Hom}(M\otimes N,P)\cong\operatorname{Hom}(M,\operatorname{Hom}(N,P))$。
+  カリー化。向き（どちらが左随伴か）を取り違えない。
+- **完全性の左右は随伴の左右から。** 左随伴（テンソル）は余極限保存＝右完全、右随伴（Hom）は極限保存＝左完全。
+  [圏論](/category-theory/9)の一般定理。
+- **随伴は「自然な」同型。** 単なる全単射でなく、$M,N,P$ について自然。自然性が随伴の定義。
+- **特殊類＝関手を完全にする加群。** 平坦（テンソルを完全に）・射影（Hom(P,-)を完全に）・入射（Hom(-,I)を完全に）。
+  次章の主題。
+</Statement>
+
+## この章のまとめ
+
+- **テンソル–Hom随伴** $\operatorname{Hom}(M\otimes N,P)\cong\operatorname{Hom}(M,\operatorname{Hom}(N,P))$＝**カリー化**の代数版。$-\otimes N\dashv\operatorname{Hom}(N,-)$（テンソルが左随伴）。
+- **完全性の左右は随伴の左右から**：左随伴テンソルは余極限保存＝**右完全**、右随伴Homは極限保存＝**左完全**（[圏論](/category-theory/9)の保存定理）。個別確認が不要になる。
+- 加群の圏は**閉モノイダルアーベル圏**（テンソルと内部Hom）。随伴の視点が加群論の道具立てを統一。
+- Part III（テンソルと完全性）はここまで。次章では、「関手の完全性を回復する加群」——射影・入射・平坦加群を、随伴の視点で導入します。
+
+次章では、射影加群・入射加群・平坦加群を、それぞれ Hom・テンソルを完全にする加群として定義し、特徴づけます。
