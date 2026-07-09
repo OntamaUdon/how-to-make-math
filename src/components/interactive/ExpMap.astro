@@ -1,0 +1,94 @@
+---
+/* ExpMap.astro — 指数写像 exp が「直線（リー環）を円（リー群）に巻きつける」様子を体感する装置。
+   リー群 SO(2)≅単位円、そのリー環＝単位元 (1,0) での接空間（垂直な直線 ℝ·X, X=[[0,-1],[1,0]]）。
+   スライダー t を動かすと、
+     ・リー環の元 tX（接直線上の高さ t の点）
+     ・その指数 exp(tX)＝角 t の回転＝円上の点 (cos t, sin t)
+   が対応して動く。まっすぐな接直線が、円へ巻きついていく（弧長 t ↔ 角 t）。
+   t と t+2π が同じ点に写る＝周期性（核）も見える。状態はメモリ内のみ（storage 不使用）。 */
+---
+
+<figure class="em" role="group" aria-label="指数写像 exp で直線が円に巻きつく">
+  <div class="em-controls">
+    <label class="em-label">t ＝ <span id="em-tval">1.00</span>
+      <input id="em-t" type="range" min="-628" max="628" value="100" step="1" class="em-range" />
+    </label>
+  </div>
+  <canvas id="em-cv" width="380" height="300" class="em-cv"></canvas>
+  <figcaption id="em-cap" class="em-cap"></figcaption>
+</figure>
+
+<script>
+  const tIn = document.getElementById("em-t") as HTMLInputElement | null;
+  const tVal = document.getElementById("em-tval");
+  const cv = document.getElementById("em-cv") as HTMLCanvasElement | null;
+  const capEl = document.getElementById("em-cap");
+
+  if (tIn && tVal && cv && capEl) {
+    const ctx = cv.getContext("2d")!;
+    const W = cv.width, H = cv.height;
+    const cx = 150, cy = 150, R = 95;           // 円（群）の中心と半径
+    const idX = cx + R, idY = cy;               // 単位元 (1,0)
+    const sc = 13;                              // 接直線の高さスケール（px / 単位 t、模式的）
+    const css = (v: string) => getComputedStyle(document.documentElement).getPropertyValue(v).trim() || "#888";
+
+    const render = () => {
+      const t = Number(tIn.value) / 100;
+      tVal.textContent = t.toFixed(2);
+      ctx.clearRect(0, 0, W, H);
+      // 座標軸
+      ctx.strokeStyle = css("--line"); ctx.lineWidth = 1;
+      ctx.beginPath(); ctx.moveTo(cx - R - 20, cy); ctx.lineTo(cx + R + 40, cy); ctx.moveTo(cx, cy - R - 20); ctx.lineTo(cx, cy + R + 20); ctx.stroke();
+      // リー群 SO(2)＝単位円
+      ctx.strokeStyle = css("--ai"); ctx.lineWidth = 2;
+      ctx.beginPath(); ctx.arc(cx, cy, R, 0, 2 * Math.PI); ctx.stroke();
+      // リー環＝単位元での接直線（垂直線）。表示範囲だけ
+      ctx.strokeStyle = css("--shu"); ctx.lineWidth = 1.6; ctx.globalAlpha = 0.55;
+      ctx.beginPath(); ctx.moveTo(idX, cy - 120); ctx.lineTo(idX, cy + 120); ctx.stroke(); ctx.globalAlpha = 1;
+
+      // 巻きついた弧（0 → t）
+      ctx.strokeStyle = css("--shu"); ctx.lineWidth = 3.5;
+      ctx.beginPath(); ctx.arc(cx, cy, R, 0, -t, t > 0); ctx.stroke();
+
+      // リー環の元 tX（接直線上、高さ t·sc）
+      const algY = idY - t * sc;
+      ctx.fillStyle = css("--shu"); ctx.beginPath(); ctx.arc(idX, algY, 4.5, 0, 2 * Math.PI); ctx.fill();
+      ctx.fillStyle = css("--ink"); ctx.font = "italic 13px serif"; ctx.textAlign = "left"; ctx.textBaseline = "middle";
+      ctx.fillText("tX", idX + 8, algY);
+
+      // exp(tX)＝円上の点 (cos t, sin t)
+      const gx = cx + R * Math.cos(t), gy = cy - R * Math.sin(t);
+      ctx.fillStyle = css("--ai"); ctx.beginPath(); ctx.arc(gx, gy, 5, 0, 2 * Math.PI); ctx.fill();
+      // 対応（接直線の点 → 円上の点）の破線
+      ctx.strokeStyle = css("--ink-faint"); ctx.lineWidth = 1; ctx.setLineDash([4, 4]);
+      ctx.beginPath(); ctx.moveTo(idX, algY); ctx.lineTo(gx, gy); ctx.stroke(); ctx.setLineDash([]);
+      // 単位元の点
+      ctx.fillStyle = css("--ink"); ctx.beginPath(); ctx.arc(idX, idY, 3.5, 0, 2 * Math.PI); ctx.fill();
+      ctx.font = "12px sans-serif"; ctx.fillText("1 (単位元)", idX + 8, idY + 14);
+
+      const deg = (t * 180 / Math.PI).toFixed(0);
+      const wraps = Math.floor(Math.abs(t) / (2 * Math.PI) + 1e-9);
+      capEl.innerHTML =
+        `<b class="ai">リー群 SO(2)</b>＝単位円（回転全体）。<b class="shu">リー環</b>＝単位元での接直線 ℝ·X。` +
+        `<b class="shu">tX</b>（接直線上）を <b class="ai">exp</b> で写すと、角 ${deg}° の回転 <b class="ai">exp(tX)=(cos t, sin t)</b>（円上）。` +
+        `<br>まっすぐな接直線が、円へ<b>巻きついていく</b>（弧長 t ↔ 角 t）。` +
+        (wraps >= 1
+          ? ` いまは ${wraps} 周ぶん巻いた——<b>t と t+2π は同じ点</b>に写る（周期性＝exp の核 2πℤ）。`
+          : ` t を増やすと巻き、t±2π で元の点に戻る。`);
+    };
+    tIn.addEventListener("input", render);
+    render();
+  }
+</script>
+
+<style>
+  .em { margin: 26px 0; padding: 16px 18px 14px; border: 1px solid var(--line); border-radius: 10px; background: var(--card); }
+  .em-controls { display: flex; flex-wrap: wrap; gap: 10px 18px; margin-bottom: 12px; align-items: center; }
+  .em-label { font-size: 13px; font-weight: 600; color: var(--ink); font-family: var(--sans); display: flex; align-items: center; gap: 8px; }
+  .em-range { width: 240px; accent-color: var(--shu); }
+  .em-cv { display: block; margin: 0 auto; width: 100%; max-width: 380px; height: auto; border: 1px solid var(--line); border-radius: 6px; background: var(--paper-sunk); }
+  .em-cap { margin-top: 12px; font-size: 13px; line-height: 1.85; color: var(--ink-faint); font-family: var(--sans); }
+  .em-cap b { color: var(--ink); font-weight: 700; }
+  .em-cap b.shu { color: var(--shu); }
+  .em-cap b.ai { color: var(--ai); }
+</style>

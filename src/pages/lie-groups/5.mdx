@@ -1,0 +1,95 @@
+---
+layout: ../../layouts/BaseLayout.astro
+title: 第5章 指数写像
+description: 無限小の対称性（リー環）から、有限の対称性（リー群）を積み上げる橋。行列指数関数 exp(tX) が、直線を群へ巻きつける。
+---
+
+import Term from "../../components/assets/Term.astro";
+import Statement from "../../components/assets/Statement.astro";
+import ExpMap from "../../components/interactive/ExpMap.astro";
+
+# 第5章 指数写像
+
+## 無限小から有限へ
+
+これまで、リー群を単位元で微分してリー環（無限小の対称性）を得ました。今度は逆——**無限小のリー環から、
+有限の対称性であるリー群へ登る**橋を架けます。それが指数写像です。
+
+直感はこうです。リー環の元 $X$ は「単位元での初速度」でした。ならば「その初速度で群の中を進み続けたら、
+どこに着くか」。速度 $X$ で時間 $t$ だけ進んだ到達点が $\exp(tX)$。無限小の一歩を無限回積み重ねて、有限の
+変換を作る——微分の逆、積分にあたる操作です。実は名前どおり、これは指数関数の一般化になります。
+
+> 指数写像 $\exp:\mathfrak g\to G$＝リー環の元 $X$（初速度）で群の中を進み続けた到達点。無限小を積み上げて有限の対称性にする。
+
+## 行列指数関数
+
+行列群では、指数写像は**行列指数関数**——おなじみの $e^x$ の級数を行列に当てたもの——として明示的に
+書けます。[微分方程式](/differential-equations/6)で連立線形系を解いた $e^{tA}$ と同じものです。
+
+<Statement kind="definition" title="行列指数関数">
+行列 $X$ に対し
+$$
+\exp(X)=e^X=\sum_{n=0}^\infty\frac{X^n}{n!}=I+X+\frac{X^2}2+\frac{X^3}6+\cdots
+$$
+（[関数解析](/functional-analysis/2)の絶対収束により、すべての行列で収束）。$\exp(0)=I$。
+</Statement>
+
+この級数は $\sum\frac{\|X\|^n}{n!}=e^{\|X\|}<\infty$ より必ず収束します（第2章で触れた完備性の御利益）。
+$t$ を掛けた $\exp(tX)$ を考えると、これがちょうど 1パラメータ部分群になります。
+
+<Statement kind="theorem" title="exp は1パラメータ部分群を生む">
+$X\in\mathfrak g$ に対し $\gamma(t)=\exp(tX)$ は、
+1. $\gamma(0)=I$、$\gamma'(0)=X$（初速度が $X$）、
+2. $\gamma(s+t)=\gamma(s)\gamma(t)$（**1パラメータ部分群**、[第3章](/lie-groups/3)）、
+3. $\dfrac{d}{dt}\exp(tX)=X\exp(tX)$（微分方程式 $\gamma'=X\gamma$ の解）
+をみたす。
+</Statement>
+
+<Statement kind="proof">
+級数を項別微分すると $\frac{d}{dt}\sum\frac{(tX)^n}{n!}=\sum\frac{n t^{n-1}X^n}{n!}=X\sum\frac{(tX)^{n-1}}{(n-1)!}=X\exp(tX)$、
+$t=0$ で $X$。$\gamma(s+t)=\gamma(s)\gamma(t)$ は、$X$ と $tX$ が可換なので級数の積が指数法則をみたすことから
+（$e^{(s+t)X}=e^{sX}e^{tX}$）。∎
+</Statement>
+
+規則 3「$\gamma'=X\gamma$」に注目してください。これは「各瞬間の速度が、現在位置に初速度 $X$ を掛けたもの」
+——一定の“無限小回転” $X$ を積分し続ける運動。$\exp(tX)$ は、無限小の対称性 $X$ を有限時間ぶん積み上げた
+到達点なのです。
+
+## 指数写像を体感する——直線が群に巻きつく
+
+$\mathrm{SO}(2)$ で指数写像の姿を見ましょう。リー環 $\mathfrak{so}(2)$ は $1$ 次元（無限小回転 $X$ の実数倍）、
+群 $\mathrm{SO}(2)=S^1$ は円。$\exp(tX)$ は角 $t$ の回転です。下で動かしてください。
+
+<ExpMap />
+
+まっすぐな接直線（リー環 $\mathbb R\cdot X$）が、$\exp$ によって円（群 $\mathrm{SO}(2)$）へ**巻きついて**いきます。
+リー環の元 $tX$（接直線上の高さ $t$）が、円上の角 $t$ の点 $\exp(tX)=(\cos t,\sin t)$ に写る。弧長 $t$ と
+角 $t$ が対応します。そして $t$ と $t+2\pi$ は同じ点に着く——**周期性**（$\exp$ の核が $2\pi\mathbb Z$）。
+平らな直線を、曲がった群へ巻き取る——これが指数写像の幾何的な姿です。
+
+<Statement kind="example" title="exp の計算例">
+- $X=\begin{pmatrix}0&-1\\1&0\end{pmatrix}$（$\mathfrak{so}(2)$）：$\exp(tX)=\begin{pmatrix}\cos t&-\sin t\\\sin t&\cos t\end{pmatrix}$＝角 $t$ の回転。$X^2=-I$ より級数がオイラーの公式に化ける。
+- $X=\mathrm{diag}(a_1,\dots,a_n)$（対角）：$\exp(X)=\mathrm{diag}(e^{a_1},\dots,e^{a_n})$。
+- 反対称 $X$（$\mathfrak{so}(n)$）→ $\exp X$ は回転（直交行列）。反エルミート → ユニタリ。**リー環の条件が群の条件に写る**。
+</Statement>
+
+## つまずきポイント
+
+<Statement kind="remark" title="よくある誤解">
+- **exp は級数で定義（行列群）。** $e^X=\sum X^n/n!$。数の指数関数の一般化。$\det=1$ や直交性は級数から従う
+  （$\det e^X=e^{\operatorname{tr}X}$ など）。
+- **$e^{X+Y}\ne e^Xe^Y$（一般に）。** $X,Y$ が可換なときだけ指数法則が成り立つ。非可換だとずれる——そのずれが
+  BCH公式（次章）で、リー括弧が効いてくる。
+- **exp は直線を群に巻きつける。** リー環（平ら）→ 群（曲がった）。$\mathrm{SO}(2)$ では周期的に巻く。だから
+  全単射でない（核 $2\pi\mathbb Z$）。
+- **$\exp(tX)$ の初速度が $X$。** $t=0$ での速度がリー環の元 $X$ を回収する。exp は「微分の逆」（積分的）操作。
+</Statement>
+
+## この章のまとめ
+
+- **指数写像** $\exp:\mathfrak g\to G$＝リー環の元 $X$ で群を進み続けた到達点。行列群では**行列指数関数** $e^X=\sum X^n/n!$（必ず収束）。
+- $\exp(tX)$ は初速度 $X$ の**1パラメータ部分群**で、$\gamma'=X\gamma$ をみたす（無限小 $X$ の積分）。
+- 幾何的には**平らな直線（リー環）を曲がった群へ巻きつける**。$\mathrm{SO}(2)$ では円に周期的に巻き（核 $2\pi\mathbb Z$）。リー環の条件（反対称・トレース0）が群の条件（直交・$\det=1$）に写る。
+- ただし $e^{X+Y}\ne e^Xe^Y$（非可換）。次章では、この積のずれを支配する式——BCH公式と、exp が局所同相であることを見ます。
+
+次章では、$\exp X\exp Y=\exp(X+Y+\frac12[X,Y]+\cdots)$（BCH公式）と、exp が単位元近傍で座標を与えること（局所同相）を扱います。

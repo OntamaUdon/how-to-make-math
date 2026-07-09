@@ -1,0 +1,98 @@
+---
+layout: ../../layouts/BaseLayout.astro
+title: 第8章 随伴表現
+description: 群が自分自身に共役で作用する様子を微分すると、リー環への作用 Ad と、リー括弧そのもの ad が現れる。群と環を結ぶ最重要の表現。
+---
+
+import Term from "../../components/assets/Term.astro";
+import Statement from "../../components/assets/Statement.astro";
+
+# 第8章 随伴表現
+
+## 群が自分のリー環に作用する
+
+前章で「準同型はリー環で線形化できる」と学びました。その最重要の例が、群が**自分自身の共役**によって作る
+作用——随伴表現です。群 $G$ は、各元 $g$ による共役 $x\mapsto gxg^{-1}$ で自分自身に作用します。これを単位元で
+微分すると、群 $G$ が自分のリー環 $\mathfrak g$ に**線形に作用**する表現 $\mathrm{Ad}$ が得られる。さらにそれを
+もう一度微分すると、リー括弧そのもの $\mathrm{ad}=[\,\cdot\,,-]$ が現れます。
+
+随伴表現は、リー群論の“自己言及”です。群が外の空間ではなく、自分の無限小構造（リー環）に作用する。この
+作用が、群と環の関係を締めくくり、次章以降の表現論・構造論の土台になります。
+
+> 随伴表現 $\mathrm{Ad}$＝群が共役で自分のリー環に作用する表現。その微分 $\mathrm{ad}$ がリー括弧そのもの。
+
+## 随伴表現 Ad
+
+<Statement kind="definition" title="随伴表現 Ad">
+$g\in G$ による共役 $C_g:G\to G,\ x\mapsto gxg^{-1}$ は単位元を固定する準同型。その単位元での微分
+$$
+\mathrm{Ad}(g)=d(C_g)_e:\mathfrak g\to\mathfrak g
+$$
+は $\mathfrak g$ 上の可逆線形写像で、$\mathrm{Ad}:G\to\mathrm{GL}(\mathfrak g)$ は群準同型（<Term>随伴表現</Term>）。
+行列群では $\mathrm{Ad}(g)X=gXg^{-1}$（行列の共役）。
+</Statement>
+
+行列群での $\mathrm{Ad}(g)X=gXg^{-1}$ は分かりやすい——リー環の元 $X$（無限小変換）を、$g$ で「座標変換」した
+もの。$g$ の視点から見た無限小対称性です。$\mathrm{Ad}$ は $G$ から $\mathrm{GL}(\mathfrak g)$ への準同型なので、
+「群 $G$ を、そのリー環に作用する行列として表す」——**表現**（次章以降）の最初の、そして最も自然な例です。
+
+<Statement kind="theorem" title="Ad は exp と両立">
+$\mathrm{Ad}(\exp X)=\exp(\mathrm{ad}_X)$（下の $\mathrm{ad}$）。また $g\exp(X)g^{-1}=\exp(\mathrm{Ad}(g)X)$
+——共役は、リー環側で $\mathrm{Ad}$ を施すことに対応する。
+</Statement>
+
+## 随伴表現 ad ＝ リー括弧
+
+$\mathrm{Ad}:G\to\mathrm{GL}(\mathfrak g)$ もリー群準同型ですから、前章のとおり微分できます。その微分が、
+リー括弧そのものになる——これが随伴表現の“オチ”です。
+
+<Statement kind="definition" title="ad ＝ Ad の微分">
+$\mathrm{Ad}:G\to\mathrm{GL}(\mathfrak g)$ の単位元での微分を $\mathrm{ad}:\mathfrak g\to\mathfrak{gl}(\mathfrak g)=\mathrm{End}(\mathfrak g)$ とする。すると
+$$
+\mathrm{ad}_X(Y)=[X,Y].
+$$
+すなわち $\mathrm{ad}_X=[X,-]$（$X$ との括弧をとる線形写像）。
+</Statement>
+
+<Statement kind="proof">
+$\mathrm{Ad}(\exp(tX))Y=\exp(tX)\,Y\,\exp(-tX)$ を $t$ で微分し $t=0$：積の微分則で
+$\frac{d}{dt}\big|_0=XY-YX=[X,Y]$。ゆえに $\mathrm{ad}_X(Y)=[X,Y]$。∎
+</Statement>
+
+美しい二段構えです。共役（群の作用）を一度微分すると $\mathrm{Ad}$（群がリー環に作用）、もう一度微分すると
+$\mathrm{ad}=[\,\cdot\,,-]$（リー括弧）。**リー括弧は、群の共役作用を二回微分したもの**——第4章で「非可換性の
+無限小」と述べた括弧が、随伴表現として群構造から自然に導かれました。ヤコビ恒等式（第4章）も、この視点では
+「$\mathrm{ad}$ が括弧を保つ（リー環準同型）」ことの言い換えになります。
+
+## キリング形式——リー環に入る内積
+
+随伴表現から、リー環上に自然な対称双線形形式が作れます。構造論（半単純性の判定、第12章）で決定的な道具です。
+
+<Statement kind="definition" title="キリング形式">
+$B(X,Y)=\operatorname{tr}(\mathrm{ad}_X\,\mathrm{ad}_Y)$ を<Term>キリング形式</Term>という。リー環に固有の対称
+双線形形式で、$\mathrm{Ad}$ 不変（$B(\mathrm{Ad}(g)X,\mathrm{Ad}(g)Y)=B(X,Y)$）。
+</Statement>
+
+キリング形式は「リー環に内在する内積」。第12章で見るように、$B$ が**負定値**ならコンパクト型、
+**非退化**なら半単純——リー環の“気質”を、この一つの形式が判定します。$\mathrm{ad}$（＝括弧）だけから作れる
+のがポイントで、リー環の内在的な幾何を与えます。
+
+## つまずきポイント
+
+<Statement kind="remark" title="よくある誤解">
+- **Ad は群→GL(𝔤)、ad は 𝔤→End(𝔤)。** 前者は群の表現（共役の微分）、後者はその微分（括弧）。$\mathrm{Ad}$ の
+  $A$ は大文字、$\mathrm{ad}$ は小文字——階層が一段違う。
+- **ad_X(Y)=[X,Y]。** 随伴表現の微分がリー括弧そのもの。括弧は「共役を二回微分」して自然に出る、群由来の構造。
+- **行列群では Ad(g)X=gXg⁻¹。** 共役。抽象群では共役の微分として定義。行列は具体例。
+- **キリング形式は ad から作る内積。** $B(X,Y)=\operatorname{tr}(\mathrm{ad}_X\mathrm{ad}_Y)$。半単純性・コンパクト性の
+  判定器（第12章）。
+</Statement>
+
+## この章のまとめ
+
+- **随伴表現 $\mathrm{Ad}:G\to\mathrm{GL}(\mathfrak g)$**＝群が共役 $x\mapsto gxg^{-1}$ で自分のリー環に作用（行列群で $\mathrm{Ad}(g)X=gXg^{-1}$）。$G$ の最も自然な表現。
+- その微分 **$\mathrm{ad}_X=[X,-]$＝リー括弧**。共役を二回微分すると括弧が出る——第4章の括弧が群構造から導かれる。
+- **キリング形式** $B(X,Y)=\operatorname{tr}(\mathrm{ad}_X\mathrm{ad}_Y)$＝$\mathrm{ad}$ から作る $\mathrm{Ad}$ 不変な内積。半単純性・コンパクト性の判定器（第12章）。
+- Part II（指数写像と対応）はここまで。次章から構造と表現へ。まず「部分群の切り出し方」と、群が作る幾何——閉部分群定理と等質空間 $G/H$ を扱います。
+
+次章では、閉部分群定理（閉部分群は自動的にリー群）と、商 $G/H$ として現れる等質空間（球面など）を見ます。

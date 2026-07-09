@@ -1,0 +1,126 @@
+---
+/* RotationCommutator.astro — 3次元回転の非可換性＝リー括弧を体感する装置。
+   同じ箱に、左は「x軸回転→y軸回転」、右は「y軸回転→x軸回転」を同じ角 θ で施す。
+   θ が小さいと二つはほぼ一致、大きいと明らかにずれる——回転は可換でない。
+   ずれの主要項は θ²[X,Y]（X,Y は無限小回転＝リー環の元、[X,Y]=XY−YX）。
+   スライダーで θ を動かす。正射影で箱を描く。状態はメモリ内のみ（storage 不使用）。 */
+---
+
+<figure class="rc" role="group" aria-label="3次元回転の非可換性">
+  <div class="rc-controls">
+    <label class="rc-label">回転角 θ ＝ <span id="rc-tval">40</span>°
+      <input id="rc-t" type="range" min="0" max="90" value="40" step="1" class="rc-range" />
+    </label>
+  </div>
+  <canvas id="rc-cv" width="380" height="230" class="rc-cv"></canvas>
+  <figcaption id="rc-cap" class="rc-cap"></figcaption>
+</figure>
+
+<script>
+  type V3 = [number, number, number];
+  type M3 = [V3, V3, V3];
+  const mul = (A: M3, B: M3): M3 => {
+    const r: M3 = [[0, 0, 0], [0, 0, 0], [0, 0, 0]];
+    for (let i = 0; i < 3; i++) for (let j = 0; j < 3; j++) { let s = 0; for (let k = 0; k < 3; k++) s += A[i][k] * B[k][j]; r[i][j] = s; }
+    return r;
+  };
+  const apply = (A: M3, v: V3): V3 => [
+    A[0][0] * v[0] + A[0][1] * v[1] + A[0][2] * v[2],
+    A[1][0] * v[0] + A[1][1] * v[1] + A[1][2] * v[2],
+    A[2][0] * v[0] + A[2][1] * v[1] + A[2][2] * v[2],
+  ];
+  const Rx = (a: number): M3 => [[1, 0, 0], [0, Math.cos(a), -Math.sin(a)], [0, Math.sin(a), Math.cos(a)]];
+  const Ry = (a: number): M3 => [[Math.cos(a), 0, Math.sin(a)], [0, 1, 0], [-Math.sin(a), 0, Math.cos(a)]];
+
+  const tIn = document.getElementById("rc-t") as HTMLInputElement | null;
+  const tVal = document.getElementById("rc-tval");
+  const cv = document.getElementById("rc-cv") as HTMLCanvasElement | null;
+  const capEl = document.getElementById("rc-cap");
+
+  if (tIn && tVal && cv && capEl) {
+    const ctx = cv.getContext("2d")!;
+    const W = cv.width, H = cv.height;
+    const css = (v: string) => getComputedStyle(document.documentElement).getPropertyValue(v).trim() || "#888";
+    // 箱（直方体）の頂点と辺。z を奥行きとして少し斜め上から見る正射影。
+    const verts: V3[] = [];
+    const sx = 0.9, sy = 0.6, sz = 0.45; // 各軸で違う寸法（向きが分かるように）
+    for (const a of [-1, 1]) for (const b of [-1, 1]) for (const c of [-1, 1]) verts.push([a * sx, b * sy, c * sz]);
+    const edges: [number, number][] = [];
+    for (let i = 0; i < 8; i++) for (let j = i + 1; j < 8; j++) {
+      const d = verts[i].map((x, k) => Math.abs(x - verts[j][k]) > 1e-9 ? 1 : 0).reduce((p, q) => p + q, 0);
+      if (d === 1) edges.push([i, j]);
+    }
+    // 面（法線が +の面を色分け：向きの変化を見せる）
+    const faces: { idx: number[]; color: string }[] = [
+      { idx: [4, 5, 7, 6], color: "--shu" }, // +x 面
+      { idx: [2, 3, 7, 6], color: "--ai" },  // +y 面
+    ];
+
+    // 視点：x軸まわり tiltX, y軸まわり tiltY で見やすく
+    const viewRot = mul(Rx(-0.5), Ry(0.6));
+    const project = (v: V3, ox: number, oy: number, scale: number) => {
+      const p = apply(viewRot, v);
+      return { x: ox + p[0] * scale, y: oy - p[1] * scale, depth: p[2] };
+    };
+
+    const drawBox = (M: M3, ox: number, oy: number, label: string) => {
+      const scale = 62;
+      const P = verts.map((v) => project(apply(M, v), ox, oy, scale));
+      // 面（前面のみ塗る）
+      for (const f of faces) {
+        const pts = f.idx.map((i) => P[i]);
+        const avgDepth = pts.reduce((s, q) => s + q.depth, 0) / pts.length;
+        if (avgDepth <= 0) continue;
+        ctx.fillStyle = css(f.color); ctx.globalAlpha = 0.22;
+        ctx.beginPath(); pts.forEach((q, i) => (i ? ctx.lineTo(q.x, q.y) : ctx.moveTo(q.x, q.y))); ctx.closePath(); ctx.fill();
+        ctx.globalAlpha = 1;
+      }
+      // 辺
+      for (const [i, j] of edges) {
+        const front = (P[i].depth + P[j].depth) / 2 > -0.1;
+        ctx.strokeStyle = css("--ink"); ctx.lineWidth = front ? 1.8 : 0.8; ctx.globalAlpha = front ? 1 : 0.3;
+        ctx.beginPath(); ctx.moveTo(P[i].x, P[i].y); ctx.lineTo(P[j].x, P[j].y); ctx.stroke();
+      }
+      ctx.globalAlpha = 1;
+      ctx.fillStyle = css("--ink-faint"); ctx.font = "600 12px sans-serif"; ctx.textAlign = "center"; ctx.textBaseline = "top";
+      ctx.fillText(label, ox, oy + 78);
+    };
+
+    const render = () => {
+      const th = Number(tIn.value) * Math.PI / 180;
+      tVal.textContent = tIn.value;
+      ctx.clearRect(0, 0, W, H);
+      // 左：Ry∘Rx（x回転→y回転）、右：Rx∘Ry（y回転→x回転）
+      const left = mul(Ry(th), Rx(th));
+      const right = mul(Rx(th), Ry(th));
+      drawBox(left, 100, 95, "①x回転 → ②y回転");
+      drawBox(right, 280, 95, "①y回転 → ②x回転");
+      // 中央の区切り
+      ctx.strokeStyle = css("--line"); ctx.lineWidth = 1; ctx.setLineDash([3, 4]);
+      ctx.beginPath(); ctx.moveTo(190, 12); ctx.lineTo(190, 178); ctx.stroke(); ctx.setLineDash([]);
+
+      // ずれの大きさ（回転行列の差のノルム）を数値で
+      let diff = 0; for (let i = 0; i < 3; i++) for (let j = 0; j < 3; j++) diff += (left[i][j] - right[i][j]) ** 2;
+      diff = Math.sqrt(diff);
+      capEl.innerHTML =
+        `同じ箱に、左は<b class="shu">x軸回転→y軸回転</b>、右は<b class="ai">y軸回転→x軸回転</b>（同じ角 ${tIn.value}°）。` +
+        `結果が<b>ずれる＝回転は可換でない</b>（順序が効く）。ずれの大きさ ＝ <b>${diff.toFixed(3)}</b>。<br>` +
+        `θ→0 でずれは消え、ずれの主要項は <b>θ²·[X,Y]</b>（X,Y＝無限小回転＝リー環の元、<b>リー括弧</b> [X,Y]=XY−YX）。` +
+        ` リー括弧は「無限小の非可換性」を測る量。`;
+    };
+    tIn.addEventListener("input", render);
+    render();
+  }
+</script>
+
+<style>
+  .rc { margin: 26px 0; padding: 16px 18px 14px; border: 1px solid var(--line); border-radius: 10px; background: var(--card); }
+  .rc-controls { display: flex; flex-wrap: wrap; gap: 10px 18px; margin-bottom: 12px; align-items: center; }
+  .rc-label { font-size: 13px; font-weight: 600; color: var(--ink); font-family: var(--sans); display: flex; align-items: center; gap: 8px; }
+  .rc-range { width: 220px; accent-color: var(--shu); }
+  .rc-cv { display: block; margin: 0 auto; width: 100%; max-width: 380px; height: auto; border: 1px solid var(--line); border-radius: 6px; background: var(--paper-sunk); }
+  .rc-cap { margin-top: 12px; font-size: 13px; line-height: 1.85; color: var(--ink-faint); font-family: var(--sans); }
+  .rc-cap b { color: var(--ink); font-weight: 700; }
+  .rc-cap b.shu { color: var(--shu); }
+  .rc-cap b.ai { color: var(--ai); }
+</style>
