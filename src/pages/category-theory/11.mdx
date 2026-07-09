@@ -1,0 +1,107 @@
+---
+layout: ../../layouts/BaseLayout.astro
+title: 第11章 完全系列と完全関手
+description: 「像＝核」で連鎖する完全系列。関手はそれを完全には保たない——左完全・右完全という“ずれ”が、導来関手を呼び込む。
+---
+
+import Term from "../../components/assets/Term.astro";
+import Statement from "../../components/assets/Statement.astro";
+
+# 第11章 完全系列と完全関手
+
+## 完全系列——ちょうど噛み合う連鎖
+
+アーベル圏の主役が**完全系列**です。射の連鎖 $\cdots\to A\to B\to C\to\cdots$ で、各点において「入ってくる射の
+像」と「出ていく射の核」がぴったり一致するもの。[加群論](/module-theory)・[ホモロジー代数](/commutative-homological)で
+出会った概念を、いまはアーベル圏（第10章）の言葉で扱います。
+
+> 完全系列＝各点で「像＝核」。ずれ（ホモロジー）がゼロで、ちょうど噛み合う連鎖。
+
+<Statement kind="definition" title="完全系列">
+アーベル圏の射の列 $A\xrightarrow{f}B\xrightarrow{g}C$ が $B$ で<Term>完全</Term>とは、$\mathrm{im}f=\ker g$
+（部分対象として一致）。すべての点で完全な列を<Term>完全系列</Term>という。とくに
+$$
+0\to A\xrightarrow{f}B\xrightarrow{g}C\to 0
+$$
+が完全（<Term>短完全系列</Term>）とは、$f$ が単射・$g$ が全射・$\mathrm{im}f=\ker g$、すなわち $A$ が $B$ の
+部分対象で $C\cong B/A$。
+</Statement>
+
+短完全系列 $0\to A\to B\to C\to 0$ は「$B$ が $A$ を部分にもち、商が $C$」という状況の圏論的表現です。
+「$A$ と $C$ から $B$ がどう組み上がるか」を測るのがホモロジー代数の中心問題でした。ここで、関手を通したとき
+完全性がどうなるかを問います。
+
+## 完全関手・左完全・右完全
+
+アーベル圏の間の加法関手が、短完全系列をどこまで完全に保つか。これが関手の“質”を測る物差しになります。
+
+<Statement kind="definition" title="完全性の階層">
+加法関手 $F:\mathcal A\to\mathcal B$（共変）について、短完全系列 $0\to A\to B\to C\to 0$ を移したとき、
+- <Term>左完全</Term>：$0\to F(A)\to F(B)\to F(C)$ が完全（**左端まで**保つ）。
+- <Term>右完全</Term>：$F(A)\to F(B)\to F(C)\to 0$ が完全（**右端まで**保つ）。
+- <Term>完全</Term>：$0\to F(A)\to F(B)\to F(C)\to 0$ が完全（両端とも保つ）。
+</Statement>
+
+多くの自然な関手は、片側しか保ちません。**どちら側を保つかは、第9章の随伴で決まる**——左随伴は右完全、
+右随伴は左完全。第9章の「保存則」がここに直結します。
+
+<Statement kind="theorem" title="Hom とテンソルの完全性">
+$\mathcal A=\mathbf{Mod}_R$ で、
+- $\mathrm{Hom}(M,-)$ は**左完全**（右随伴）、$\mathrm{Hom}(-,N)$（反変）も左完全。
+- $-\otimes_R M$ は**右完全**（左随伴、第9章）。
+どちらも一般には完全でない——保たれない“端”がある。
+</Statement>
+
+<Statement kind="example" title="完全性が破れる——ずれが見える">
+$0\to\mathbb Z\xrightarrow{\times2}\mathbb Z\to\mathbb Z/2\to0$（$\mathbf{Ab}$ の短完全系列）に $-\otimes\mathbb Z/2$ を
+当てる：$\mathbb Z/2\xrightarrow{\times2=0}\mathbb Z/2\to\mathbb Z/2\to0$。右端は完全（右完全）だが、**左端で
+$\times2=0$ が単射でない**——完全性が破れる。この「破れ」の大きさ $\ker(\times2)=\mathbb Z/2$ こそ、次章の
+$\mathrm{Tor}_1(\mathbb Z/2,\mathbb Z/2)=\mathbb Z/2$。関手が壊した完全性の“傷”が、新しい不変量を生む。
+</Statement>
+
+## 蛇の補題——完全性を操る基本技
+
+完全系列を扱う最も基本的な道具が蛇の補題です。二つの短完全系列を縦の射でつないだ図式から、核と余核を
+つなぐ長い完全系列（“蛇”）を引き出します。次章の長完全系列の芽です。
+
+<Statement kind="theorem" title="蛇の補題">
+アーベル圏で、行が完全な可換図式
+$$
+\begin{CD}
+0 @>>> A @>>> B @>>> C @>>> 0\\
+@. @VaVV @VbVV @VcVV @.\\
+0 @>>> A' @>>> B' @>>> C' @>>> 0
+\end{CD}
+$$
+から、核と余核をつなぐ**完全系列**
+$$
+0\to\ker a\to\ker b\to\ker c\xrightarrow{\ \delta\ }\mathrm{coker}\,a\to\mathrm{coker}\,b\to\mathrm{coker}\,c\to0
+$$
+が得られる（$\delta$ は<Term>連結準同型</Term>）。
+</Statement>
+
+連結準同型 $\delta:\ker c\to\mathrm{coker}\,a$ が“蛇”の胴体——上段の $\ker c$ から、図式を対角にたどって下段の
+$\mathrm{coker}\,a$ へ渡る。この $\delta$ が、完全性の破れを次の段へ「繰り越す」役割を果たします。証明は
+「元を追う」ダイアグラム・チェイシング（アーベル圏でもフレイド–ミッチェルで正当化、第10章）。蛇の補題は、
+次章の導来関手が生む長完全系列の、最小の原型です。
+
+## つまずきポイント
+
+<Statement kind="remark" title="よくある誤解">
+- **完全系列は「像＝核」。** 「像 ⊆ 核」（合成が $0$）だけでは複体にすぎない。**一致**して初めて完全。ずれ＝
+  ホモロジー。
+- **左完全・右完全は保つ“端”が違う。** 左完全は $0\to F(A)\to\cdots$、右完全は $\cdots\to F(C)\to0$。$\mathrm{Hom}$ は
+  左、$\otimes$ は右。随伴の左右と対応。
+- **関手は完全性を壊しうる。** その破れ（傷）が $\mathrm{Ext},\mathrm{Tor}$（次章）。「壊れる」は欠陥でなく、新しい
+  情報の源。
+- **連結準同型 $\delta$ が本質。** 蛇の補題も長完全系列も、$\delta$ が完全性の破れを繰り越すことで成立する。
+</Statement>
+
+## この章のまとめ
+
+- **完全系列**＝各点で**像＝核**。短完全系列 $0\to A\to B\to C\to0$ は「部分対象と商」を表す。
+- 加法関手は完全性を片側しか保たないことが多い：**$\mathrm{Hom}$ は左完全**（右随伴）、**$\otimes$ は右完全**（左随伴）。第9章の随伴と直結。
+- 完全性の**破れ**が新しい不変量を生む（$\otimes\mathbb Z/2$ の左端の傷＝$\mathrm{Tor}$）。**蛇の補題**は核・余核をつなぐ完全系列を作る基本技で、連結準同型 $\delta$ が破れを繰り越す。
+- 次章（最終章）では、この「関手が壊した完全性」を測る**導来関手**（Ext・Tor）を圏論的に定義し、圏論全体を総括します。
+
+次章では、導来関手を導入し、Ext・Tor を「関手が壊した完全性を測る量」として圏論的に定義して、分野全体をまとめます。

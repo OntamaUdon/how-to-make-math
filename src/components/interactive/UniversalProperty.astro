@@ -1,0 +1,122 @@
+---
+/* UniversalProperty.astro — 積と余積の普遍性、そして双対性を体感する装置。
+   ・積 A×B：射影 π₁,π₂ をもち、任意のテスト対象 X（f:X→A, g:X→B つき）から
+     π₁∘u=f, π₂∘u=g をみたす一意な媒介射 u:X→A×B が存在する。
+   ・余積 A⊔B：入射 i₁,i₂ をもち、任意の X（f:A→X, g:B→X つき）へ、u∘i₁=f, u∘i₂=g を
+     みたす一意な媒介射 u:A⊔B→X が存在する。
+   トグルで積↔余積を切り替えると「すべての矢印が反転」する＝双対性。一意な u が普遍性。
+   状態はメモリ内のみ（storage 不使用）。 */
+---
+
+<figure class="up" role="group" aria-label="積と余積の普遍性">
+  <div class="up-controls">
+    <div class="up-switch" role="tablist" aria-label="積か余積か">
+      <button id="up-prod" type="button" class="up-mode is-on" role="tab">積 A×B</button>
+      <button id="up-coprod" type="button" class="up-mode" role="tab">余積 A⊔B</button>
+    </div>
+  </div>
+  <canvas id="up-cv" width="380" height="300" class="up-cv"></canvas>
+  <figcaption id="up-cap" class="up-cap"></figcaption>
+</figure>
+
+<script>
+  const cv = document.getElementById("up-cv") as HTMLCanvasElement | null;
+  const capEl = document.getElementById("up-cap");
+  const btnP = document.getElementById("up-prod");
+  const btnC = document.getElementById("up-coprod");
+
+  if (cv && capEl && btnP && btnC) {
+    const ctx = cv.getContext("2d")!;
+    const W = cv.width, H = cv.height;
+    const css = (v: string) => getComputedStyle(document.documentElement).getPropertyValue(v).trim() || "#888";
+    let mode: "prod" | "coprod" = "prod";
+
+    const A = { x: 95, y: 78 }, B = { x: 285, y: 78 }, P = { x: 190, y: 158 }, X = { x: 190, y: 256 };
+
+    const node = (p: { x: number; y: number }, label: string, tone: string) => {
+      ctx.fillStyle = css("--card"); ctx.strokeStyle = css(tone); ctx.lineWidth = 1.6;
+      ctx.beginPath(); ctx.arc(p.x, p.y, 20, 0, 2 * Math.PI); ctx.fill(); ctx.stroke();
+      ctx.fillStyle = css("--ink"); ctx.font = "600 13px sans-serif"; ctx.textAlign = "center"; ctx.textBaseline = "middle";
+      ctx.fillText(label, p.x, p.y);
+    };
+    // 矢印 from→to。bow は横へのふくらみ、dashed で破線、label を中点付近に。
+    const arrow = (from: { x: number; y: number }, to: { x: number; y: number }, color: string, label: string, opts: { bow?: number; dashed?: boolean } = {}) => {
+      const r = 20, bow = opts.bow ?? 0;
+      const dx = to.x - from.x, dy = to.y - from.y, len = Math.hypot(dx, dy);
+      const ux = dx / len, uy = dy / len;
+      const nx = -uy, ny = ux; // 法線
+      const sx = from.x + ux * r, sy = from.y + uy * r;
+      const ex = to.x - ux * r, ey = to.y - uy * r;
+      const mx = (sx + ex) / 2 + nx * bow, my = (sy + ey) / 2 + ny * bow;
+      ctx.strokeStyle = color; ctx.fillStyle = color; ctx.lineWidth = 1.8;
+      ctx.setLineDash(opts.dashed ? [5, 4] : []);
+      ctx.beginPath(); ctx.moveTo(sx, sy); ctx.quadraticCurveTo(mx, my, ex, ey); ctx.stroke();
+      ctx.setLineDash([]);
+      // 矢じり（終点での接線方向 ≈ 制御点→終点）
+      const ax = ex - mx, ay = ey - my, al = Math.hypot(ax, ay) || 1;
+      const a = Math.atan2(ay, ax), h = 9;
+      ctx.beginPath(); ctx.moveTo(ex, ey);
+      ctx.lineTo(ex - h * Math.cos(a - 0.4), ey - h * Math.sin(a - 0.4));
+      ctx.lineTo(ex - h * Math.cos(a + 0.4), ey - h * Math.sin(a + 0.4));
+      ctx.closePath(); ctx.fill();
+      // ラベル
+      ctx.fillStyle = color; ctx.font = "italic 600 13px serif"; ctx.textAlign = "center"; ctx.textBaseline = "middle";
+      ctx.fillText(label, mx + nx * 9, my + ny * 9);
+    };
+
+    const render = () => {
+      ctx.clearRect(0, 0, W, H);
+      const apexLabel = mode === "prod" ? "A×B" : "A⊔B";
+      const shu = "--shu", ai = "--ai", ink = "--ink-faint";
+      if (mode === "prod") {
+        // 射影 apex→A, apex→B
+        arrow(P, A, css(ai), "π₁");
+        arrow(P, B, css(ai), "π₂");
+        // テスト射 X→A, X→B（外へふくらませて apex を避ける）
+        arrow(X, A, css(ink), "f", { bow: 42 });
+        arrow(X, B, css(ink), "g", { bow: -42 });
+        // 一意な媒介射 X→apex
+        arrow(X, P, css(shu), "u", { dashed: true });
+      } else {
+        // 入射 A→apex, B→apex
+        arrow(A, P, css(ai), "i₁");
+        arrow(B, P, css(ai), "i₂");
+        // テスト射 A→X, B→X
+        arrow(A, X, css(ink), "f", { bow: -42 });
+        arrow(B, X, css(ink), "g", { bow: 42 });
+        // 一意な媒介射 apex→X
+        arrow(P, X, css(shu), "u", { dashed: true });
+      }
+      node(A, "A", ai); node(B, "B", ai); node(P, apexLabel, shu); node(X, "X", ink);
+
+      if (mode === "prod") {
+        capEl.innerHTML =
+          `<b>積 A×B の普遍性</b>：射影 <b class="ai">π₁,π₂</b> をもつ。どんなテスト対象 X（<b>f:X→A, g:X→B</b>）に対しても、` +
+          `<b class="shu">π₁∘u=f, π₂∘u=g</b> をみたす<b class="shu">一意な媒介射 u:X→A×B</b>（朱・破線）がただ一つ存在する。` +
+          ` この「一意に因子分解できる」が普遍性。切り替えると全矢印が反転——<b>余積は積の双対</b>。`;
+      } else {
+        capEl.innerHTML =
+          `<b>余積 A⊔B の普遍性</b>：入射 <b class="ai">i₁,i₂</b> をもつ。どんな X（<b>f:A→X, g:B→X</b>）に対しても、` +
+          `<b class="shu">u∘i₁=f, u∘i₂=g</b> をみたす<b class="shu">一意な媒介射 u:A⊔B→X</b>（朱・破線）がただ一つ存在する。` +
+          ` 積と<b>すべての矢印の向きが逆</b>なだけ——同じパターンの裏返し（<b>双対性</b>）。`;
+      }
+    };
+    const set = (m: "prod" | "coprod") => { mode = m; btnP.classList.toggle("is-on", m === "prod"); btnC.classList.toggle("is-on", m === "coprod"); render(); };
+    btnP.addEventListener("click", () => set("prod"));
+    btnC.addEventListener("click", () => set("coprod"));
+    render();
+  }
+</script>
+
+<style>
+  .up { margin: 26px 0; padding: 16px 18px 14px; border: 1px solid var(--line); border-radius: 10px; background: var(--card); }
+  .up-controls { display: flex; justify-content: center; margin-bottom: 12px; }
+  .up-switch { display: inline-flex; gap: 4px; padding: 3px; border: 1px solid var(--line); border-radius: 9px; background: var(--paper-sunk); }
+  .up-mode { appearance: none; border: none; background: transparent; color: var(--ink-faint); font-family: var(--sans); font-size: 13px; font-weight: 600; padding: 5px 14px; border-radius: 7px; cursor: pointer; }
+  .up-mode.is-on { background: var(--card); color: var(--shu); box-shadow: 0 1px 2px rgba(0,0,0,.08); }
+  .up-cv { display: block; margin: 0 auto; width: 100%; max-width: 380px; height: auto; border: 1px solid var(--line); border-radius: 6px; background: var(--paper-sunk); }
+  .up-cap { margin-top: 12px; font-size: 13px; line-height: 1.85; color: var(--ink-faint); font-family: var(--sans); }
+  .up-cap b { color: var(--ink); font-weight: 700; }
+  .up-cap b.shu { color: var(--shu); }
+  .up-cap b.ai { color: var(--ai); }
+</style>

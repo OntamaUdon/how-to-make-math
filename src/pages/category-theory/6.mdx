@@ -1,0 +1,94 @@
+---
+layout: ../../layouts/BaseLayout.astro
+title: 第6章 Hom関手と表現可能関手
+description: 対象を「それが他と結ぶ射の全体」で見る。Hom関手という視点を用意し、表現可能関手を通して米田の補題への道を開く。
+---
+
+import Term from "../../components/assets/Term.astro";
+import Statement from "../../components/assets/Statement.astro";
+
+# 第6章 Hom関手と表現可能関手
+
+## 対象を「関係の束」として見る
+
+第1章で「対象は中身でなく関係で語る」と述べました。この精神を極限まで推し進めます——**対象 $A$ を、
+$A$ が他のすべての対象と結ぶ射の全体で捉える**。$A$ から見える世界、あるいは $A$ へ向かう射の全体。
+それが Hom 関手です。この視点が、次章の米田の補題——圏論の心臓——への直接の入り口になります。
+
+固定した対象 $A$ に対し、各対象 $X$ に「$A$ から $X$ への射の集合」$\mathrm{Hom}(A,X)$ を対応させる。$X$ を
+動かすと、これは $\mathcal C$ から $\mathbf{Set}$ への関手になります。
+
+> Hom関手＝固定対象 $A$ から見た「他対象への射の集合」を、$X$ ごとに集めた関手。対象を関係の束として見る。
+
+## 共変 Hom 関手と反変 Hom 関手
+
+Hom は二つの引数をもち、一方を固定すると関手になります。前引数を固定すると共変、後引数を固定すると反変です。
+
+<Statement kind="definition" title="Hom関手">
+圏 $\mathcal C$ の対象 $A$ を固定する。
+- <Term>共変 Hom 関手</Term> $h^A=\mathrm{Hom}(A,-):\mathcal C\to\mathbf{Set}$。対象 $X\mapsto\mathrm{Hom}(A,X)$、
+  射 $f:X\to Y$ には**後合成** $f_*:\mathrm{Hom}(A,X)\to\mathrm{Hom}(A,Y)$、$\ \varphi\mapsto f\circ\varphi$。
+- <Term>反変 Hom 関手</Term> $h_A=\mathrm{Hom}(-,A):\mathcal C^{\mathrm{op}}\to\mathbf{Set}$。対象 $X\mapsto\mathrm{Hom}(X,A)$、
+  射 $f:X\to Y$ には**前合成** $f^*:\mathrm{Hom}(Y,A)\to\mathrm{Hom}(X,A)$、$\ \varphi\mapsto\varphi\circ f$。
+</Statement>
+
+後合成（$f_*$）は向きを保ち共変、前合成（$f^*$）は向きを逆にし反変——第2章の押し出し/引き戻しの区別が
+そのまま効きます。$\mathrm{Hom}(A,-)$ は「$A$ から出る射の世界」、$\mathrm{Hom}(-,A)$ は「$A$ へ入る射の世界」。
+対象 $A$ を、出ていく矢印・入ってくる矢印の全体として描像するのです。
+
+<Statement kind="remark" title="Hom関手は普遍性を翻訳する">
+第5章の積の普遍性「$\mathrm{Hom}(X,A\times B)\cong\mathrm{Hom}(X,A)\times\mathrm{Hom}(X,B)$」は、まさに Hom 関手の
+言葉。普遍性とは「Hom 集合の間の自然な全単射」だった。実際、あらゆる極限は $\mathrm{Hom}(X,-)$ が保つ
+（$\mathrm{Hom}(X,\lim D)\cong\lim\mathrm{Hom}(X,D)$）。**Hom 関手を通すと、普遍性が集合の同型として見える**——
+この観点が次章と第9章で本質的になる。
+</Statement>
+
+## 表現可能関手
+
+さて、$\mathcal C$ から $\mathbf{Set}$ への関手はいろいろあります。そのうち、**ある対象の Hom 関手と（自然）同型に
+なる**ものは特別です。「集合値の関手が、実は一つの対象で“代表”されている」——これを表現可能といいます。
+
+<Statement kind="definition" title="表現可能関手">
+関手 $F:\mathcal C\to\mathbf{Set}$ が<Term>表現可能</Term>とは、ある対象 $A$ が存在して自然同型
+$$
+F\cong\mathrm{Hom}(A,-)
+$$
+が成り立つこと。$A$ を $F$ の<Term>表現対象</Term>という。（反変なら $F\cong\mathrm{Hom}(-,A)$。）
+</Statement>
+
+表現可能性は「一見複雑な関手の背後に、それを支配する一つの対象がいる」という発見です。そして——**多くの
+普遍性は、ある関手の表現可能性として言い換えられる**。表現対象こそが普遍対象なのです。
+
+<Statement kind="example" title="表現可能関手と普遍対象">
+- **恒等関手的な例**：$\mathrm{Hom}(A,-)$ 自身は $A$ で表現される。
+- **べき集合**（反変）$\mathcal P:\mathbf{Set}^{\mathrm{op}}\to\mathbf{Set}$、$X\mapsto\mathcal P(X)$ は $\mathrm{Hom}(-,\{0,1\})$ と
+  自然同型（部分集合 ↔ 特性関数）。表現対象は**二元集合** $\{0,1\}$。
+- **積を作る関手** $X\mapsto\mathrm{Hom}(X,A)\times\mathrm{Hom}(X,B)$ は $\mathrm{Hom}(-,A\times B)$ で表現される。
+  表現対象＝**積 $A\times B$**。「積の存在」＝「この関手が表現可能」。
+- 忘却関手 $\mathbf{Grp}\to\mathbf{Set}$ は $\mathrm{Hom}(\mathbb Z,-)$ で表現される（群の元 ↔ $\mathbb Z$ からの準同型）。
+</Statement>
+
+「べき集合は $\{0,1\}$ で代表される」「積の存在は表現可能性」——バラバラの構成が、$\mathrm{Hom}$ を通して
+「一つの対象による代表」という一枚の絵に収束していきます。この“代表”の考え方を極限まで突き詰めると、
+次章の米田の補題になります。
+
+## つまずきポイント
+
+<Statement kind="remark" title="よくある誤解">
+- **共変 $\mathrm{Hom}(A,-)$ と反変 $\mathrm{Hom}(-,A)$ を区別。** 前者は後合成で共変、後者は前合成で反変。どちらの
+  引数を固定したかで向きが決まる。
+- **表現可能＝「一つの対象で代表される」。** 集合値関手が $\mathrm{Hom}(A,-)$ の形。表現対象 $A$ が普遍対象。関手が
+  表現可能かどうかは自明でない。
+- **普遍性は Hom 集合の自然同型。** 「一意な媒介射」は「Hom 集合の全単射」の言い換え。普遍性を集合の同型として
+  見る癖をつける。
+- **表現対象は同型を除いて一意。** 次章の米田の補題の帰結。二つの表現対象は自然同型から同型になる。
+</Statement>
+
+## この章のまとめ
+
+- **Hom 関手**：固定対象 $A$ に対し、共変 $\mathrm{Hom}(A,-)$（後合成・$A$ から出る射の世界）と反変 $\mathrm{Hom}(-,A)$（前合成・$A$ へ入る射の世界）。対象を「関係の束」として見る。
+- 普遍性は **Hom 集合の自然同型**として翻訳できる（積の普遍性＝$\mathrm{Hom}(X,A\times B)\cong\mathrm{Hom}(X,A)\times\mathrm{Hom}(X,B)$）。
+- **表現可能関手** $F\cong\mathrm{Hom}(A,-)$：集合値関手が一つの対象 $A$ で代表される。表現対象＝普遍対象（べき集合は $\{0,1\}$、積は $A\times B$）。
+- 「対象を Hom で捉える」「関手を対象で代表する」——この二つを極限まで突き詰めると米田の補題。次章でその心臓に触れます。
+
+次章では、圏論の心臓——米田の補題を述べ、「対象はそれが他と結ぶ関係の全体で完全に決まる」ことの意味を掘り下げます。

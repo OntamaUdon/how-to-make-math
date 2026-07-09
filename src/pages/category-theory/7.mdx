@@ -1,0 +1,103 @@
+---
+layout: ../../layouts/BaseLayout.astro
+title: 第7章 米田の補題
+description: 圏論の心臓。「対象は、それが他と結ぶ射の全体で完全に決まる」。米田の補題とその埋め込み、そして哲学的な含意。
+---
+
+import Term from "../../components/assets/Term.astro";
+import Statement from "../../components/assets/Statement.astro";
+
+# 第7章 米田の補題
+
+## あなたが何者かは、世界との関わり方が決める
+
+圏論でもっとも有名で、もっとも深いと言われるのが米田の補題です。一言でいえば——**対象は、それが他の
+あらゆる対象と結ぶ射の全体（$\mathrm{Hom}(A,-)$）によって、完全に決まってしまう**。中身を一切見なくても、
+「他とどう関わるか」さえ分かれば対象は同定できる。「あなたが何者かは、あなたと世界との関わり方が決める」
+——第1章から掲げてきた「関係で語る」哲学の、究極の到達点です。
+
+抽象的なので、まず主張の形を掴みます。関手 $F:\mathcal C\to\mathbf{Set}$ と対象 $A$ について、「$A$ の Hom 関手
+$\mathrm{Hom}(A,-)$ から $F$ への自然変換」が、驚くほど単純なもの——**$F(A)$ の要素そのもの**——と一対一に
+対応する、というのが補題の中身です。
+
+> 米田の補題：$\mathrm{Hom}(A,-)$ から $F$ への自然変換は、$F(A)$ の要素と一対一。対象は Hom 関手で完全に決まる。
+
+## 米田の補題
+
+<Statement kind="theorem" title="米田の補題">
+局所小圏 $\mathcal C$、関手 $F:\mathcal C\to\mathbf{Set}$、対象 $A\in\mathcal C$ に対し、自然変換の集合と
+$F(A)$ の間に**自然な全単射**
+$$
+\mathrm{Nat}\big(\mathrm{Hom}(A,-),\,F\big)\ \cong\ F(A)
+$$
+がある。対応は、自然変換 $\eta$ に $\eta_A(\mathrm{id}_A)\in F(A)$ を与えることで実現される。
+</Statement>
+
+<Statement kind="proof">
+**写像 $\Phi:\eta\mapsto\eta_A(\mathrm{id}_A)$ が全単射**を示す。逆を作る。$x\in F(A)$ に対し、自然変換 $\eta^x$ を
+$$
+\eta^x_X:\mathrm{Hom}(A,X)\to F(X),\qquad \eta^x_X(f)=F(f)(x)
+$$
+で定める（$f:A\to X$ に、$F(f)$ で $x$ を送る）。これが自然変換であることは $F$ の関手性から従う。
+$\Phi(\eta^x)=\eta^x_A(\mathrm{id}_A)=F(\mathrm{id}_A)(x)=\mathrm{id}_{F(A)}(x)=x$ なので $\Phi\circ(x\mapsto\eta^x)=\mathrm{id}$。
+逆に、任意の自然変換 $\eta$ と $f:A\to X$ に対し、自然性の四角形（$f_*$ と $F(f)$ の可換性）から
+$\eta_X(f)=\eta_X(f\circ\mathrm{id}_A)=F(f)(\eta_A(\mathrm{id}_A))$。つまり $\eta$ は $\eta_A(\mathrm{id}_A)$ だけで復元される
+＝$\eta=\eta^{\eta_A(\mathrm{id}_A)}$。ゆえに $\Phi$ は全単射。∎
+</Statement>
+
+証明の心臓は一行——「$\eta_X(f)=F(f)(\eta_A(\mathrm{id}_A))$」。自然性の四角形が、**自然変換全体を、たった一つの
+値 $\eta_A(\mathrm{id}_A)$ に凝縮する**。恒等射 $\mathrm{id}_A$ という「$A$ 自身を指す射」に $\eta$ がどう作用するかで、
+すべてが決まってしまうのです。無限にありそうな自然変換が、$F(A)$ の一点に対応する——この圧縮こそ米田の
+驚きです。
+
+## 米田埋め込み——対象を Hom 関手と同一視する
+
+補題の最重要の系。$F$ として別の対象の Hom 関手 $\mathrm{Hom}(B,-)$ をとると、「対象 $A,B$ の間の射」と
+「Hom 関手の間の自然変換」が一対一に対応します。つまり**対象を Hom 関手へ写す対応が、射をも忠実に写す**。
+
+<Statement kind="theorem" title="米田埋め込み">
+対応 $A\mapsto\mathrm{Hom}(A,-)$ は、$\mathcal C^{\mathrm{op}}$ から関手圏 $[\mathcal C,\mathbf{Set}]$ への
+**忠実充満関手**（<Term>米田埋め込み</Term>）を与える。すなわち
+$$
+\mathrm{Hom}_{\mathcal C}(B,A)\ \cong\ \mathrm{Nat}\big(\mathrm{Hom}(A,-),\,\mathrm{Hom}(B,-)\big).
+$$
+とくに $\mathrm{Hom}(A,-)\cong\mathrm{Hom}(B,-)$（自然同型）$\Rightarrow A\cong B$。
+</Statement>
+
+<Statement kind="proof">
+米田の補題で $F=\mathrm{Hom}(B,-)$ とすれば $\mathrm{Nat}(\mathrm{Hom}(A,-),\mathrm{Hom}(B,-))\cong\mathrm{Hom}(B,A)$。
+この対応が合成と整合し、忠実充満になる。自然同型なら[第3章](/category-theory/3)の圏同値の判定により対象の
+同型 $A\cong B$ を得る。∎
+</Statement>
+
+「$\mathrm{Hom}(A,-)$ が分かれば $A$ が同型を除いて分かる」——これが米田埋め込みの帰結です。だから第6章の
+**表現対象は同型を除いて一意**（積・べき集合の表現対象の一意性）。対象そのものを扱う代わりに、その Hom 関手
+（＝他対象との射の全体）を扱ってよい。**対象を“関係のパターン”へ翻訳しても、情報は一切失われない**のです。
+
+<Statement kind="remark" title="米田の哲学と応用">
+米田の補題は、深い哲学的含意をもつ——「対象の本質は、その内部構造でなく、他との関係の総体にある」。この
+視点は数学を超えて広がる。**代数幾何**では、スキームを「その上の点（他対象からの射）の関手」で捉える（関手的
+視点、グロタンディーク）。**プログラミング**（型理論）では、型を「それを使う文脈の全体」で理解する（継続・
+CPS 変換が米田の一種）。抽象的な補題が、これほど広い射程をもつ——圏論が「数学の言語」と呼ばれる理由の
+中心に、米田の補題がある。
+</Statement>
+
+## つまずきポイント
+
+<Statement kind="remark" title="よくある誤解">
+- **米田は「自然変換＝$F(A)$ の一点」。** 無数にありそうな自然変換が、恒等射の行き先 $\eta_A(\mathrm{id}_A)$ だけで
+  決まる。この圧縮が核心。
+- **証明の鍵は $\mathrm{id}_A$。** 自然性を $f=f\circ\mathrm{id}_A$ に当てるだけ。「恒等射に何が起きるか」が全情報を運ぶ。
+- **米田埋め込みは反変（$\mathcal C^{\mathrm{op}}$）。** $\mathrm{Hom}(A,-)$ は $A$ について反変。向きに注意。
+- **「対象＝Hom 関手」は同型を除いて。** 完全に等しいのでなく、Hom 関手が対象を同型を除いて決める。表現対象の
+  一意性の根拠。
+</Statement>
+
+## この章のまとめ
+
+- **米田の補題** $\mathrm{Nat}(\mathrm{Hom}(A,-),F)\cong F(A)$：$\mathrm{Hom}(A,-)$ から $F$ への自然変換は $F(A)$ の一点で決まる。証明の心臓は「自然性を $\mathrm{id}_A$ に当てる」。
+- **米田埋め込み** $A\mapsto\mathrm{Hom}(A,-)$ は忠実充満。**対象は Hom 関手（他との射の全体）で同型を除いて完全に決まる**。表現対象の一意性の根拠。
+- 哲学的含意「本質は関係の総体」は代数幾何（関手的点）・プログラミング（継続）まで貫く、圏論の心臓。
+- 基本概念・普遍性・米田が揃った。次章から**随伴**——「自由と忘却」のような対になった関手の、最も豊かな関係へ進みます。
+
+次章では、随伴関手を Hom 集合の自然同型として定義し、単位・余単位、自由–忘却随伴を見ます。

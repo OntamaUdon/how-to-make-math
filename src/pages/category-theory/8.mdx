@@ -1,0 +1,96 @@
+---
+layout: ../../layouts/BaseLayout.astro
+title: 第8章 随伴関手
+description: 「自由」と「忘却」のように対になる関手の、最も豊かな関係＝随伴。Hom集合の自然同型として定義し、単位・余単位で捉える。
+---
+
+import Term from "../../components/assets/Term.astro";
+import Statement from "../../components/assets/Statement.astro";
+
+# 第8章 随伴関手
+
+## 対になった関手——自由と忘却
+
+第2章で、忘却関手 $U:\mathbf{Grp}\to\mathbf{Set}$（群を台集合に）と自由関手 $F:\mathbf{Set}\to\mathbf{Grp}$
+（集合を自由群に）を見ました。この二つには特別な関係があります。**集合 $S$ から群 $G$ の“中身”への写像
+（$S\to U(G)$）は、自由群からの群準同型（$F(S)\to G$）と一対一に対応する**。「生成元をどこへ送るか決めれば、
+準同型が一意に決まる」——自由群の定義そのものです。
+
+この「一方の関手で作った対象からの射」と「他方で移した対象への射」が一対一に対応する関係を**随伴**といいます。
+圏論でもっとも重要で遍在する概念の一つ。極限・自由対象・テンソル–Hom・論理の量化子——数学のいたるところに
+現れる「対になった構成」の正体です。
+
+> 随伴 $F\dashv G$：$\mathrm{Hom}(F(A),B)\cong\mathrm{Hom}(A,G(B))$ が自然に成り立つ。自由と忘却の関係の一般化。
+
+## 随伴の定義
+
+<Statement kind="definition" title="随伴関手">
+関手 $F:\mathcal C\to\mathcal D$ と $G:\mathcal D\to\mathcal C$ が<Term>随伴</Term>（$F$ が左随伴、$G$ が右随伴、
+$F\dashv G$）であるとは、$A\in\mathcal C,\ B\in\mathcal D$ について**自然な全単射**
+$$
+\mathrm{Hom}_{\mathcal D}\big(F(A),\,B\big)\ \cong\ \mathrm{Hom}_{\mathcal C}\big(A,\,G(B)\big)
+$$
+が成り立つこと（両変数について自然）。この対応で移り合う射を<Term>随伴転置</Term>という。
+</Statement>
+
+左が「$F$ で送ってから射」、右が「射してから $G$ で送る」。この二つの見方が完全に一致する。$F\dashv G$ の
+記号は「$F$ が左、$G$ が右」を表します（Hom の中で $F$ が左引数、$G$ が右引数に立つ）。**左随伴と右随伴は
+対等でなく役割が違う**（次章で左は余極限、右は極限を保存）。
+
+<Statement kind="example" title="随伴の実例">
+- **自由 ⊣ 忘却**：$F:\mathbf{Set}\to\mathbf{Grp}$（自由群）$\dashv U$（忘却）。$\mathrm{Hom}(F(S),G)\cong\mathrm{Hom}(S,U(G))$。
+  自由ベクトル空間・自由モノイド・テンソル代数など、「自由構成」はみな忘却の左随伴。
+- **離散 ⊣ 忘却 ⊣ 密着**：$\mathbf{Set}\to\mathbf{Top}$ の離散位相（左随伴）と密着位相（右随伴）が忘却を挟む。
+- **テンソル ⊣ Hom**：$-\otimes M\dashv\mathrm{Hom}(M,-)$（[加群論](/module-theory)）。カリー化の代数版。
+- **積 ⊣ 対角 ⊣ 余積**：対角関手 $\Delta$ の右随伴が積、左随伴が余積（第5章の普遍性の言い換え）。
+- **論理**：$\exists\dashv$ 引き戻し $\dashv\forall$（量化子は随伴、[数理論理学](/logic-foundations)への橋）。
+</Statement>
+
+これほど多様な構成が「随伴」の一語に収まる。自由・離散・テンソル・積・量化子——分野も見た目もバラバラな
+ものが、$\mathrm{Hom}$ の自然な全単射という一つのパターンの現れなのです。
+
+## 単位と余単位
+
+随伴には、Hom の全単射と同値な、もう一つの記述があります。**単位** $\eta$ と**余単位** $\varepsilon$ という
+二つの自然変換です。こちらの方が計算に便利なことが多い。
+
+<Statement kind="definition" title="単位・余単位">
+$F\dashv G$ に対し、
+- <Term>単位</Term> $\eta:\mathrm{id}_{\mathcal C}\Rightarrow G\circ F$（各 $A$ で $\eta_A:A\to G(F(A))$）、
+- <Term>余単位</Term> $\varepsilon:F\circ G\Rightarrow\mathrm{id}_{\mathcal D}$（各 $B$ で $\varepsilon_B:F(G(B))\to B$）
+
+が定まり、<Term>三角恒等式</Term> $\varepsilon_{F}\circ F\eta=\mathrm{id}_F$、$G\varepsilon\circ\eta_G=\mathrm{id}_G$ をみたす。
+逆に、三角恒等式をみたす $\eta,\varepsilon$ があれば随伴が定まる。
+</Statement>
+
+単位 $\eta_A:A\to GF(A)$ の意味は「$A$ を、自由に作って忘却したものへ埋め込む」——自由群の例なら、集合 $S$ を
+自由群 $F(S)$ の生成元として埋め込む写像 $S\to U(F(S))$。余単位 $\varepsilon_B:FG(B)\to B$ は逆向きの「評価・
+潰し込み」。$G$ の値 $G(B)$ を自由に作り直して $B$ に戻す。この $\eta,\varepsilon$ が随伴の“骨組み”です。
+
+<Statement kind="remark" title="単位は普遍性を体現する">
+単位 $\eta_A:A\to GF(A)$ は、実は「$A$ から $G$ の像への射のうち最も普遍的なもの」。$F(A)$ は「$A$ を含む
+最も自由な $\mathcal D$ の対象」という**普遍性**をもち、$\eta_A$ がその普遍元。第4章の「普遍性＝補助圏の始対象」の
+視点では、$\eta_A$ が始対象そのもの。**随伴とは、対象ごとの普遍性が一様に（関手的に）束ねられたもの**、と
+読める。米田（第7章）・普遍性（第4章）・随伴（本章）が一つの絵に溶け合う。
+</Statement>
+
+## つまずきポイント
+
+<Statement kind="remark" title="よくある誤解">
+- **左随伴と右随伴は非対称。** $F\dashv G$ で $F$ が左・$G$ が右。役割が違う（次章：左は余極限、右は極限を保存）。
+  記号の向きを取り違えない。
+- **随伴は Hom の“自然な”全単射。** 単なる全単射でなく、両変数について自然（可換条件つき）。自然性が命。
+- **単位・余単位と Hom 同型は同値な二つの顔。** どちらから定義してもよい。三角恒等式が両者を結ぶ。計算では
+  単位・余単位が便利なことが多い。
+- **随伴は存在すれば一意。** 左随伴は（存在すれば）同型を除いて一意（Hom 同型と米田から）。だから「$G$ の左随伴」と
+  言えば一意に定まる。
+</Statement>
+
+## この章のまとめ
+
+- **随伴** $F\dashv G$＝**Hom 集合の自然な全単射** $\mathrm{Hom}(F(A),B)\cong\mathrm{Hom}(A,G(B))$。自由⊣忘却、テンソル⊣Hom、積・余積、量化子など、無数の「対になった構成」を統一。
+- **単位** $\eta:\mathrm{id}\Rightarrow GF$・**余単位** $\varepsilon:FG\Rightarrow\mathrm{id}$ と**三角恒等式**が、Hom 同型と同値なもう一つの記述。単位は普遍性を体現する。
+- 左随伴と右随伴は**非対称**な役割をもつ。随伴は存在すれば同型を除いて一意。
+- 次章では、随伴の最重要の性質——左随伴は余極限を、右随伴は極限を保存する——を証明し、その威力を見ます。
+
+次章では、随伴関手が極限・余極限をどう保存するか（左随伴は余極限、右随伴は極限）を示し、随伴の力を実感します。
