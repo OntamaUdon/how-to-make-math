@@ -1,0 +1,100 @@
+---
+layout: ../../layouts/BaseLayout.astro
+title: 第10章 制限と誘導 — フロベニウスの相互律
+description: 部分群の表現と全体群の表現をつなぐ、制限と誘導。両者は互いに随伴で、指標の内積が一致する——フロベニウスの相互律。
+---
+
+import Term from "../../components/assets/Term.astro";
+import Statement from "../../components/assets/Statement.astro";
+
+# 第10章 制限と誘導 — フロベニウスの相互律
+
+## 部分群と全体群を行き来する
+
+大きな群 $G$ の表現論を、部分群 $H$ の表現論と関係づけたい。二つの自然な操作があります——$G$ の表現を $H$ に
+**制限する**（下ろす）、そして $H$ の表現から $G$ の表現を**誘導する**（持ち上げる）。この二つが、部分群と
+全体群の表現論をつなぐ橋です。
+
+驚くべきことに、制限と誘導は互いに**随伴**（[圏論](/category-theory/8)）——指標の内積で美しく結ばれます。
+この関係（フロベニウスの相互律）が、大きな群の指標表を部分群から組み立てる強力な道具になり、$S_n$ の
+表現論（ヤング図形）など、より進んだ理論の入り口になります。
+
+> 制限（$G$→$H$ に下ろす）と誘導（$H$→$G$ に持ち上げる）は互いに随伴。指標の内積が一致する（フロベニウス）。
+
+## 制限と誘導
+
+<Statement kind="definition" title="制限表現・誘導表現">
+$H\le G$ を部分群とする。
+- $G$ の表現 $V$ の<Term>制限</Term> $\mathrm{Res}^G_H V$：同じ $V$ を、$H$ の作用だけ見た $H$ 表現。指標は
+  $\chi_V$ を $H$ に制限しただけ。
+- $H$ の表現 $W$ の<Term>誘導</Term> $\mathrm{Ind}_H^G W$：$W$ を $G$ 全体へ「引き伸ばした」$G$ 表現。次元は
+  $[G:H]\cdot\dim W$。$\mathbb C[G]\otimes_{\mathbb C[H]}W$（[加群論](/module-theory/8)のテンソル）として構成できる。
+</Statement>
+
+制限は簡単——$V$ の作用を $H$ だけに絞るだけ。誘導は少し込み入っていて、$H$ の表現 $W$ を、剰余類 $G/H$ の
+各コピーに配って $G$ 全体の表現に膨らませます（次元が $[G:H]$ 倍になる）。[加群論](/module-theory)の言葉では、
+誘導は群環のテンソル $\mathbb C[G]\otimes_{\mathbb C[H]}W$——係数拡大（[加群論第8章](/module-theory/8)）の
+群環版です。
+
+<Statement kind="theorem" title="誘導指標の公式">
+誘導表現 $\mathrm{Ind}_H^G W$ の指標は
+$$
+\chi_{\mathrm{Ind}\,W}(g)=\frac1{|H|}\sum_{\substack{x\in G\\ x^{-1}gx\in H}}\chi_W(x^{-1}gx).
+$$
+$g$ の共役のうち $H$ に入るものについて、$W$ の指標を平均する。
+</Statement>
+
+## フロベニウスの相互律
+
+制限と誘導の関係が、この章の主定理。**「誘導した表現の指標との内積」と「制限した表現の指標との内積」が
+等しい**——制限と誘導が随伴であることの指標版です。
+
+<Statement kind="theorem" title="フロベニウスの相互律">
+$H\le G$、$W$ を $H$ の表現、$V$ を $G$ の表現とする。すると
+$$
+\big\langle\,\chi_{\mathrm{Ind}_H^G W},\ \chi_V\,\big\rangle_G\ =\ \big\langle\,\chi_W,\ \chi_{\mathrm{Res}^G_H V}\,\big\rangle_H.
+$$
+すなわち $\mathrm{Hom}_G(\mathrm{Ind}_H^G W,\ V)\cong\mathrm{Hom}_H(W,\ \mathrm{Res}^G_H V)$——誘導は制限の**左随伴**
+（[圏論](/category-theory/8)）。
+</Statement>
+
+<Statement kind="proof">
+誘導指標の公式と内積の定義を代入し、和を並べ替える。左辺 $\frac1{|G|}\sum_{g\in G}\chi_{\mathrm{Ind}\,W}(g)\overline{\chi_V(g)}$ に
+誘導指標を入れ、$G$ 上の和を $H$ 上の和に整理すると、右辺 $\frac1{|H|}\sum_{h\in H}\chi_W(h)\overline{\chi_V(h)}$ に
+一致する。（随伴 $\mathrm{Ind}\dashv\mathrm{Res}$ は、$\mathbb C[G]\otimes_{\mathbb C[H]}(-)\dashv\mathrm{Res}$＝
+[テンソル⊣Hom](/module-theory/10)の群環版としても従う。）∎
+</Statement>
+
+相互律の威力は「**大きな群 $G$ の既約 $V$ が、誘導表現 $\mathrm{Ind}\,W$ に何個含まれるか**」を、「小さな群 $H$ の側の
+内積」で計算できること。$H$ の表現論（簡単）から $G$ の表現論（難しい）の情報が取れます。とくに $W$ が $H$ の
+$1$ 次表現なら $\mathrm{Ind}\,W$ の分解が読め、指標表の未知の行を埋めるのに使えます。[加群論](/module-theory/10)の
+テンソル⊣Hom随伴が、ここで表現論の相互律として現れる——分野を貫く随伴の力です。
+
+<Statement kind="example" title="相互律の使い方">
+$H$ の $1$ 次表現 $W$ を誘導した $\mathrm{Ind}_H^G W$ を、$G$ の既約 $V_i$ に分解したい。フロベニウスより
+$$
+（\mathrm{Ind}\,W\text{ に }V_i\text{ が入る重複度}）=\langle\chi_{\mathrm{Ind}\,W},\chi_i\rangle_G=\langle\chi_W,\mathrm{Res}\,\chi_i\rangle_H.
+$$
+右辺は $H$ 上の内積で計算が楽。たとえば $H=A_n\le S_n$ の $1$ 次表現の誘導から、$S_n$ の既約が組み立てられる。
+$S_n$ の表現論（ヤング図形・特性写像）は、この制限・誘導の精密化として展開される。
+</Statement>
+
+## つまずきポイント
+
+<Statement kind="remark" title="よくある誤解">
+- **制限は簡単（作用を絞る）、誘導は膨らませる（次元 $[G:H]$ 倍）。** 誘導は $\mathbb C[G]\otimes_{\mathbb C[H]}W$
+  （群環テンソル）。
+- **フロベニウス：$\langle\mathrm{Ind}\,W,V\rangle_G=\langle W,\mathrm{Res}\,V\rangle_H$。** 大きな群の内積を小さな群の内積で
+  計算。誘導⊣制限（左随伴）。
+- **誘導指標は「$H$ に入る共役」で平均。** すべての $g$ でなく、$x^{-1}gx\in H$ となる共役のみ。
+- **随伴は[加群論](/module-theory/10)のテンソル⊣Homの群環版。** 分野を貫く随伴。相互律はその指標での顔。
+</Statement>
+
+## この章のまとめ
+
+- **制限** $\mathrm{Res}^G_H V$（$G$ 表現を $H$ に絞る）と**誘導** $\mathrm{Ind}_H^G W$（$H$ 表現を $G$ に膨らませる、次元 $[G:H]$ 倍、$\mathbb C[G]\otimes_{\mathbb C[H]}W$）。
+- **フロベニウスの相互律** $\langle\mathrm{Ind}\,W,V\rangle_G=\langle W,\mathrm{Res}\,V\rangle_H$——誘導は制限の**左随伴**（[加群論](/module-theory/10)のテンソル⊣Homの群環版）。
+- 相互律で、大きな群の既約分解を小さな群の内積で計算できる。指標表の構成・$S_n$ の表現論（ヤング図形）の入り口。
+- 次章では、表現論を群論そのものへ応用する——バーンサイドの $p^a q^b$ 定理（可解性）など、表現論が代数の定理を証明する力を見ます。
+
+次章では、表現論を使って群論の定理を証明する——バーンサイドの $p^a q^b$ 定理（可解群）を例に、表現論の代数への応用を見ます。

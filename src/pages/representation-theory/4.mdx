@@ -1,0 +1,117 @@
+---
+layout: ../../layouts/BaseLayout.astro
+title: 第4章 表現と群環
+description: 表現は、群環 ℂ[G] という一つの環の上の加群だった。加群論の視点で表現論を見通し、正則表現がすべての既約表現を含むことを見る。
+---
+
+import Term from "../../components/assets/Term.astro";
+import Statement from "../../components/assets/Statement.astro";
+
+# 第4章 表現と群環
+
+## 表現を「加群」として見る
+
+ここまで表現を「群準同型 $G\to\mathrm{GL}(V)$」として扱ってきました。この章では、視点を一段上げます。群 $G$ から
+**群環** $\mathbb C[G]$ という一つの環を作ると、**表現＝$\mathbb C[G]$ 加群**になる。[加群論](/module-theory)の道具立てが
+そっくり表現論に使えるようになり、理論が一気に見通しよくなります。
+
+なぜ嬉しいか。既約表現＝単純加群、完全可約＝半単純、分解の一意性＝加群の構造——表現論の概念が、加群論の
+一般論の特殊例として統一的に語れる。とくに、群環 $\mathbb C[G]$ 自身を加群とみなした**正則表現**が、すべての
+既約表現をその次元の重複度で含む、という美しい事実が見えてきます。
+
+> 群環 $\mathbb C[G]$ を作ると、表現＝$\mathbb C[G]$ 加群。[加群論](/module-theory)の視点で表現論が統一的に見える。
+
+## 群環
+
+<Statement kind="definition" title="群環">
+群 $G$ の<Term>群環</Term> $\mathbb C[G]$ とは、$G$ の元を基底とする $\mathbb C$ ベクトル空間
+$$
+\mathbb C[G]=\Big\{\textstyle\sum_{g\in G}a_g\,g : a_g\in\mathbb C\Big\}
+$$
+に、群の積を線形に拡張した掛け算 $\big(\sum a_g g\big)\big(\sum b_h h\big)=\sum_{g,h}a_g b_h\,(gh)$ を入れた環
+（[環論](/ring-theory)）。$\dim_{\mathbb C}\mathbb C[G]=|G|$。
+</Statement>
+
+$\mathbb C[G]$ は「群の元を形式的に足し合わせられるようにした環」。$G$ が非可換なら $\mathbb C[G]$ も非可換です。
+この一つの環が、$G$ のすべての表現を統べます。
+
+<Statement kind="theorem" title="表現 ＝ 群環の加群">
+$G$ の表現 $\rho:G\to\mathrm{GL}(V)$ を与えることと、$V$ に $\mathbb C[G]$ 加群（[加群論](/module-theory)）の構造を
+入れることは、**同じ**。スカラー倍を $\big(\sum a_g g\big)\cdot v=\sum a_g\rho(g)v$ で定める。
+</Statement>
+
+<Statement kind="proof">
+表現 $\rho$ から上の式でスカラー倍を定めると加群の公理をみたす。逆に $\mathbb C[G]$ 加群 $V$ で、各 $g\in G$ の作用が
+$\rho(g)$（可逆、$\rho(gh)=\rho(g)\rho(h)$）を与える。両者は逆の対応。∎
+</Statement>
+
+これで辞書ができました。**表現の言葉と加群の言葉が一対一**に対応します。
+
+<Statement kind="remark" title="表現論 ↔ 加群論の辞書">
+| 表現論 | 加群論（$\mathbb C[G]$ 上） |
+|---|---|
+| 表現 $V$ | $\mathbb C[G]$ 加群 $V$ |
+| 部分表現 | 部分加群 |
+| 既約表現 | 単純加群（自明でない部分加群なし） |
+| 完全可約（マシュケ） | $\mathbb C[G]$ が半単純環 |
+| 絡作用素 $\mathrm{Hom}_G$ | 加群準同型 $\mathrm{Hom}_{\mathbb C[G]}$ |
+
+マシュケの定理は、加群論の言葉では「$\mathbb C[G]$ は**半単純環**」（[加群論](/module-theory)の完全可約）。だから
+表現論は「半単純環 $\mathbb C[G]$ の加群論」として、一般論に吸収される。
+</Statement>
+
+## 正則表現——群環自身を表現とみなす
+
+群環 $\mathbb C[G]$ 自身を、$G$ が左から掛けて動く加群（＝表現）とみなしたものが正則表現です。これが特別なのは、
+**すべての既約表現を含む**からです。
+
+<Statement kind="definition" title="正則表現">
+$\mathbb C[G]$ を、$G$ が左から掛けて作用する $\mathbb C[G]$ 加群とみなした表現を<Term>正則表現</Term>という。次数は
+$|G|$。$g$ の作用は基底 $G$ を置換する（左正則置換表現）。
+</Statement>
+
+<Statement kind="theorem" title="正則表現の分解">
+正則表現 $\mathbb C[G]$ は、各既約表現 $V_i$（次元 $d_i$）を、その**次元 $d_i$ 回**ずつ含む：
+$$
+\mathbb C[G]\ \cong\ \bigoplus_i d_i\,V_i.
+$$
+次元を比べると $|G|=\sum_i d_i^2$（<Term>次元の二乗和公式</Term>）。
+</Statement>
+
+<Statement kind="proof">
+半単純環 $\mathbb C[G]$ を自身上の加群として分解すると、各単純加群 $V_i$ が $\dim V_i=d_i$ 回現れる（半単純環の
+アルティン–ウェダーバーン分解、[加群論](/module-theory)）。両辺の次元 $|G|=\sum d_i\cdot d_i=\sum d_i^2$。∎
+</Statement>
+
+正則表現は「すべての既約表現の見本市」です。各既約 $V_i$ が、その次元 $d_i$ 回ちょうど入っている。次元を
+数えると $|G|=\sum d_i^2$——**既約表現の次元の二乗和が群の位数**という、表現論の基本等式が出ます。$S_3$ なら
+$6=1^2+1^2+2^2$、位数 $8$ なら $8=1^2\cdot4+2^2$（$D_4,Q_8$）や $8=1^2\cdot8$（可換群）。この等式が、既約表現の
+次元を強く制約します（第8章で指標理論の中心公式として再登場）。
+
+<Statement kind="remark" title="なぜ群環の視点が強力か">
+「表現をひとつずつ」でなく「$G$ のすべての表現を統べる環 $\mathbb C[G]$ をまとめて」扱えるのが群環の強み。
+アルティン–ウェダーバーンの定理により、半単純環 $\mathbb C[G]$ は行列環の直積 $\prod_i M_{d_i}(\mathbb C)$ に分解し、
+各因子が一つの既約表現に対応する。だから「$G$ の既約表現をすべて見つける」＝「$\mathbb C[G]$ を行列環の積に
+分解する」。[加群論](/module-theory)の構造論が、表現の分類そのものになる。次章からの指標理論は、この分解を
+“数”（トレース）で実行する技術。
+</Statement>
+
+## つまずきポイント
+
+<Statement kind="remark" title="よくある誤解">
+- **表現＝群環の加群。** $\mathbb C[G]$ 加群と表現は同じもの。部分表現＝部分加群、既約＝単純加群。加群論の辞書で
+  読み替える。
+- **マシュケ＝$\mathbb C[G]$ が半単純環。** 完全可約性の加群論的言い換え。表現論が半単純環論に吸収される。
+- **正則表現は各既約を次元回含む。** $\mathbb C[G]\cong\bigoplus d_i V_i$。だから $|G|=\sum d_i^2$。すべての既約が
+  正則表現に現れる。
+- **$|G|=\sum d_i^2$ は次元を制約する。** 位数から既約の次元の候補が絞れる。第8章の中心公式。
+</Statement>
+
+## この章のまとめ
+
+- **群環** $\mathbb C[G]$（$G$ の元を基底とし群積を拡張した環、$\dim=|G|$）を作ると、**表現＝$\mathbb C[G]$ 加群**。[加群論](/module-theory)の辞書（既約＝単純加群、完全可約＝半単純環）で統一的に扱える。
+- **正則表現** $\mathbb C[G]$（群環自身）は、各既約 $V_i$ を**次元 $d_i$ 回**含む：$\mathbb C[G]\cong\bigoplus d_i V_i$。ゆえに**$|G|=\sum d_i^2$**（次元の二乗和公式）。
+- アルティン–ウェダーバーンで $\mathbb C[G]\cong\prod M_{d_i}(\mathbb C)$——既約の分類＝群環の行列環分解。
+- Part I（表現の基礎）はここまで。次章から指標理論へ。表現の全情報を「トレース」という数個の数に凝縮する——指標を導入します。
+
+次章では、指標（表現のトレース）を定義し、それが同値・共役で不変な類関数であること、表現の全情報を担うことを見ます。

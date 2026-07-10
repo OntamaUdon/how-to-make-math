@@ -1,0 +1,112 @@
+---
+layout: ../../layouts/BaseLayout.astro
+title: 第6章 指標の直交関係
+description: 既約指標は、共役類で重み付けた内積のもとで互いに直交する正規直交系をなす。この一つの定理が、表現論を実用的な計算に変える。
+---
+
+import Term from "../../components/assets/Term.astro";
+import Statement from "../../components/assets/Statement.astro";
+
+# 第6章 指標の直交関係
+
+## 指標を「座標」にする
+
+前章で、指標が表現を完全に決めると分かりました。でも「なぜトレースだけで十分か」の核心はまだ見ていません。
+その答えが、この章の主役——**既約指標の直交関係**です。既約指標たちは、類関数の空間の中で**正規直交系**を
+なす。だから任意の表現の指標を、既約指標という“座標軸”で展開でき、各既約の重複度が**内積**で読める。
+
+これは[関数解析](/functional-analysis/5)・[フーリエ解析](/fourier-analysis)の「正規直交基底への展開」の、有限群
+表現論版です。フーリエ級数が関数を三角関数（正規直交基底）で展開したように、表現の指標を既約指標で展開する。
+直交関係が、その展開の係数（重複度）を内積で取り出す公式を与えます。
+
+> 既約指標は類関数の内積で正規直交系。任意の表現の指標を既約指標で展開でき、重複度が内積で読める。
+
+## 類関数の内積
+
+まず、指標を測る内積を定めます。共役類のサイズで重み付けた、自然な内積です。
+
+<Statement kind="definition" title="類関数の内積">
+$G$ 上の類関数 $\varphi,\psi$（共役類で一定な関数）に対し
+$$
+\langle\varphi,\psi\rangle=\frac1{|G|}\sum_{g\in G}\varphi(g)\overline{\psi(g)}=\frac1{|G|}\sum_{C}|C|\,\varphi(C)\overline{\psi(C)}
+$$
+（右は共役類 $C$ ごとの和、$|C|$ は類のサイズ）を内積とする。
+</Statement>
+
+$\frac1{|G|}\sum_g$ は前章までの**群平均**（マシュケの平均化と同じ）。指標は類関数なので、この内積は共役類
+ごとの和で計算できます。この内積のもとで、既約指標が直交する——それが次の定理です。
+
+## 第一直交関係
+
+<Statement kind="theorem" title="第一直交関係（行の直交）">
+$G$ の相異なる既約表現の指標 $\chi_1,\dots,\chi_r$ は、上の内積のもとで**正規直交系**をなす：
+$$
+\langle\chi_i,\chi_j\rangle=\delta_{ij}=\begin{cases}1&(i=j)\\0&(i\ne j).\end{cases}
+$$
+</Statement>
+
+<Statement kind="proof">
+$\langle\chi_V,\chi_W\rangle=\dim\mathrm{Hom}_G(V,W)$ を示せばよい（するとシューア（[第3章](/representation-theory/3)）で
+$i=j$ なら $1$、$i\ne j$ なら $0$）。任意の線形写像 $T_0:V\to W$ を群平均した
+$T=\frac1{|G|}\sum_g\rho_W(g)T_0\rho_V(g)^{-1}$ は絡作用素で、この対応は絡作用素の空間 $\mathrm{Hom}_G(V,W)$ への
+射影を与える。その射影のトレースを計算すると
+$$
+\frac1{|G|}\sum_g\mathrm{tr}\big(\rho_W(g)\,(\cdot)\,\rho_V(g)^{-1}\big)=\frac1{|G|}\sum_g\chi_W(g)\overline{\chi_V(g)}=\langle\chi_W,\chi_V\rangle
+$$
+（$\chi_V(g^{-1})=\overline{\chi_V(g)}$）。射影のトレース＝像の次元 $=\dim\mathrm{Hom}_G(V,W)$。∎
+</Statement>
+
+証明の心臓は、またしても**群平均とシューアの補題**です。「線形写像を群平均すると絡作用素になり、その空間の
+次元がちょうど指標の内積」。シューア（絡作用素はゼロか同型・スカラー）から、異なる既約は直交（$\dim=0$）、
+同じ既約は正規（$\dim=1$）。マシュケの平均化と、シューアの補題という前半の二大道具が、ここで一つの美しい
+等式に結晶します。
+
+## 重複度・既約性の判定
+
+直交関係の御利益は絶大です。表現の指標を既約指標で展開すれば、**各既約の重複度が内積で計算できる**。
+分解を実際に手で行えるようになります。
+
+<Statement kind="theorem" title="重複度と既約性の判定">
+表現 $V\cong\bigoplus_i m_i V_i$（$V_i$ 既約）の指標 $\chi_V$ について、
+1. **重複度** $m_i=\langle\chi_V,\chi_i\rangle$（$V$ に $V_i$ が何個含まれるか）。
+2. **ノルム** $\langle\chi_V,\chi_V\rangle=\sum_i m_i^2$。
+3. **既約性の判定**：$V$ が既約 $\iff\langle\chi_V,\chi_V\rangle=1$。
+</Statement>
+
+<Statement kind="proof">
+$\chi_V=\sum_i m_i\chi_i$（[第5章](/representation-theory/5)、直和は指標の和）。直交関係より
+$\langle\chi_V,\chi_j\rangle=\sum_i m_i\langle\chi_i,\chi_j\rangle=m_j$。$\langle\chi_V,\chi_V\rangle=\sum_i m_i^2$。
+既約 $\iff$ ただ一つの $m_i=1$ で他が $0$ $\iff\sum m_i^2=1$。∎
+</Statement>
+
+これで表現論が完全に**計算**になりました。表現 $V$ の指標を求め、既約指標との内積を取れば、各既約が何個
+含まれるか（重複度 $m_i$）が分かる。「$\langle\chi_V,\chi_V\rangle=1$ なら既約」という判定は特に実用的——
+指標のノルムを計算するだけで既約性が分かります。フーリエ級数で「係数＝関数と基底の内積」だったのと
+まったく同じ構造（[関数解析](/functional-analysis/5)）です。
+
+<Statement kind="remark" title="指標は類関数の正規直交“基底”">
+既約指標は正規直交系だが、実は類関数の空間全体の**正規直交基底**になる（次章）。類関数の空間の次元は
+共役類の数、だから既約表現の個数＝共役類の数（第7章）。任意の類関数を既約指標で展開できる——表現論が、
+共役類の上の“フーリエ解析”になる。可換群なら共役類＝元、既約指標＝$1$ 次指標で、これはまさに有限アーベル群の
+[フーリエ変換](/fourier-analysis)。表現論は非可換版フーリエ解析、という見方ができる。
+</Statement>
+
+## つまずきポイント
+
+<Statement kind="remark" title="よくある誤解">
+- **内積は群平均（共役類で重み付け）。** $\frac1{|G|}\sum_g\varphi\overline\psi=\frac1{|G|}\sum_C|C|\varphi(C)\overline{\psi(C)}$。
+  類のサイズ $|C|$ を忘れない。
+- **既約指標は正規直交系。** $\langle\chi_i,\chi_j\rangle=\delta_{ij}$。証明はシューア＋群平均。フーリエの正規直交基底と
+  同じ役割。
+- **重複度＝内積 $\langle\chi_V,\chi_i\rangle$。** 表現の分解が内積計算になる。既約性は $\langle\chi_V,\chi_V\rangle=1$。
+- **指標は類関数の基底。** だから既約表現の個数＝共役類の数（次章）。表現論＝非可換フーリエ解析。
+</Statement>
+
+## この章のまとめ
+
+- **類関数の内積** $\langle\varphi,\psi\rangle=\frac1{|G|}\sum_g\varphi\overline\psi$（群平均、共役類で重み付け）。
+- **第一直交関係**：既約指標は**正規直交系** $\langle\chi_i,\chi_j\rangle=\delta_{ij}$。証明は $\langle\chi_V,\chi_W\rangle=\dim\mathrm{Hom}_G(V,W)$＋シューア＋群平均。
+- 帰結：**重複度 $m_i=\langle\chi_V,\chi_i\rangle$**、**既約性 $\iff\langle\chi_V,\chi_V\rangle=1$**。表現の分解が内積計算に。[フーリエ解析](/fourier-analysis/5)の正規直交基底展開と同じ構造。
+- 既約指標が正規直交系だと分かった。次章では、これを表にまとめた指標表を構成し、行・列の直交と既約表現の個数を確定します。
+
+次章では、指標表（既約指標 × 共役類）を構成し、行・列の直交関係、既約表現の個数＝共役類の数を確立します。

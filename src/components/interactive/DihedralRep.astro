@@ -1,0 +1,115 @@
+---
+/* DihedralRep.astro — 「群を行列に翻訳する（表現）」と「指標＝トレース」を体感する装置。
+   正 n 角形の対称性（二面体群 D_n）を、平面 ℝ² への標準 2 次元表現として見る。
+   ・回転 r^k は角 2πk/n の回転行列（トレース＝2cos(2πk/n)）
+   ・鏡映 s·r^k は行列式 −1 の鏡映行列（トレース＝0）
+   群の元 → 2×2 行列、指標 χ＝トレースが元の“種類”を表す。n と元を選んで、
+   多角形の変換・行列・指標を見る。状態はメモリ内のみ（storage 不使用）。 */
+---
+
+<figure class="dr" role="group" aria-label="二面体群の2次元表現">
+  <div class="dr-controls">
+    <label class="dr-label">n =
+      <select id="dr-n" class="dr-sel">
+        <option value="3">3（正三角形）</option>
+        <option value="4" selected>4（正方形）</option>
+        <option value="5">5（正五角形）</option>
+        <option value="6">6（正六角形）</option>
+      </select>
+    </label>
+    <label class="dr-label">回転 rᵏ：k = <span id="dr-kval">0</span>
+      <input id="dr-k" type="range" min="0" max="3" value="0" step="1" class="dr-range" />
+    </label>
+    <label class="dr-check"><input id="dr-refl" type="checkbox" /> 鏡映 s を掛ける</label>
+  </div>
+  <canvas id="dr-cv" width="300" height="240" class="dr-cv"></canvas>
+  <figcaption id="dr-cap" class="dr-cap"></figcaption>
+</figure>
+
+<script>
+  const nSel = document.getElementById("dr-n") as HTMLSelectElement | null;
+  const kIn = document.getElementById("dr-k") as HTMLInputElement | null;
+  const kVal = document.getElementById("dr-kval");
+  const reflIn = document.getElementById("dr-refl") as HTMLInputElement | null;
+  const cv = document.getElementById("dr-cv") as HTMLCanvasElement | null;
+  const capEl = document.getElementById("dr-cap");
+
+  if (nSel && kIn && kVal && reflIn && cv && capEl) {
+    const ctx = cv.getContext("2d")!;
+    const W = cv.width, H = cv.height, cx = W / 2, cy = H / 2, R = 78;
+    const css = (v: string) => getComputedStyle(document.documentElement).getPropertyValue(v).trim() || "#888";
+
+    const render = () => {
+      const n = Number(nSel.value);
+      kIn.max = String(n - 1);
+      if (Number(kIn.value) > n - 1) kIn.value = String(n - 1);
+      const k = Number(kIn.value);
+      const refl = reflIn.checked;
+      kVal.textContent = String(k);
+      const th = 2 * Math.PI * k / n;
+
+      // 表現行列 M（回転 or 鏡映）
+      let M: number[][];
+      if (!refl) M = [[Math.cos(th), -Math.sin(th)], [Math.sin(th), Math.cos(th)]];
+      else M = [[Math.cos(th), Math.sin(th)], [Math.sin(th), -Math.cos(th)]]; // det −1, trace 0
+      const trace = M[0][0] + M[1][1];
+
+      ctx.clearRect(0, 0, W, H);
+      // 軸
+      ctx.strokeStyle = css("--line"); ctx.lineWidth = 1;
+      ctx.beginPath(); ctx.moveTo(0, cy); ctx.lineTo(W, cy); ctx.moveTo(cx, 0); ctx.lineTo(cx, H); ctx.stroke();
+
+      const verts = (m: number[][] | null): [number, number][] => {
+        const out: [number, number][] = [];
+        for (let i = 0; i < n; i++) {
+          const a = 2 * Math.PI * i / n - Math.PI / 2;
+          let x = Math.cos(a), y = Math.sin(a);
+          if (m) { const nx = m[0][0] * x + m[0][1] * y, ny = m[1][0] * x + m[1][1] * y; x = nx; y = ny; }
+          out.push([cx + x * R, cy - y * R]);
+        }
+        return out;
+      };
+      const poly = (pts: [number, number][], color: string, w: number, alpha: number) => {
+        ctx.strokeStyle = color; ctx.lineWidth = w; ctx.globalAlpha = alpha;
+        ctx.beginPath(); pts.forEach(([x, y], i) => (i ? ctx.lineTo(x, y) : ctx.moveTo(x, y))); ctx.closePath(); ctx.stroke();
+        ctx.globalAlpha = 1;
+      };
+      // 元の多角形（灰・薄）と、変換後（朱）
+      poly(verts(null), css("--ink-faint"), 1.4, 0.4);
+      const V = verts(M);
+      poly(V, css("--shu"), 2.4, 1);
+      // 頂点 0 を追跡（藍点）＝動きが見える
+      ctx.fillStyle = css("--ai"); ctx.beginPath(); ctx.arc(V[0][0], V[0][1], 5, 0, 2 * Math.PI); ctx.fill();
+      // 元の頂点0（薄い藍）
+      const V0 = verts(null); ctx.fillStyle = css("--ai"); ctx.globalAlpha = 0.35; ctx.beginPath(); ctx.arc(V0[0][0], V0[0][1], 4, 0, 2 * Math.PI); ctx.fill(); ctx.globalAlpha = 1;
+
+      const f = (x: number) => (Math.abs(x) < 1e-9 ? "0" : x.toFixed(2).replace(/\.00$/, "").replace(/(\.\d)0$/, "$1"));
+      const name = refl ? (k === 0 ? "s（鏡映）" : `s·r<sup>${k}</sup>`) : (k === 0 ? "e（単位元）" : `r<sup>${k}</sup>`);
+      const kind = refl ? "鏡映（det = −1）" : "回転（det = +1）";
+      capEl.innerHTML =
+        `群の元 <b>${name}</b> を、2次元表現で行列にすると<br>` +
+        `<b class="shu">M = [[${f(M[0][0])}, ${f(M[0][1])}], [${f(M[1][0])}, ${f(M[1][1])}]]</b>（${kind}）。<br>` +
+        `<b class="ai">指標 χ = トレース = ${f(trace)}</b>` +
+        (refl ? `（鏡映はつねに 0）` : `（回転 rᵏ は 2cos(2πk/n) = ${f(trace)}）`) +
+        `。群の掛け算 ↔ 行列の掛け算、元の“種類”は指標（トレース）に表れる。`;
+    };
+    nSel.addEventListener("change", render);
+    kIn.addEventListener("input", render);
+    reflIn.addEventListener("change", render);
+    render();
+  }
+</script>
+
+<style>
+  .dr { margin: 26px 0; padding: 16px 18px 14px; border: 1px solid var(--line); border-radius: 10px; background: var(--card); }
+  .dr-controls { display: flex; flex-wrap: wrap; gap: 8px 16px; margin-bottom: 12px; align-items: center; }
+  .dr-label { font-size: 13px; font-weight: 600; color: var(--ink); font-family: var(--sans); display: flex; align-items: center; gap: 6px; }
+  .dr-check { font-size: 13px; font-weight: 600; color: var(--ink); font-family: var(--sans); display: flex; align-items: center; gap: 5px; }
+  .dr-sel { font-family: var(--sans); font-size: 13px; padding: 4px 8px; border: 1px solid var(--line); border-radius: 7px; background: var(--paper-sunk); color: var(--ink); }
+  .dr-range { width: 130px; accent-color: var(--shu); }
+  .dr-cv { display: block; margin: 0 auto; width: 100%; max-width: 300px; height: auto; border: 1px solid var(--line); border-radius: 6px; background: var(--paper-sunk); }
+  .dr-cap { margin-top: 12px; font-size: 13px; line-height: 1.9; color: var(--ink-faint); font-family: var(--sans); }
+  .dr-cap b { color: var(--ink); font-weight: 700; }
+  .dr-cap b.shu { color: var(--shu); }
+  .dr-cap b.ai { color: var(--ai); }
+</style>
