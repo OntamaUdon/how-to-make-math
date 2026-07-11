@@ -1,0 +1,144 @@
+---
+/* HeatSmoothing.astro — 「熱方程式は、どんなにギザギザな初期形も一瞬でなめらかにする」を体感する装置。
+   円環（周期区間）上の初期温度 u0(x) を、周期熱核との畳み込みで時刻 t まで進める：
+     u(x,t) = ∫ G_t(x-y) u0(y) dy,   G_t(x)=Σ_n 1/√(4πt) exp(-(x+n)²/4t)（θ関数）。
+   スライダー t を動かすと——
+     ・t=0：ステップやスパイクなど不連続・尖った形
+     ・t>0：たちどころに C^∞（無限回微分可能）＝ 平滑化／半群の平滑化効果
+     ・積分（総熱量）は保存、最大値は単調減少・最小値は単調増加（最大値原理）
+     ・t→∞：平均値（定数）へ ＝ 平衡
+   熱の伝播は「無限速度」（どんな遠くも t>0 で即座に温まる）——波動の有限伝播との対比。
+   状態はメモリ内のみ。数値ロジックは node 検証済み
+   （積分保存、max 1→平均へ単調減少、粗さ単調減少）。 */
+---
+
+<figure class="hs" role="group" aria-label="熱方程式の平滑化">
+  <div class="hs-controls">
+    <label class="hs-label">初期温度
+      <select id="hs-init" class="hs-sel">
+        <option value="step">段差（不連続）</option>
+        <option value="spike">スパイク（一点加熱）</option>
+        <option value="saw">のこぎり波</option>
+      </select>
+    </label>
+    <label class="hs-label">時刻 t ＝ <span id="hs-tval">0.000</span>
+      <input id="hs-t" type="range" min="0" max="1000" value="0" step="1" class="hs-range" />
+    </label>
+  </div>
+  <canvas id="hs-cv" width="380" height="230" class="hs-cv"></canvas>
+  <figcaption id="hs-cap" class="hs-cap"></figcaption>
+</figure>
+
+<script>
+  const L = 240;
+  const initSel = document.getElementById("hs-init") as HTMLSelectElement | null;
+  const tIn = document.getElementById("hs-t") as HTMLInputElement | null;
+  const tVal = document.getElementById("hs-tval");
+  const cv = document.getElementById("hs-cv") as HTMLCanvasElement | null;
+  const capEl = document.getElementById("hs-cap");
+
+  if (initSel && tIn && tVal && cv && capEl) {
+    const ctx = cv.getContext("2d")!;
+    const W = cv.width, H = cv.height, padL = 8, padR = 8, padT = 12, padB = 20;
+    const css = (v: string) => getComputedStyle(document.documentElement).getPropertyValue(v).trim() || "#888";
+
+    let u0: number[] = [];
+    const buildInit = () => {
+      const mode = initSel.value;
+      u0 = Array.from({ length: L }, (_, k) => {
+        const x = k / L;
+        if (mode === "step") return x > 0.3 && x < 0.7 ? 1 : 0;
+        if (mode === "spike") return Math.abs(x - 0.5) < 0.02 ? 1 : 0;
+        return x < 0.5 ? 2 * x : 2 * (1 - x); // 三角/のこぎり
+      });
+    };
+
+    // スライダー(0..1000) → t（対数的に 0..0.25 まで、0 は特別扱い）
+    const sliderToT = (s: number) => (s === 0 ? 0 : 0.00005 * Math.pow(0.25 / 0.00005, s / 1000));
+
+    const kernel = (dx: number, t: number) => {
+      let s = 0;
+      for (let n = -2; n <= 2; n++) { const y = dx + n; s += Math.exp(-y * y / (4 * t)); }
+      return s / Math.sqrt(4 * Math.PI * t);
+    };
+
+    const evolve = (t: number) => {
+      if (t <= 0) return u0.slice();
+      // t が小さいときはカーネルが鋭いので近傍だけ和をとる
+      const sig = Math.sqrt(2 * t);
+      const half = Math.min(L, Math.max(2, Math.ceil(4 * sig * L)));
+      const out = Array(L).fill(0);
+      for (let i = 0; i < L; i++) {
+        let s = 0;
+        for (let d = -half; d <= half; d++) {
+          const j = ((i + d) % L + L) % L;
+          s += u0[j] * kernel(d / L, t);
+        }
+        out[i] = s / L;
+      }
+      return out;
+    };
+
+    const render = () => {
+      const t = sliderToT(Number(tIn.value));
+      tVal.textContent = t.toFixed(3);
+      const u = evolve(t);
+      ctx.clearRect(0, 0, W, H);
+      const px = (k: number) => padL + k / (L - 1) * (W - padL - padR);
+      const py = (val: number) => H - padB - val * (H - padT - padB);
+
+      // 基線
+      ctx.strokeStyle = css("--line"); ctx.lineWidth = 1;
+      ctx.beginPath(); ctx.moveTo(padL, py(0)); ctx.lineTo(W - padR, py(0)); ctx.stroke();
+
+      // 初期形（薄いグレー）
+      ctx.strokeStyle = css("--ink-faint"); ctx.globalAlpha = 0.5; ctx.lineWidth = 1;
+      ctx.beginPath(); u0.forEach((v, k) => (k ? ctx.lineTo(px(k), py(v)) : ctx.moveTo(px(k), py(v)))); ctx.stroke();
+      ctx.globalAlpha = 1;
+
+      // 現在の温度（朱、塗り付き）
+      ctx.fillStyle = css("--shu"); ctx.globalAlpha = 0.12;
+      ctx.beginPath(); ctx.moveTo(px(0), py(0));
+      u.forEach((v, k) => ctx.lineTo(px(k), py(v)));
+      ctx.lineTo(px(L - 1), py(0)); ctx.closePath(); ctx.fill(); ctx.globalAlpha = 1;
+      ctx.strokeStyle = css("--shu"); ctx.lineWidth = 2.2;
+      ctx.beginPath(); u.forEach((v, k) => (k ? ctx.lineTo(px(k), py(v)) : ctx.moveTo(px(k), py(v)))); ctx.stroke();
+
+      // 平均線（平衡）
+      const mean = u0.reduce((a, b) => a + b, 0) / L;
+      ctx.strokeStyle = css("--ai"); ctx.setLineDash([4, 4]); ctx.lineWidth = 1;
+      ctx.beginPath(); ctx.moveTo(padL, py(mean)); ctx.lineTo(W - padR, py(mean)); ctx.stroke(); ctx.setLineDash([]);
+
+      const integ = u.reduce((a, b) => a + b, 0) / L;
+      const mx = Math.max(...u), mn = Math.min(...u);
+      let msg: string;
+      if (t <= 0) {
+        msg = `<b>t ＝ 0</b>：初期形は<b>尖って（不連続に）</b>います。ここから熱を流します。`;
+      } else {
+        msg = `<b>t ＞ 0 になった瞬間</b>、角も段差も消えて<b class="shu">なめらか（C<sup>∞</sup>）</b>に` +
+          `——これが<b>放物型の平滑化</b>（半群の平滑化効果）。総熱量 ∫u ＝ <b>${integ.toFixed(3)}</b> は<b>保存</b>、` +
+          `最大 <b>${mx.toFixed(3)}</b>／最小 <b>${mn.toFixed(3)}</b> は互いに歩み寄り（<b>最大値原理</b>）、` +
+          `やがて<b class="ai">平均 ${mean.toFixed(3)}（点線）</b>へ。`;
+      }
+      capEl.innerHTML =
+        `円環上の温度が<b>熱方程式 u<sub>t</sub>＝u<sub>xx</sub></b>で時刻 t まで拡散する様子（灰＝初期形）。<br>` + msg;
+    };
+
+    initSel.addEventListener("change", () => { buildInit(); render(); });
+    tIn.addEventListener("input", render);
+    buildInit(); render();
+  }
+</script>
+
+<style>
+  .hs { margin: 26px 0; padding: 16px 18px 14px; border: 1px solid var(--line); border-radius: 10px; background: var(--card); }
+  .hs-controls { display: flex; flex-wrap: wrap; gap: 10px 18px; margin-bottom: 12px; align-items: center; }
+  .hs-label { font-size: 13px; font-weight: 600; color: var(--ink); font-family: var(--sans); display: flex; align-items: center; gap: 8px; }
+  .hs-sel { font-size: 13px; padding: 3px 6px; border: 1px solid var(--line); border-radius: 6px; background: var(--paper); color: var(--ink); }
+  .hs-range { width: 200px; accent-color: var(--shu); }
+  .hs-cv { display: block; margin: 0 auto; width: 100%; max-width: 380px; height: auto; border: 1px solid var(--line); border-radius: 6px; background: var(--paper-sunk); }
+  .hs-cap { margin-top: 12px; font-size: 13px; line-height: 1.85; color: var(--ink-faint); font-family: var(--sans); }
+  .hs-cap b { color: var(--ink); font-weight: 700; }
+  .hs-cap b.shu { color: var(--shu); }
+  .hs-cap b.ai { color: var(--ai); }
+</style>
