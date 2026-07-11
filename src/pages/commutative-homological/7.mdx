@@ -1,0 +1,127 @@
+---
+layout: ../../layouts/BaseLayout.astro
+title: 第7章 複体とホモロジー
+description: ホモロジー代数の言語を作る。鎖複体と ∂²=0、ホモロジー＝「閉じているが境界でない」ズレ、鎖写像と鎖ホモトピー。位相の穴の数え上げを、純代数の機械に蒸留する。
+---
+
+import Term from "../../components/assets/Term.astro";
+import Statement from "../../components/assets/Statement.astro";
+
+# 第7章 複体とホモロジー
+
+ここから分野の後半、**ホモロジー代数**に入ります。その心は一言——「**完全系列がどこで破れるかを測る**」。
+[位相幾何学](/algebraic-topology)で、図形の穴を「境界の輪だが何かの縁ではない輪」として数えたのを
+覚えているでしょうか。あの発想を、図形から切り離し、純粋に代数的な機械——**複体とホモロジー**——に
+蒸留します。この言語が、可換環論の正則性（第12章）まで貫く共通の道具になります。
+
+## 鎖複体と ∂²＝0
+
+主役は、加群と写像を一列に並べたものです。
+
+<Statement kind="definition" title="鎖複体">
+$R$-加群と準同型の列
+$$
+\cdots \to C_{n+1}\xrightarrow{\ \partial_{n+1}\ } C_n \xrightarrow{\ \partial_{n}\ } C_{n-1}\to\cdots
+$$
+が<Term>鎖複体</Term>であるとは、連続する二つの合成がつねに $0$：
+$$
+\partial_n\circ\partial_{n+1}=0\qquad(\text{すべての }n).
+$$
+$\partial$ を<Term>境界作用素</Term>という。（矢印が逆向き $\to C^{n}\to C^{n+1}\to$ のものは<Term>余鎖複体</Term>。）
+</Statement>
+
+たった一つの条件 $\partial^2=0$。これが何を意味するか、包含関係で読み解きます。$\partial^2=0$ は
+「$\partial_{n+1}$ の像は、$\partial_n$ の核に含まれる」——$\operatorname{im}\partial_{n+1}\subset\ker\partial_n$ と
+同値です。ここで二つの部分加群に名前を付けます。
+
+- $\ker\partial_n$ の元＝<Term>サイクル</Term>（$Z_n$）：「$\partial$ で $0$ になる」＝**閉じている**もの。
+- $\operatorname{im}\partial_{n+1}$ の元＝<Term>バウンダリ</Term>（$B_n$）：「何かの $\partial$ で来た」＝**境界である**もの。
+
+$\partial^2=0$ は「境界はすべて閉じている（$B_n\subset Z_n$）」。位相の直感では「縁（バウンダリ）を持つ輪は
+必ず閉じている」——当たり前に見えますが、逆は成り立ちません。**閉じているのに、どの境界でもない**サイクルが
+あるかもしれない。そのズレこそ、穴の存在を告げるのです。
+
+## ホモロジー：閉じているが境界でないズレ
+
+<Statement kind="definition" title="ホモロジー">
+鎖複体 $C_\bullet$ の $n$ 次<Term>ホモロジー</Term>を、剰余加群
+$$
+H_n(C_\bullet)=\frac{\ker\partial_n}{\operatorname{im}\partial_{n+1}}=\frac{Z_n}{B_n}=\frac{\text{閉じているもの}}{\text{境界であるもの}}
+$$
+で定める。$H_n=0$（すべての $n$）のとき、複体は<Term>完全</Term>であるという。
+</Statement>
+
+$H_n$ は「閉じているサイクルのうち、境界で説明できないぶんの余り」。位相なら**$n$ 次元の穴の個数**、
+代数一般なら「完全性の破れ具合」を測る量です。$H_n=0$ とは「閉じているものはすべて境界＝
+$\operatorname{im}\partial_{n+1}=\ker\partial_n$」、つまりその箇所で系列がぴったりつながる（[完全系列](/module-theory)）。
+**ホモロジーは、完全系列からのズレを加群として取り出す装置**なのです。
+
+一言でまとめれば：$\partial^2=0$ で「境界 ⊂ サイクル」が保証され、その**差 $Z_n/B_n$** がホモロジー。
+$0$ なら完全、$0$ でなければそこに「穴」や「障害」がある。ホモロジー代数のすべては、この一つの商から始まります。
+
+## 鎖写像とホモロジーの関手性
+
+複体どうしを比べるには、各段の写像が境界作用素と両立していなければなりません。
+
+<Statement kind="definition" title="鎖写像">
+複体 $C_\bullet, D_\bullet$ の間の<Term>鎖写像</Term> $f_\bullet\colon C_\bullet\to D_\bullet$ とは、各 $n$ で
+準同型 $f_n\colon C_n\to D_n$ の族で、$\partial$ と可換なもの：$\partial_n^D\circ f_n=f_{n-1}\circ\partial_n^C$
+（下の四角形がすべて可換）。
+</Statement>
+
+可換性のおかげで、鎖写像はサイクルをサイクルに、バウンダリをバウンダリに送ります。だから商に降りて、
+**ホモロジーの間の写像** $H_n(f)\colon H_n(C)\to H_n(D)$ を誘導する。これが $H_n$ の<Term>関手性</Term>：
+$H_n(g\circ f)=H_n(g)\circ H_n(f)$、$H_n(\mathrm{id})=\mathrm{id}$。[圏論](/category-theory)の言葉で、$H_n$ は
+「複体の圏 → 加群の圏」の関手です。複体を作り、ホモロジーを取れば、写像も自動で移る——この機械的な移行が、
+複雑な代数・幾何の情報を計算可能な加群に落とす原動力になります。
+
+## 鎖ホモトピー：見かけが違っても同じ写像
+
+二つの鎖写像が「ホモロジー上では区別できない」ことがあります。それを保証するのが、位相の
+ホモトピー（連続変形）を代数化した<Term>鎖ホモトピー</Term>です。
+
+<Statement kind="definition" title="鎖ホモトピー">
+鎖写像 $f_\bullet, g_\bullet\colon C_\bullet\to D_\bullet$ が<Term>鎖ホモトピック</Term>とは、次数を一つ上げる
+写像の族 $s_n\colon C_n\to D_{n+1}$ が存在して
+$$
+f_n-g_n=\partial_{n+1}^D\circ s_n+s_{n-1}\circ\partial_n^C
+$$
+となること。
+</Statement>
+
+<Statement kind="theorem" title="ホモトピー不変性">
+鎖ホモトピックな $f,g$ は、ホモロジー上で同じ写像を誘導する：$H_n(f)=H_n(g)$。
+</Statement>
+
+<Statement kind="proof">
+サイクル $z\in Z_n$（$\partial z=0$）で差を評価すると
+$f_n(z)-g_n(z)=\partial_{n+1}s_n(z)+s_{n-1}\underbrace{\partial_n z}_{=0}=\partial_{n+1}\big(s_n(z)\big)$。
+これは**バウンダリ** $B_n$ の元。ゆえに $H_n$ では $f_n(z)$ と $g_n(z)$ は同じ類、$H_n(f)=H_n(g)$。
+</Statement>
+
+証明の効き所は「サイクルでは $\partial z=0$ で片方の項が消え、残りが境界になる」ところ。境界の差は
+ホモロジーで見えない——だから見かけの違う写像が同一視されます。この道具は次章以降で決定的です。
+とくに「**恒等写像が $0$ 写像とホモトピック**な複体」は、ホモロジーがすべて $0$（**可縮**）——これが
+分解の well-defined 性（第9章、導来関手が分解の取り方に依らないこと）を支えます。位相の
+「連続変形で不変」という直感が、$s$ という一本の代数的な式に凝縮されているのが見どころです。
+
+<Statement kind="remark" title="つまずきポイント">
+- **$\partial^2=0$ は「境界 ⊂ サイクル」であって「＝」ではない。** 等号なら完全（穴なし）。ホモロジーは
+  その差 $Z/B$ を測る。$\partial^2=0$ がなければ商 $Z/B$ すら定義できない（$B\subset Z$ が要る）。
+- **ホモロジーは加群であって数ではない。** 位相では階数（ベッチ数）を数えるが、一般には $H_n$ は加群の構造
+  （ねじれ等）まで持つ。$H_n=0$ ／ $\ne0$ の別が「完全か否か」。
+- **鎖ホモトピー $s$ は鎖写像ではない**（次数を上げ、$\partial$ と可換でない）。あくまで二つの鎖写像の差を
+  境界で埋める「補間」。同型でなくてもホモロジーを一致させられるのが強み。
+</Statement>
+
+## この章のまとめ
+
+- **鎖複体**＝ $\partial^2=0$ を満たす加群の列。これは「$\operatorname{im}\partial_{n+1}\subset\ker\partial_n$
+  （境界 ⊂ サイクル）」と同値。
+- **ホモロジー** $H_n=\ker\partial_n/\operatorname{im}\partial_{n+1}$＝「閉じているが境界でないズレ」＝
+  **完全系列からの破れ**。$H_n=0$ ⟺ その箇所で完全。$H_n$ は関手（鎖写像が誘導）。
+- **鎖ホモトピー**は位相の連続変形の代数版で、ホモトピックな写像はホモロジー上一致（**ホモトピー不変性**）。
+  分解の一意性を支える鍵。
+
+複体という器と、ズレを測るホモロジーができました。次章は、短完全系列から**長完全系列**を生む
+「蛇の補題」と、任意の加群を complex で近似する**分解**——導来関手の材料をそろえます。

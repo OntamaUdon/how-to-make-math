@@ -1,0 +1,214 @@
+---
+/* PrimeChain.astro — クルル次元を「素イデアルの鎖の長さ」として体感する装置。
+   環を選ぶと、その Spec（素イデアルたち）を高さ（height）ごとの段に並べて表示する。
+   下から上へ、包含 p₀ ⊊ p₁ ⊊ … で結べる素イデアルをクリックしていくと鎖が伸び、
+   その長さ（＝⊊ の本数）が出る。どの環でも「作れる最長の鎖の長さ」＝クルル次元。
+   ℤ・k[x] は 1 次元、k[x,y]・ℤ[x] は 2 次元。数論の環 ℤ[x] が「素数 × 変数」で 2 段になるのが見どころ。
+   包含関係は各ノードの below（すぐ下に含む素イデアル）で与え、到達可能性で判定する。
+   状態はメモリ内のみ（storage 不使用）。 */
+---
+
+<figure class="pc" role="group" aria-label="素イデアルの鎖とクルル次元">
+  <div class="pc-controls" role="tablist" aria-label="環を選ぶ">
+    <button id="pc-Z"   type="button" class="pc-mode is-on" role="tab">ℤ</button>
+    <button id="pc-kx"  type="button" class="pc-mode" role="tab">k[x]</button>
+    <button id="pc-kxy" type="button" class="pc-mode" role="tab">k[x,y]</button>
+    <button id="pc-Zx"  type="button" class="pc-mode" role="tab">ℤ[x]</button>
+  </div>
+  <canvas id="pc-cv" width="380" height="270" class="pc-cv"></canvas>
+  <div class="pc-buttons">
+    <button id="pc-reset" type="button" class="pc-btn">鎖をリセット</button>
+  </div>
+  <figcaption id="pc-cap" class="pc-cap"></figcaption>
+</figure>
+
+<script>
+  type Node = { id: string; label: string; h: number; below: string[]; x?: number; y?: number };
+  type Ring = { name: string; dim: number; nodes: Node[]; hint: string };
+
+  const rings: Record<string, Ring> = {
+    Z: {
+      name: "ℤ", dim: 1,
+      hint: "整数環。(0) の上に各素数 (p)。鎖 (0) ⊊ (p) は長さ 1。",
+      nodes: [
+        { id: "0", label: "(0)", h: 0, below: [] },
+        { id: "2", label: "(2)", h: 1, below: ["0"] },
+        { id: "3", label: "(3)", h: 1, below: ["0"] },
+        { id: "5", label: "(5)", h: 1, below: ["0"] },
+        { id: "7", label: "(7)", h: 1, below: ["0"] },
+      ],
+    },
+    kx: {
+      name: "k[x]", dim: 1,
+      hint: "1 変数多項式環。(0) の上に各点 (x−a)。鎖 (0) ⊊ (x−a) は長さ 1。",
+      nodes: [
+        { id: "0", label: "(0)", h: 0, below: [] },
+        { id: "x", label: "(x)", h: 1, below: ["0"] },
+        { id: "x1", label: "(x−1)", h: 1, below: ["0"] },
+        { id: "x2", label: "(x²+1)", h: 1, below: ["0"] },
+      ],
+    },
+    kxy: {
+      name: "k[x,y]", dim: 2,
+      hint: "2 変数。(0) ⊊ 既約曲線 (f) ⊊ 点 (x−a,y−b)。最長鎖の長さ 2 ＝ 平面の次元。",
+      nodes: [
+        { id: "0", label: "(0)", h: 0, below: [] },
+        { id: "x", label: "(x)", h: 1, below: ["0"] },
+        { id: "y", label: "(y)", h: 1, below: ["0"] },
+        { id: "f", label: "(x²+y²−1)", h: 1, below: ["0"] },
+        { id: "xy", label: "(x,y)", h: 2, below: ["x", "y"] },
+        { id: "x1y", label: "(x−1,y)", h: 2, below: ["y"] },
+      ],
+    },
+    Zx: {
+      name: "ℤ[x]", dim: 2,
+      hint: "数論の環。(0) ⊊ (p) ⊊ (p,x)。素数と変数を重ねて 2 段——ℤ より 1 次元高い。",
+      nodes: [
+        { id: "0", label: "(0)", h: 0, below: [] },
+        { id: "2", label: "(2)", h: 1, below: ["0"] },
+        { id: "3", label: "(3)", h: 1, below: ["0"] },
+        { id: "x", label: "(x)", h: 1, below: ["0"] },
+        { id: "2x", label: "(2,x)", h: 2, below: ["2", "x"] },
+        { id: "3x", label: "(3,x)", h: 2, below: ["3", "x"] },
+      ],
+    },
+  };
+
+  // q が p を（真に）含むか：q から below を辿って p に到達できるか。
+  function contains(ring: Ring, qId: string, pId: string): boolean {
+    if (qId === pId) return false;
+    const byId = new Map(ring.nodes.map((n) => [n.id, n]));
+    const stack = [...(byId.get(qId)?.below ?? [])];
+    while (stack.length) {
+      const cur = stack.pop()!;
+      if (cur === pId) return true;
+      stack.push(...(byId.get(cur)?.below ?? []));
+    }
+    return false;
+  }
+
+  const cv = document.getElementById("pc-cv") as HTMLCanvasElement | null;
+  const capEl = document.getElementById("pc-cap");
+  const resetBtn = document.getElementById("pc-reset");
+  const btns: Record<string, HTMLElement | null> = {
+    Z: document.getElementById("pc-Z"), kx: document.getElementById("pc-kx"),
+    kxy: document.getElementById("pc-kxy"), Zx: document.getElementById("pc-Zx"),
+  };
+
+  if (cv && capEl && resetBtn && btns.Z && btns.kx && btns.kxy && btns.Zx) {
+    const ctx = cv.getContext("2d")!;
+    const W = cv.width, H = cv.height;
+    const css = (v: string) => getComputedStyle(document.documentElement).getPropertyValue(v).trim() || "#888";
+    let key = "Z";
+    let chain: string[] = [];               // 選んだ素イデアルの列（下→上）
+
+    const layout = (ring: Ring) => {
+      const maxH = Math.max(...ring.nodes.map((n) => n.h));
+      const padT = 30, padB = 44;
+      for (const n of ring.nodes) {
+        const row = ring.nodes.filter((m) => m.h === n.h);
+        const i = row.indexOf(n);
+        n.x = (W / (row.length + 1)) * (i + 1);
+        n.y = (H - padB) - (maxH === 0 ? 0 : n.h / maxH) * (H - padB - padT);
+      }
+    };
+
+    const render = () => {
+      const ring = rings[key];
+      layout(ring);
+      ctx.clearRect(0, 0, W, H);
+      const byId = new Map(ring.nodes.map((n) => [n.id, n]));
+
+      // 包含のエッジ（below）を薄く描く
+      ctx.strokeStyle = css("--line"); ctx.lineWidth = 1;
+      for (const n of ring.nodes) for (const b of n.below) {
+        const lo = byId.get(b)!;
+        ctx.beginPath(); ctx.moveTo(lo.x!, lo.y!); ctx.lineTo(n.x!, n.y!); ctx.stroke();
+      }
+      // 選んだ鎖の連結線（朱・太）
+      if (chain.length >= 2) {
+        ctx.strokeStyle = css("--shu"); ctx.lineWidth = 3;
+        ctx.beginPath();
+        for (let i = 0; i < chain.length; i++) {
+          const n = byId.get(chain[i])!;
+          i ? ctx.lineTo(n.x!, n.y!) : ctx.moveTo(n.x!, n.y!);
+        }
+        ctx.stroke();
+      }
+      // ノード
+      ctx.font = "600 12px var(--sans, sans-serif)";
+      ctx.textAlign = "center"; ctx.textBaseline = "middle";
+      for (const n of ring.nodes) {
+        const on = chain.includes(n.id);
+        ctx.beginPath(); ctx.arc(n.x!, n.y!, 15, 0, 2 * Math.PI);
+        ctx.fillStyle = on ? css("--shu") : css("--card");
+        ctx.fill();
+        ctx.lineWidth = on ? 2.5 : 1.5;
+        ctx.strokeStyle = on ? css("--shu") : css("--ai");
+        ctx.stroke();
+        ctx.fillStyle = on ? "#fff" : css("--ink");
+        ctx.fillText(n.label, n.x!, n.y!);
+      }
+      // 高さの目盛りラベル
+      ctx.fillStyle = css("--ink-faint"); ctx.textAlign = "left"; ctx.font = "11px var(--sans, sans-serif)";
+      ctx.fillText("↑ 高さ（含む素イデアルの段数）", 6, 14);
+
+      // 説明
+      const len = chain.length === 0 ? 0 : chain.length - 1;
+      const isMax = len === ring.dim;
+      const chainStr = chain.length
+        ? chain.map((id) => byId.get(id)!.label).join(" ⊊ ")
+        : "（素イデアルをクリックして下から鎖を作る）";
+      capEl.innerHTML =
+        `<b>環 ${ring.name}</b>：${ring.hint}<br>` +
+        `いま選んだ鎖：<b class="shu">${chainStr}</b>　長さ ＝ <b>${len}</b>（⊊ の本数）。<br>` +
+        `<b>クルル次元 dim ${ring.name} ＝ ${ring.dim}</b>（＝作れる最長鎖の長さ）。` +
+        (isMax ? `　<b class="shu">✓ 最長鎖に到達！</b>` : ` もっと長い鎖を狙ってみよう。`);
+    };
+
+    // クリック位置 → 最も近いノード
+    cv.addEventListener("click", (e) => {
+      const ring = rings[key];
+      const r = cv.getBoundingClientRect();
+      const mx = (e.clientX - r.left) * (W / r.width);
+      const my = (e.clientY - r.top) * (H / r.height);
+      let hit: Node | null = null;
+      for (const n of ring.nodes) {
+        if ((mx - n.x!) ** 2 + (my - n.y!) ** 2 <= 20 * 20) { hit = n; break; }
+      }
+      if (!hit) return;
+      if (chain.length === 0) chain = [hit.id];
+      else if (chain[chain.length - 1] === hit.id) chain.pop();       // 同じを押すと戻す
+      else if (contains(ring, hit.id, chain[chain.length - 1])) chain.push(hit.id); // 上へ伸ばす
+      else chain = [hit.id];                                          // 繋がらなければ再スタート
+      render();
+    });
+
+    const setRing = (k: string) => {
+      key = k; chain = [];
+      for (const kk of Object.keys(btns)) btns[kk]!.classList.toggle("is-on", kk === k);
+      render();
+    };
+    btns.Z.addEventListener("click", () => setRing("Z"));
+    btns.kx.addEventListener("click", () => setRing("kx"));
+    btns.kxy.addEventListener("click", () => setRing("kxy"));
+    btns.Zx.addEventListener("click", () => setRing("Zx"));
+    resetBtn.addEventListener("click", () => { chain = []; render(); });
+    render();
+  }
+</script>
+
+<style>
+  .pc { margin: 26px 0; padding: 16px 18px 14px; border: 1px solid var(--line); border-radius: 10px; background: var(--card); }
+  .pc-controls { display: inline-flex; gap: 4px; padding: 3px; border: 1px solid var(--line); border-radius: 9px; background: var(--paper-sunk); margin-bottom: 12px; }
+  .pc-mode { appearance: none; border: none; background: transparent; color: var(--ink-faint); font-family: var(--sans); font-size: 13px; font-weight: 600; padding: 5px 14px; border-radius: 7px; cursor: pointer; }
+  .pc-mode.is-on { background: var(--card); color: var(--ai); box-shadow: 0 1px 2px rgba(0,0,0,.08); }
+  .pc-cv { display: block; margin: 0 auto; width: 100%; max-width: 380px; height: auto; border: 1px solid var(--line); border-radius: 6px; background: var(--paper-sunk); cursor: pointer; }
+  .pc-buttons { display: flex; justify-content: center; margin-top: 10px; }
+  .pc-btn { appearance: none; border: 1px solid var(--line); background: var(--paper-sunk); color: var(--ink); font-family: var(--sans); font-size: 12.5px; font-weight: 600; padding: 6px 14px; border-radius: 8px; cursor: pointer; }
+  .pc-btn:hover { border-color: var(--shu); color: var(--shu); }
+  .pc-cap { margin-top: 12px; font-size: 13px; line-height: 1.85; color: var(--ink-faint); font-family: var(--sans); }
+  .pc-cap b { color: var(--ink); font-weight: 700; }
+  .pc-cap b.shu { color: var(--shu); }
+  .pc-cap b.ai { color: var(--ai); }
+</style>

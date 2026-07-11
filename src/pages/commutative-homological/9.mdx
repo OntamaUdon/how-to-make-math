@@ -1,0 +1,145 @@
+---
+layout: ../../layouts/BaseLayout.astro
+title: 第9章 導来関手 — Ext と Tor
+description: 「関手を分解に施してホモロジーを取る」という一般機械で、左完全・右完全な関手の破れを測る導来関手を構成する。Ext と Tor が、分解の取り方に依らない不変量として立ち上がる。
+---
+
+import Term from "../../components/assets/Term.astro";
+import Statement from "../../components/assets/Statement.astro";
+
+# 第9章 導来関手 — Ext と Tor
+
+[加群論](/module-theory)で、$\operatorname{Hom}$ は左完全・$\otimes$ は右完全——**完全性が片側で破れる**のを見ました。
+「破れをどう測るか」への答えが<Term>導来関手</Term>です。前章までの材料（分解・ホモロジー・長完全系列）を
+組み合わせ、「関手を分解に施してホモロジーを取る」という一般機械を回す。すると、破れの度合いが
+<Term>Ext</Term>・<Term>Tor</Term> という不変量として立ち上がります。ホモロジー代数の心臓部です。
+
+## なぜ導来関手が要るのか
+
+短完全系列 $0\to A\to B\to C\to0$ に関手 $F$ を施すと、一般には完全性が壊れます。たとえば
+$\operatorname{Hom}(N,-)$（左完全）は
+$$
+0\to\operatorname{Hom}(N,A)\to\operatorname{Hom}(N,B)\to\operatorname{Hom}(N,C)
+$$
+までは完全ですが、**最後の $\to0$ が付かない**——右への全射性が破れる。$-\otimes N$（右完全）なら逆に
+**左の単射性**が破れます。この「破れたぶん」を測る加群を系統的に作り、破れた系列を長完全系列で
+$0$ まで伸ばしきる——それが導来関手のねらいです。
+
+## 一般機械：分解して、施して、ホモロジー
+
+作り方は、前章の材料をこの順に組むだけです。
+
+<Statement kind="definition" title="（左）導来関手">
+右完全関手 $F$ の<Term>左導来関手</Term> $L_nF$ を次で定める。加群 $M$ の射影分解
+$\cdots\to P_1\to P_0\to M\to0$ をとり、$M$ を落とした複体 $P_\bullet$ に $F$ を施し、そのホモロジーをとる：
+$$
+L_nF(M)=H_n\big(F(P_\bullet)\big)=H_n\big(\cdots\to F(P_1)\to F(P_0)\to0\big).
+$$
+双対に、左完全関手 $G$ の<Term>右導来関手</Term> $R^nG$ は、入射分解に $G$ を施した余鎖複体のコホモロジー。
+</Statement>
+
+三段構え——**分解する**（$M$ を素直な complex $P_\bullet$ に置き換え）、**施す**（$F$ を各段に適用）、
+**ホモロジーを取る**（ズレを測る）。$F$ が完全性を保つ理想の関手なら分解は分解のまま保たれ、$H_n$ は
+$n\ge1$ で $0$。$F$ が破る箇所でだけ $H_n\ne0$ が生じる——**導来関手は完全性の破れそのもの**を捉えます。
+$L_0F=F$、$R^0G=G$（元の関手が $0$ 次に復元される）。
+
+ここで前章の一意性が決定的に効きます。分解は無数にあるのに——
+
+<Statement kind="theorem" title="well-defined 性（分解に依らない）">
+$L_nF(M)$、$R^nG(M)$ は、選んだ射影分解・入射分解に**依らず** $M$ だけで定まる。
+</Statement>
+
+<Statement kind="proof" title="（要点）">
+二つの射影分解は[前章の比較定理](/commutative-homological/8)より鎖ホモトピー同値。$F$ は加法的関手だから
+鎖ホモトピーを鎖ホモトピーに保つ（$F(\partial s+s\partial)=F(\partial)F(s)+F(s)F(\partial)$）。第7章の
+**ホモトピー不変性**より、鎖ホモトピー同値な複体は同じホモロジーを与える。ゆえに $H_n(F(P_\bullet))$ は
+分解の取り方に依らない。
+</Statement>
+
+「見かけの違う分解が、ホモロジーでは同じ答え」——第7章で仕込んだ鎖ホモトピーの伏線が、ここで回収されます。
+この保証があって初めて、導来関手は $M$ の**不変量**として意味を持ちます。
+
+## Tor：テンソルの破れ
+
+右完全関手 $-\otimes_R N$ の左導来関手が Tor です。
+
+<Statement kind="definition" title="Tor">
+$$
+\operatorname{Tor}_n^R(M,N)=L_n(-\otimes N)(M)=H_n\big(P_\bullet\otimes N\big)\qquad(P_\bullet\to M \text{ 射影分解}).
+$$
+</Statement>
+
+$\operatorname{Tor}_0=M\otimes N$（元に戻る）。$\operatorname{Tor}_{n\ge1}$ が、$\otimes$ が単射性を壊した破れを測ります。
+$\mathbb{Z}$ 上で計算してみましょう。$M=\mathbb{Z}/m$ の分解 $0\to\mathbb{Z}\xrightarrow{\times m}\mathbb{Z}\to0$ に
+$-\otimes\mathbb{Z}/n$ を施すと $0\to\mathbb{Z}/n\xrightarrow{\times m}\mathbb{Z}/n\to0$。この複体のホモロジー：
+$$
+\operatorname{Tor}_0=\mathbb{Z}/n\big/m\mathbb{Z}/n=\mathbb{Z}/\gcd(m,n),\qquad
+\operatorname{Tor}_1=\ker(\times m:\mathbb{Z}/n\to\mathbb{Z}/n)=\mathbb{Z}/\gcd(m,n).
+$$
+$\operatorname{Tor}_1^{\mathbb{Z}}(\mathbb{Z}/m,\mathbb{Z}/n)=\mathbb{Z}/\gcd(m,n)$——互いに素なら $0$、共通因子があれば
+その分だけねじれが現れる。名前の由来どおり **Tor はねじれ（torsion）を検出**します。$\operatorname{Tor}_n=0\ (n\ge1)$
+がすべての $N$ で成り立つことが、$M$ の<Term>平坦性</Term>と同値——[平坦加群](/module-theory)の
+ホモロジー的な正体がこれです。
+
+## Ext：Hom の破れ、そして拡大の分類
+
+左完全関手 $\operatorname{Hom}_R(-,N)$（反変）の右導来関手が Ext です。
+
+<Statement kind="definition" title="Ext">
+$$
+\operatorname{Ext}^n_R(M,N)=R^n\operatorname{Hom}(-,N)(M)=H^n\big(\operatorname{Hom}(P_\bullet,N)\big)\qquad(P_\bullet\to M \text{ 射影分解}).
+$$
+（入射分解を使って $\operatorname{Hom}(M,-)$ から作っても同型で、どちらでもよい。）
+</Statement>
+
+$\operatorname{Ext}^0=\operatorname{Hom}(M,N)$。$\operatorname{Ext}^{n\ge1}$ が、$\operatorname{Hom}$ が全射性を壊した破れを測ります。
+同じ $\mathbb{Z}/m$ の分解に $\operatorname{Hom}(-,\mathbb{Z}/n)$ を施すと $0\to\mathbb{Z}/n\xrightarrow{\times m}\mathbb{Z}/n\to0$
+（$\operatorname{Hom}(\mathbb{Z},\mathbb{Z}/n)=\mathbb{Z}/n$）で、$\operatorname{Ext}^1_{\mathbb{Z}}(\mathbb{Z}/m,\mathbb{Z}/n)=\mathbb{Z}/\gcd(m,n)$。
+
+Ext には Tor にない、驚くべき**幾何的**意味があります。
+
+<Statement kind="theorem" title="Ext¹ は拡大を分類する">
+$\operatorname{Ext}^1_R(C,A)$ は、$A$ による $C$ の<Term>拡大</Term>——短完全系列 $0\to A\to E\to C\to0$——の
+同値類の集合と一対一に対応する。零元が分裂拡大 $E=A\oplus C$ に対応する。
+</Statement>
+
+「$A$ と $C$ を、どんな $E$ で貼り合わせられるか」の分類が $\operatorname{Ext}^1$。$\operatorname{Ext}^1=0$ なら
+貼り合わせは直和しかない（分裂）。$\ne0$ なら「ねじれた貼り合わせ」が存在する。たとえば
+$\operatorname{Ext}^1_{\mathbb{Z}}(\mathbb{Z}/m,\mathbb{Z})=\mathbb{Z}/m\ne0$ は、$0\to\mathbb{Z}\to\mathbb{Z}\to\mathbb{Z}/m\to0$ という
+非分裂拡大の存在を語ります。この「拡大の分類」という顔が、Ext を[群のコホモロジー](/algebraic-topology)や
+変形理論へとつなげます。
+
+## 長完全系列とバランス
+
+導来関手の実用性は、短完全系列を**長完全系列**に伸ばす点にあります（前章の蛇の補題の果実）。
+$0\to A\to B\to C\to0$ に対し、
+$$
+\cdots\to\operatorname{Tor}_1(M,C)\xrightarrow{\ \delta\ }M\otimes A\to M\otimes B\to M\otimes C\to0,
+$$
+$$
+0\to\operatorname{Hom}(M,A)\to\operatorname{Hom}(M,B)\to\operatorname{Hom}(M,C)\xrightarrow{\ \delta\ }\operatorname{Ext}^1(M,A)\to\cdots.
+$$
+破れて途中で止まっていた系列が、Tor・Ext を継ぎ足すことで**$0$ まで完全に伸びきる**。しかも Ext・Tor は
+**両変数で対称**に計算できる（どちらの変数を分解しても同じ＝バランス性）。$\operatorname{Tor}_n(M,N)\cong\operatorname{Tor}_n(N,M)$。
+この機械が、次章以降で可換環論の深い量（深さ・大域次元）を測る物差しになります。
+
+<Statement kind="remark" title="つまずきポイント">
+- **導来関手は「分解に施す」——元の加群に直接施すのではない。** $M$ を complex $P_\bullet$ に置き換え、$F(P_\bullet)$ の
+  ホモロジーを取る。$L_0F=F$ で元は復元される。
+- **well-defined 性は鎖ホモトピー不変性が根拠。** 分解が一意でないのに答えが定まるのは、第7・8章の伏線の回収。
+- **Tor はねじれ、Ext は拡大。** $\operatorname{Tor}_1(\mathbb Z/m,\mathbb Z/n)=\mathbb Z/\gcd$、
+  $\operatorname{Ext}^1(C,A)=$ 拡大の分類。名前の由来（torsion / extension）がそのまま意味。
+- **番号の向き：Tor は下付き（ホモロジー的）、Ext は上付き（コホモロジー的）。** $\otimes$ は共変で左導来（$L_n$）、
+  $\operatorname{Hom}(-,N)$ は反変で右導来（$R^n$）。
+</Statement>
+
+## この章のまとめ
+
+- **導来関手**＝「**分解して・関手を施して・ホモロジーを取る**」一般機械。完全性の破れを測り、$L_0F=F$。
+  **分解に依らない**（鎖ホモトピー不変性）ので $M$ の不変量になる。
+- **Tor**（$\otimes$ の左導来）は**ねじれ**を検出：$\operatorname{Tor}_1^{\mathbb Z}(\mathbb Z/m,\mathbb Z/n)=\mathbb Z/\gcd(m,n)$。
+  $\operatorname{Tor}_{\ge1}=0$ ⟺ 平坦。**Ext**（$\operatorname{Hom}$ の右導来）は**拡大を分類**：$\operatorname{Ext}^1(C,A)=$ 拡大の同値類。
+- 短完全系列は Tor・Ext を継いで**長完全系列**に伸びきる。両変数で対称（バランス）。
+
+Ext・Tor という物差しが手に入りました。次章はこれを可換環論に差し戻し、**正則列と深さ**、
+そしてそれを Ext で測る**コーエン–マコーレー環**——代数と幾何の「太さ」を測る概念へ進みます。

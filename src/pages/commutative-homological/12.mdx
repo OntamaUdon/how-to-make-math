@@ -1,0 +1,124 @@
+---
+layout: ../../layouts/BaseLayout.astro
+title: 第12章 大域次元と正則性
+description: 分野の統合。射影次元と大域次元をホモロジーで定義し、アウスランダー–ブックスバウムの公式、そしてセールの定理「正則局所環 ⟺ 有限大域次元」で、可換環論とホモロジー代数を一つに溶かす。
+---
+
+import Term from "../../components/assets/Term.astro";
+import Statement from "../../components/assets/Statement.astro";
+
+# 第12章 大域次元と正則性
+
+第6章で正則局所環を「接空間が太らない滑らかな点」と定義しましたが、その**真の正体**は宙吊りのままでした。
+なぜ正則局所環は UFD なのか、なぜ特別なのか——$\mathfrak m/\mathfrak m^2$ を眺めるだけでは掴めない。この最終章で、
+まったく別の道具**ホモロジー**が答えを出します。「加群を分解するのに何段必要か」という純ホモロジー的な量
+**大域次元**が、正則性とぴったり一致する——セールの定理。可換環論とホモロジー代数が、一つの定理で溶け合います。
+
+## 射影次元：分解の長さ
+
+第8章で、加群 $M$ は射影分解 $\cdots\to P_1\to P_0\to M\to0$ を持ちました。この分解が**どこかで止まる**（有限の
+長さで終わる）とき、その最短の長さを射影次元と呼びます。
+
+<Statement kind="definition" title="射影次元・大域次元">
+$M$ の<Term>射影次元</Term> $\operatorname{pd}M$ とは、$M$ の射影分解の最短の長さ：
+$$
+0\to P_n\to\cdots\to P_1\to P_0\to M\to0
+$$
+と有限で書ける最小の $n$（書けなければ $\infty$）。環 $R$ の<Term>大域次元</Term>を、全加群にわたる上限
+$\operatorname{gl.dim}R=\sup_M\operatorname{pd}M$ で定める。
+</Statement>
+
+射影次元は Ext で読めます：$\operatorname{pd}M\le n\iff\operatorname{Ext}^{n+1}(M,-)=0$。だから
+「$\operatorname{Ext}$ がどこで消え止むか」が分解の長さ。$\operatorname{pd}M=0$ は $M$ 自身が射影加群
+（分解が $0\to P_0\to M\to0$ で済む）ということです。
+
+具体例で感触を。$R=\mathbb{Z}$ 上、$\mathbb{Z}/m$ の分解は $0\to\mathbb{Z}\xrightarrow{\times m}\mathbb{Z}\to\mathbb{Z}/m\to0$
+（第8章）——長さ $1$ で止まる。射影加群でない（$\mathbb{Z}/m$ は自由の直和因子でない）ので $\operatorname{pd}=1$。
+$\mathbb{Z}$ 上のすべての加群がこう（[PID 上は部分加群が自由](/module-theory)なので分解は長さ $\le1$）だから、
+$\operatorname{gl.dim}\mathbb{Z}=1$。$\dim\mathbb{Z}=1$ と一致——偶然でしょうか。体なら全加群が自由で
+$\operatorname{gl.dim}=0=\dim$。この一致が、次のヒルベルトの古典定理で一般化されます。
+
+## ヒルベルトのシジジー定理
+
+分解を続けると現れる核（関係の関係）をシジジーと呼びました（第8章）。多項式環では、シジジーが
+**有限段で自由になって止まる**——これがホモロジー代数の出発点となった、ヒルベルトの $1890$ 年の定理です。
+
+<Statement kind="theorem" title="ヒルベルトのシジジー定理">
+体 $k$ 上の多項式環では
+$$
+\operatorname{gl.dim}k[x_1,\dots,x_n]=n=\dim k[x_1,\dots,x_n].
+$$
+すなわち、任意の有限生成加群は長さ $\le n$ の自由分解を持つ。
+</Statement>
+
+$n$ 変数なら、どんな加群も**高々 $n$ 段**で自由分解が終わる。変数の本数＝次元＝大域次元が三つ揃って一致する。
+この「分解が有限で止まる」という現象は、無限に続きうる一般の環では起こりません。多項式環の際立った良さです。
+コズュル複体（第10章）が $x_1,\dots,x_n$ に対する $k$ の長さ $n$ の自由分解を与えるのが、その最短の実例です。
+
+## アウスランダー–ブックスバウムの公式
+
+大域次元と、第10・11章の深さを結ぶ、美しい**保存則**があります。
+
+<Statement kind="theorem" title="アウスランダー–ブックスバウムの公式">
+ネーター局所環 $(R,\mathfrak m)$ 上、$\operatorname{pd}M<\infty$ の有限生成加群 $M\ne0$ に対し
+$$
+\operatorname{pd}M+\operatorname{depth}M=\operatorname{depth}R.
+$$
+</Statement>
+
+「射影次元（ホモロジー的な複雑さ）と、深さ（代数的な太さ）を足すと、環の深さという定数になる」。
+$M$ が複雑（$\operatorname{pd}$ 大）なほど、その深さは削られる——複雑さと太さの間のトレードオフが、
+足すと保存される。この公式は、片方を計算すればもう片方が出るという実用面でも、正則性の証明の要としても
+決定的です。証明は $M$ の分解の一段目の核（シジジー）を取って帰納する、ホモロジー代数の典型的な議論です。
+
+## セールの定理：正則 ⟺ 有限大域次元
+
+いよいよ分野全体の**統合点**。第6章で幾何的に（接空間で）定義した正則局所環が、ホモロジー的に
+（大域次元で）完全に特徴づけられます。
+
+<Statement kind="theorem" title="アウスランダー–ブックスバウム–セールの定理">
+ネーター局所環 $(R,\mathfrak m,k)$ について、次は同値：
+$$
+R \text{ は正則局所環}\iff \operatorname{gl.dim}R<\infty\iff \operatorname{pd}_R k<\infty.
+$$
+このとき $\operatorname{gl.dim}R=\dim R$。
+</Statement>
+
+**接空間の話（第6章）と、分解の長さの話（本章）が、同じ環を指していた。** 幾何の「滑らかさ」＝
+「$\mathfrak m/\mathfrak m^2$ が太らない」が、ホモロジーの「すべての加群が有限段で分解できる」とぴったり一致する。
+これは驚くべきことです——見た目まったく無縁な二つの量が、正則性という一点で結ばれる。
+
+証明の勘所だけ。$(\Rightarrow)$ 正則なら $\mathfrak m$ が正則列で生成され、剰余体 $k$ の自由分解は
+**コズュル複体**（第10章）——長さ $\dim R$ で止まる。ゆえに $\operatorname{pd}_R k=\dim R<\infty$。
+$(\Leftarrow)$ $\operatorname{pd}_R k<\infty$ なら、アウスランダー–ブックスバウムの公式で
+$\operatorname{pd}_R k+\operatorname{depth}k=\operatorname{depth}R$、$\operatorname{depth}k=0$ より $\operatorname{pd}_R k=\operatorname{depth}R\le\dim R$。
+一方 $\operatorname{pd}_R k\ge\dim_k\mathfrak m/\mathfrak m^2\ge\dim R$。挟んで $\dim_k\mathfrak m/\mathfrak m^2=\dim R$——
+**正則**。第10章のコズュル複体と本章のアウスランダー–ブックスバウムが、両方向の橋になっています。
+
+この定理は、宙吊りだった問い全部に答えます。**なぜ正則局所環は UFD なのか**（アウスランダー–ブックスバウム）、
+**なぜ正則性が局所化で保たれるのか**——どれも「有限大域次元」というホモロジー的性質からほぼ自動で従う。
+$\operatorname{gl.dim}R_{\mathfrak p}\le\operatorname{gl.dim}R$（局所化で大域次元は増えない）から、
+**正則局所環の局所化は正則**——接空間の議論では手も足も出なかったこの事実が、ホモロジーだと一行です。
+「正則性はホモロジー的な性質だった」——セールのこの洞察が、可換環論を現代的な姿へ変えました。
+
+## この分野を振り返って
+
+<Statement kind="remark" title="二つの半分が一つになった">
+前半（可換環論）で、局所化・ネーター・整拡大・次元・正則局所環を積み上げ、「正則＝滑らか」を接空間で定義した。
+後半（ホモロジー代数）で、複体・分解・導来関手 Ext/Tor・深さ・大域次元という、まったく別系統の道具を作った。
+最終章で、この二つが**セールの定理**で一つに溶けた——「幾何の滑らかさ ＝ ホモロジーの有限性」。
+[代数幾何](/algebraic-geometry)の特異点解消、[代数的整数論](/algebraic-number-theory)の分岐、
+表現論のホモロジー的手法——現代数学の広い前線が、この統合の上に立っている。
+</Statement>
+
+## この章のまとめ
+
+- **射影次元** $\operatorname{pd}M$＝分解の最短の長さ（$\operatorname{Ext}$ の消滅次数）、**大域次元** $\operatorname{gl.dim}R=\sup_M\operatorname{pd}M$。
+- **ヒルベルトのシジジー定理**：$\operatorname{gl.dim}k[x_1,\dots,x_n]=n$（分解は有限段で止まる）。
+  **アウスランダー–ブックスバウム**：$\operatorname{pd}M+\operatorname{depth}M=\operatorname{depth}R$（複雑さと太さの保存則）。
+- **セールの定理**：**正則局所環 ⟺ 有限大域次元**（$\operatorname{gl.dim}R=\dim R$）。幾何の滑らかさとホモロジーの
+  有限性が一致し、正則性が局所化で保たれること・UFD であることが自動で従う。可換環論とホモロジー代数の統合点。
+
+局所化の一点から始まった旅は、素イデアルの鎖で次元を測り、複体でズレを測り、最後に「滑らかさとは
+ホモロジーの有限性である」という一つの真実へ到達しました。図形と環を同じ言葉で語り、そのズレを測る——
+可換環論とホモロジー代数は、こうして現代数学の共通言語になったのです。
