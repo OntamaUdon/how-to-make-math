@@ -1,0 +1,161 @@
+---
+layout: ../../layouts/BaseLayout.astro
+title: 第3章 期待値・分散と不等式
+description: 期待値は「積分」、分散は「散らばり」。マルコフ・チェビシェフ・イェンセン・コーシー–シュワルツ——確率を縛る基本不等式を証明し、大数の法則への武器をそろえる。
+---
+
+import Term from "../../components/assets/Term.astro";
+import Statement from "../../components/assets/Statement.astro";
+
+# 第3章 期待値・分散と不等式
+
+分布まるごとは情報が多すぎる。実用では「だいたいどこ（中心）」と「どれくらいばらつく（散らばり）」の
+二つの数字がまず欲しい。それが期待値と分散です。そして本章の主役は、これらを使って
+**確率を上から抑える不等式**——次章以降の大定理はすべて、この素朴な不等式から生まれます。
+
+## 期待値 ＝ 積分
+
+<Term>期待値</Term>は「$X$ の平均的な値」。離散なら「値 × その確率」を足すだけです：
+$\mathbb{E}[X]=\sum_k x_k\,P(X=x_k)$。サイコロなら $(1+2+\dots+6)/6=3.5$。
+
+連続型ではどうするか。値ごとに確率を掛けて足す——これはまさに積分です。
+
+<Statement kind="definition" title="期待値">
+確率変数 $X$ の<Term>期待値</Term>を、確率測度 $P$ に関する[ルベーグ積分](/measure-theory/6)で定める：
+$$
+\mathbb{E}[X]=\int_{\Omega} X(\omega)\,dP(\omega)=\int_{-\infty}^{\infty} x\,dP_X(x).
+$$
+連続型（密度 $f$）なら $\mathbb{E}[X]=\int_{-\infty}^{\infty} x f(x)\,dx$、離散型なら和。$\mathbb{E}[|X|]<\infty$ のとき可積分という。
+</Statement>
+
+「期待値は積分」——この一言で、[測度論](/measure-theory)の全財産が確率にそのまま流れ込みます。
+積分の線形性がそのまま**期待値の線形性** $\mathbb{E}[aX+bY]=a\mathbb{E}[X]+b\mathbb{E}[Y]$ になり、
+これは $X,Y$ が独立でなくても**常に**成り立つ強力な道具。極限と期待値の交換は
+[収束定理（単調収束・ファトゥ・優収束）](/measure-theory/7)がそのまま担います。
+
+関数を通した期待値も、わざわざ $g(X)$ の分布を求めずに計算できます（**無意識の統計学者の法則**）：
+$$
+\mathbb{E}[g(X)]=\int_{-\infty}^{\infty} g(x)\,f(x)\,dx.
+$$
+
+独立なら、積の期待値が期待値の積に割れます。これは前章の「独立＝直積測度」に[フビニの定理](/measure-theory/9)を
+当てたもの：
+$$
+X,Y \text{ 独立}\ \Longrightarrow\ \mathbb{E}[XY]=\mathbb{E}[X]\,\mathbb{E}[Y].
+$$
+
+## 分散 ＝ 散らばりの二乗平均
+
+中心 $\mu=\mathbb{E}[X]$ からの「ずれ」の大きさを測ります。ずれ $X-\mu$ はそのまま平均すると $0$（正負が打ち消す）。
+そこで二乗してから平均する。
+
+<Statement kind="definition" title="分散と標準偏差">
+$$
+\mathrm{Var}(X)=\mathbb{E}\big[(X-\mu)^2\big]=\mathbb{E}[X^2]-\mu^2,\qquad \sigma(X)=\sqrt{\mathrm{Var}(X)}.
+$$
+$\sigma$ を<Term>標準偏差</Term>という（$X$ と同じ単位で散らばりを測る）。
+</Statement>
+
+右の等式 $\mathbb{E}[X^2]-\mu^2$ は展開して線形性を使えば出ます（計算に便利）。分散の要点は
+**二乗のスケール**です：$\mathrm{Var}(aX)=a^2\mathrm{Var}(X)$。そして独立なときの加法性——これが後で決定的に効きます。
+
+<Statement kind="theorem" title="独立和の分散は足し算">
+$X_1,\dots,X_n$ が独立（無相関で十分）なら
+$$
+\mathrm{Var}(X_1+\dots+X_n)=\mathrm{Var}(X_1)+\dots+\mathrm{Var}(X_n).
+$$
+</Statement>
+
+<Statement kind="proof">
+$2$ 個で示せば十分。$\mathrm{Var}(X+Y)=\mathbb{E}[(X+Y)^2]-(\mu_X+\mu_Y)^2$ を展開すると、交差項は
+$2(\mathbb{E}[XY]-\mu_X\mu_Y)=2\,\mathrm{Cov}(X,Y)$。独立なら $\mathbb{E}[XY]=\mu_X\mu_Y$ で共分散 $0$、交差項が消える。
+残りが $\mathrm{Var}(X)+\mathrm{Var}(Y)$。
+</Statement>
+
+ここに、大数の法則の芽が隠れています。独立同分布な $X_i$（各分散 $\sigma^2$）の**平均** $\bar X_n=\frac1n\sum X_i$ を考えると、
+$$
+\mathrm{Var}(\bar X_n)=\frac{1}{n^2}\sum_{i=1}^n \mathrm{Var}(X_i)=\frac{n\sigma^2}{n^2}=\frac{\sigma^2}{n}\ \xrightarrow[n\to\infty]{}\ 0.
+$$
+**平均を取るほど散らばりが $1/n$ で消える**。標準偏差でいえば $\sigma/\sqrt{n}$——この「$\sqrt{n}$ 分の $1$」が、
+以後くり返し現れる確率論の基本テンポです。散らばりが消えるなら、$\bar X_n$ は中心 $\mu$ に張り付くはず。
+それを「確率が小さい」と厳密に言うのが、次の不等式です。
+
+## 確率を抑える四つの不等式
+
+<Statement kind="theorem" title="マルコフの不等式">
+$X\ge 0$ と $a>0$ に対し
+$$
+P(X\ge a)\le \frac{\mathbb{E}[X]}{a}.
+$$
+</Statement>
+
+<Statement kind="proof">
+指示関数を使う。$X\ge 0$ なら、$a\cdot\mathbf{1}_{\{X\ge a\}}\le X$ が各 $\omega$ で成り立つ
+（$X\ge a$ の所では左辺 $a\le X$、それ以外は左辺 $0\le X$）。両辺の期待値（積分の単調性）を取ると
+$a\,P(X\ge a)\le \mathbb{E}[X]$。$a$ で割って完成。
+</Statement>
+
+たったこれだけ。「平均が小さければ、大きな値は稀」という当たり前を式にしただけ。なのにこれが恐ろしく効きます。
+$X$ を $(X-\mu)^2$ に取り替えると——
+
+<Statement kind="theorem" title="チェビシェフの不等式">
+平均 $\mu$・分散 $\sigma^2$ をもつ $X$ と $k>0$ に対し
+$$
+P\big(|X-\mu|\ge k\big)\le \frac{\sigma^2}{k^2}.
+$$
+</Statement>
+
+<Statement kind="proof">
+$|X-\mu|\ge k \iff (X-\mu)^2\ge k^2$。非負の $(X-\mu)^2$ にマルコフを適用（$a=k^2$）すれば
+$P((X-\mu)^2\ge k^2)\le \mathbb{E}[(X-\mu)^2]/k^2=\sigma^2/k^2$。
+</Statement>
+
+チェビシェフは「中心から $k$ 以上ずれる確率は、分散に比例して小さい」。分布の形を一切仮定せず、
+**平均と分散だけ**で確率を抑える万能の道具です。これを先ほどの $\bar X_n$（分散 $\sigma^2/n$）に当てれば、
+$P(|\bar X_n-\mu|\ge k)\le \sigma^2/(nk^2)\to 0$——**これがもう大数の弱法則の証明**です（第5章で仕上げます）。
+
+残り二つは、期待値どうしの関係を縛ります。
+
+<Statement kind="theorem" title="イェンセンの不等式">
+$\varphi$ が凸関数なら $\varphi(\mathbb{E}[X])\le \mathbb{E}[\varphi(X)]$。（凹なら不等号が逆）
+</Statement>
+
+<Statement kind="proof">
+凸関数は各点で接線の上にある：点 $\mu=\mathbb{E}[X]$ での接線を $\ell(x)=\varphi(\mu)+c(x-\mu)$ とすると
+$\varphi(x)\ge \ell(x)$ が全 $x$ で成り立つ。期待値を取ると、右辺は線形性で $\mathbb{E}[\ell(X)]=\varphi(\mu)$
+（$\mathbb{E}[X-\mu]=0$）。ゆえに $\mathbb{E}[\varphi(X)]\ge\varphi(\mu)$。
+</Statement>
+
+「平均してから曲げる」より「曲げてから平均する」方が大きい。$\varphi(x)=x^2$ なら
+$\mathbb{E}[X]^2\le\mathbb{E}[X^2]$、すなわち分散 $\ge 0$ が出ます。凸性一発で多くの不等式が統一されます。
+
+<Statement kind="theorem" title="コーシー–シュワルツの不等式">
+$$
+\big|\mathbb{E}[XY]\big|\le \sqrt{\mathbb{E}[X^2]}\,\sqrt{\mathbb{E}[Y^2]}.
+$$
+</Statement>
+
+これは[関数解析の $L^2$ 内積](/functional-analysis)そのもの——$\langle X,Y\rangle=\mathbb{E}[XY]$ と見れば、
+確率変数は内積空間の元、コーシー–シュワルツはその幾何です。ここから
+$|\mathrm{Cov}(X,Y)|\le\sigma_X\sigma_Y$ が出て、**相関係数** $\rho=\mathrm{Cov}(X,Y)/(\sigma_X\sigma_Y)\in[-1,1]$ が
+定義できます。$\rho$ は「$X$ と $Y$ の直線的な連動の強さ」を測る、内積の言葉での「なす角の余弦」です。
+
+## つまずきポイント
+
+<Statement kind="remark" title="よくある誤解">
+- **「無相関 ⇒ 独立」ではない。** 独立なら $\mathrm{Cov}=0$（無相関）だが、逆は偽。相関は「直線的な」連動しか捉えない。
+  $X\sim N(0,1),\ Y=X^2$ は無相関だが明らかに従属。独立は「あらゆる」関数で積が割れる、はるかに強い条件。
+- **期待値・分散が存在しない分布もある。** コーシー分布は $\int x f\,dx$ が発散し、期待値すら定義できない。
+  「平均は必ずある」と思い込まない。不等式は可積分性を前提にしている。
+- **チェビシェフは緩い。** $k=2\sigma$ で上界 $1/4$。正規分布の実際の $2\sigma$ 外は約 $4.6\%$。
+  チェビシェフは**分布に依らず**成り立つ代償に甘い。だが「$n\to\infty$ で $0$」を言うにはこれで十分。
+</Statement>
+
+## この章のまとめ
+
+- **期待値 ＝ 積分**、**分散 ＝ ずれの二乗平均**。線形性・独立時の積分解・独立和の分散加法性が基本道具。
+- 独立同分布の平均 $\bar X_n$ は $\mathrm{Var}(\bar X_n)=\sigma^2/n\to 0$。散らばりが **$1/\sqrt{n}$** で消える。
+- **マルコフ→チェビシェフ**が確率を上から抑える。**イェンセン**は凸性、**コーシー–シュワルツ**は $L^2$ の幾何（相関）。
+  チェビシェフ＋分散 $\sigma^2/n$ ＝ もう大数の弱法則の骨格。
+
+次章では、$\bar X_n\to\mu$ の「$\to$」に何種類もの意味があること——**確率変数の収束の諸相**を整理します。

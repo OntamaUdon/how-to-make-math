@@ -1,0 +1,175 @@
+---
+/* CentralLimit.astro — 中心極限定理を体感する装置。
+   元の分布（一様・コイン・指数）から独立に n 個を取り、その和を標準化した
+     Z = (S_n − nμ) / (σ√n)
+   を何千回もサンプリングしてヒストグラムにする。n を大きくすると、元がどんな形でも
+   ヒストグラムが標準正規 N(0,1) の釣鐘曲線に重なっていく——これが中心極限定理。
+   指数分布は大きく右に歪んでいるので、n=1 では歪んだまま／n を上げると釣鐘化するのが劇的。
+   乱数は seed 付き（mulberry32）で再現可能。状態はメモリ内のみ（storage 不使用）。 */
+---
+
+<figure class="cl" role="group" aria-label="中心極限定理のヒストグラム">
+  <div class="cl-controls">
+    <div class="cl-modeswitch" role="tablist" aria-label="元の分布">
+      <button id="cl-unif" type="button" class="cl-mode is-on" role="tab">一様</button>
+      <button id="cl-bern" type="button" class="cl-mode" role="tab">コイン</button>
+      <button id="cl-expo" type="button" class="cl-mode" role="tab">指数（歪み大）</button>
+    </div>
+    <label class="cl-label">n ＝ <span id="cl-nval">1</span> 個の和
+      <input id="cl-n" type="range" min="1" max="40" value="1" step="1" class="cl-range" />
+    </label>
+  </div>
+  <canvas id="cl-cv" width="380" height="250" class="cl-cv"></canvas>
+  <figcaption id="cl-cap" class="cl-cap"></figcaption>
+</figure>
+
+<script>
+  type Mode = "unif" | "bern" | "expo";
+
+  // 各元分布：1個を引く関数 draw(rng)、平均 μ、標準偏差 σ、説明。
+  const dists: Record<Mode, {
+    draw: (r: () => number) => number;
+    mu: number; sd: number; name: string; note: string;
+  }> = {
+    unif: {
+      draw: (r) => r(),
+      mu: 0.5, sd: Math.sqrt(1 / 12),
+      name: "一様分布 [0,1]",
+      note: "元は平ら（どの値も等確率）。",
+    },
+    bern: {
+      draw: (r) => (r() < 0.5 ? 1 : 0),
+      mu: 0.5, sd: 0.5,
+      name: "コイン（0か1）",
+      note: "元は2本の棒（0と1しか出ない）。",
+    },
+    expo: {
+      // 指数分布 rate=1：μ=1, σ=1。右に長い裾（大きく歪む）。
+      draw: (r) => -Math.log(1 - r()),
+      mu: 1, sd: 1,
+      name: "指数分布（右に長い裾）",
+      note: "元は大きく右へ歪んだ形。",
+    },
+  };
+
+  // seed 付き乱数（mulberry32）。再現可能にするため。
+  function mulberry32(seed: number) {
+    let a = seed >>> 0;
+    return () => {
+      a |= 0; a = (a + 0x6d2b79f5) | 0;
+      let t = Math.imul(a ^ (a >>> 15), 1 | a);
+      t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+      return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+    };
+  }
+
+  const cv = document.getElementById("cl-cv") as HTMLCanvasElement | null;
+  const capEl = document.getElementById("cl-cap");
+  const nEl = document.getElementById("cl-n") as HTMLInputElement | null;
+  const nVal = document.getElementById("cl-nval");
+  const btnU = document.getElementById("cl-unif");
+  const btnB = document.getElementById("cl-bern");
+  const btnE = document.getElementById("cl-expo");
+
+  if (cv && capEl && nEl && nVal && btnU && btnB && btnE) {
+    const ctx = cv.getContext("2d")!;
+    const W = cv.width, H = cv.height;
+    const padL = 8, padR = 8, padT = 10, padB = 22;
+    const css = (v: string) => getComputedStyle(document.documentElement).getPropertyValue(v).trim() || "#888";
+    const Z0 = -4, Z1 = 4;               // 標準化変数の表示範囲
+    const BINS = 48;
+    const TRIALS = 4000;                 // 標準化した和を何回サンプルするか
+    const px = (z: number) => padL + (z - Z0) / (Z1 - Z0) * (W - padL - padR);
+    let mode: Mode = "unif";
+
+    const phi = (z: number) => Math.exp(-z * z / 2) / Math.sqrt(2 * Math.PI); // N(0,1) 密度
+
+    const render = () => {
+      ctx.clearRect(0, 0, W, H);
+      const n = Number(nEl.value);
+      nVal.textContent = String(n);
+      const { draw, mu, sd, name, note } = dists[mode];
+      const rng = mulberry32(12345);     // 毎回同じ seed → n を動かすと滑らかに変化
+
+      // 標準化した和 Z=(S_n − nμ)/(σ√n) を TRIALS 回サンプルしてヒストグラム
+      const counts = new Array(BINS).fill(0);
+      const denom = sd * Math.sqrt(n);
+      for (let t = 0; t < TRIALS; t++) {
+        let s = 0;
+        for (let k = 0; k < n; k++) s += draw(rng);
+        const z = (s - n * mu) / denom;
+        const b = Math.floor((z - Z0) / (Z1 - Z0) * BINS);
+        if (b >= 0 && b < BINS) counts[b]++;
+      }
+      // 密度に正規化：各ビンの高さ = 頻度 /(TRIALS × ビン幅)
+      const binW = (Z1 - Z0) / BINS;
+      const yMax = 0.55;                  // 密度の表示上限（N(0,1) の峰は 0.399）
+      const py = (d: number) => (H - padB) - Math.min(d, yMax) / yMax * (H - padB - padT);
+
+      // 軸（z=0 の縦線と底の横線）
+      ctx.strokeStyle = css("--line"); ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.moveTo(px(Z0), H - padB); ctx.lineTo(px(Z1), H - padB);
+      ctx.moveTo(px(0), padT); ctx.lineTo(px(0), H - padB);
+      ctx.stroke();
+
+      // ヒストグラム（棒）
+      ctx.fillStyle = css("--ai");
+      ctx.save(); ctx.globalAlpha = 0.28;
+      for (let b = 0; b < BINS; b++) {
+        const d = counts[b] / (TRIALS * binW);
+        const x0 = px(Z0 + b * binW), x1 = px(Z0 + (b + 1) * binW);
+        ctx.fillRect(x0, py(d), x1 - x0 - 1, (H - padB) - py(d));
+      }
+      ctx.restore();
+
+      // 標準正規曲線 N(0,1)（朱の太線）
+      ctx.strokeStyle = css("--shu"); ctx.lineWidth = 2.4; ctx.beginPath();
+      for (let i = 0; i <= 400; i++) {
+        const z = Z0 + (Z1 - Z0) * i / 400;
+        i ? ctx.lineTo(px(z), py(phi(z))) : ctx.moveTo(px(z), py(phi(z)));
+      }
+      ctx.stroke();
+
+      const verdict = n === 1
+        ? `n=1 では「和」＝元の分布そのもの。<b class="shu">釣鐘（朱）</b>とはまだ形が違う${mode === "expo" ? "——特に指数は右に大きく歪んでいる" : ""}。`
+        : n < 6
+          ? `n=${n}：少し足しただけで、もう釣鐘に近づき始めた。`
+          : `n=${n}：元が${mode === "expo" ? "あれほど歪んでいても" : "どんな形でも"}、和を標準化すると<b class="shu">釣鐘（朱）</b>にほぼ一致。`;
+      capEl.innerHTML =
+        `<b>${name}</b>。${note} これを独立に <b>n=${n}</b> 個足し、` +
+        `平均 ${mu} と幅を差し引いて標準化した <b class="ai">Z=(S<sub>n</sub>−nμ)/(σ√n)</b> のヒストグラム（藍）。<br>` +
+        `${verdict}<br>` +
+        `<span class="cl-dim">元の平均・分散がどうであれ、標準化すれば行き先は同じ <b>N(0,1)</b>——それが中心極限定理。</span>`;
+    };
+
+    const setMode = (m: Mode) => {
+      mode = m;
+      btnU.classList.toggle("is-on", m === "unif");
+      btnB.classList.toggle("is-on", m === "bern");
+      btnE.classList.toggle("is-on", m === "expo");
+      render();
+    };
+    btnU.addEventListener("click", () => setMode("unif"));
+    btnB.addEventListener("click", () => setMode("bern"));
+    btnE.addEventListener("click", () => setMode("expo"));
+    nEl.addEventListener("input", render);
+    render();
+  }
+</script>
+
+<style>
+  .cl { margin: 26px 0; padding: 16px 18px 14px; border: 1px solid var(--line); border-radius: 10px; background: var(--card); }
+  .cl-controls { display: flex; flex-direction: column; gap: 10px; margin-bottom: 12px; }
+  .cl-modeswitch { display: inline-flex; gap: 4px; padding: 3px; border: 1px solid var(--line); border-radius: 9px; background: var(--paper-sunk); width: fit-content; }
+  .cl-mode { appearance: none; border: none; background: transparent; color: var(--ink-faint); font-family: var(--sans); font-size: 12.5px; font-weight: 600; padding: 5px 12px; border-radius: 7px; cursor: pointer; }
+  .cl-mode.is-on { background: var(--card); color: var(--ai); box-shadow: 0 1px 2px rgba(0,0,0,.08); }
+  .cl-label { font-size: 13px; font-weight: 600; color: var(--ink); font-family: var(--sans); display: flex; align-items: center; gap: 8px; }
+  .cl-range { flex: 1; max-width: 240px; accent-color: var(--ai); }
+  .cl-cv { display: block; margin: 0 auto; width: 100%; max-width: 380px; height: auto; border: 1px solid var(--line); border-radius: 6px; background: var(--paper-sunk); }
+  .cl-cap { margin-top: 12px; font-size: 13px; line-height: 1.85; color: var(--ink-faint); font-family: var(--sans); }
+  .cl-cap b { color: var(--ink); font-weight: 700; }
+  .cl-cap b.shu { color: var(--shu); }
+  .cl-cap b.ai { color: var(--ai); }
+  .cl-cap .cl-dim { color: var(--ink-faint); }
+</style>
