@@ -1,0 +1,162 @@
+---
+/* MorseSurface.astro — モース理論の心臓を体感する装置。
+   立てた曲面（球面・トーラス）に高さ関数 f=z を入れ、水位 c をスライダーで上げていく。
+   劣位集合 M_c={f≤c} が塗られ、c が臨界点（極小 index0 / 鞍点 index1 / 極大 index2）を
+   通過するたびに「ハンドルが付いて位相が変わる」ことと、通過した臨界点の Σ(−1)^index が
+   オイラー標数へ積み上がる様子を見せる。最後まで上げると 球面→2、トーラス→0 に一致。
+   球面＝円板（臨界点2つ）、トーラス＝立てた輪＝環（臨界点4つ）として頭から見た図で描く。
+   状態はメモリ内のみ（storage 不使用）。 */
+---
+
+<figure class="ms" role="group" aria-label="高さ関数のモース理論">
+  <div class="ms-controls">
+    <div class="ms-modeswitch" role="tablist" aria-label="曲面を選ぶ">
+      <button id="ms-sphere" type="button" class="ms-mode is-on" role="tab">球面 S²</button>
+      <button id="ms-torus"  type="button" class="ms-mode" role="tab">トーラス T²</button>
+    </div>
+    <label class="ms-label">水位 c
+      <input id="ms-c" type="range" min="0" max="1000" value="0" step="1" class="ms-range" />
+    </label>
+  </div>
+  <canvas id="ms-cv" width="380" height="300" class="ms-cv"></canvas>
+  <figcaption id="ms-cap" class="ms-cap"></figcaption>
+</figure>
+
+<script>
+  type Mode = "sphere" | "torus";
+  type Crit = { h: number; index: number; name: string };
+
+  const cv = document.getElementById("ms-cv") as HTMLCanvasElement | null;
+  const capEl = document.getElementById("ms-cap");
+  const cEl = document.getElementById("ms-c") as HTMLInputElement | null;
+  const btnS = document.getElementById("ms-sphere");
+  const btnT = document.getElementById("ms-torus");
+
+  if (cv && capEl && cEl && btnS && btnT) {
+    const ctx = cv.getContext("2d")!;
+    const W = cv.width, H = cv.height;
+    const css = (v: string) => getComputedStyle(document.documentElement).getPropertyValue(v).trim() || "#888";
+    const cx = W / 2, cy = H / 2;
+    const Ro = 110, Ri = 46, Rs = 110;         // 外半径・穴半径・球半径（画面上）
+    const padY = 30;                            // 高さ帯の余白
+    const yBot = cy + Ro, yTop = cy - Ro;       // 高さの下端・上端（canvas y）
+    let mode: Mode = "sphere";
+
+    // 高さ h∈[0,1]（0=下端,1=上端）→ canvas y
+    const hToY = (h: number) => yBot - h * (yBot - yTop);
+
+    // 臨界点（h は 0..1 の正規化高さ）
+    const crits: Record<Mode, Crit[]> = {
+      sphere: [
+        { h: 0.0, index: 0, name: "極小（谷）" },
+        { h: 1.0, index: 2, name: "極大（山）" },
+      ],
+      torus: [
+        { h: 0.0, index: 0, name: "極小（谷）" },
+        { h: (Ro - Ri) / (2 * Ro), index: 1, name: "鞍点（穴の下）" },
+        { h: (Ro + Ri) / (2 * Ro), index: 1, name: "鞍点（穴の上）" },
+        { h: 1.0, index: 2, name: "極大（山）" },
+      ],
+    };
+
+    // 現在の劣位集合の位相（トポロジー）の言葉
+    const topoWord = (m: Mode, passed: number): string => {
+      if (m === "sphere") return ["空集合", "円板（0-ハンドル）", "球面 S²（2-ハンドルで閉じた）"][passed];
+      return ["空集合", "円板（0-ハンドル）", "円筒＝帯（1-ハンドル）",
+              "穴あきトーラス＝種数1の面（もう1本の1-ハンドル）", "トーラス T²（2-ハンドルで閉じた）"][passed];
+    };
+
+    const render = () => {
+      ctx.clearRect(0, 0, W, H);
+      const c = Number(cEl.value) / 1000;       // 0..1
+      const yc = hToY(c);
+      const cs = crits[mode];
+
+      // 曲面領域のパスを作る関数（球面＝円板／トーラス＝環）
+      const surfacePath = () => {
+        ctx.beginPath();
+        if (mode === "sphere") {
+          ctx.arc(cx, cy, Rs, 0, 2 * Math.PI);
+        } else {
+          ctx.arc(cx, cy, Ro, 0, 2 * Math.PI);              // 外円
+          ctx.arc(cx, cy, Ri, 0, 2 * Math.PI, true);        // 穴（逆回りで even-odd）
+        }
+      };
+
+      // 1) 曲面全体を薄く
+      surfacePath();
+      ctx.fillStyle = css("--paper-sunk");
+      ctx.fill("evenodd");
+      ctx.lineWidth = 1.5; ctx.strokeStyle = css("--ai");
+      ctx.stroke();
+
+      // 2) 劣位集合 M_c = {y ≥ yc}（下側）を朱で塗る（クリップして塗る）
+      ctx.save();
+      ctx.beginPath(); ctx.rect(0, yc, W, H - yc); ctx.clip();
+      surfacePath();
+      ctx.fillStyle = css("--shu"); ctx.globalAlpha = 0.28; ctx.fill("evenodd");
+      ctx.restore();
+
+      // 3) 水位線
+      ctx.strokeStyle = css("--shu"); ctx.lineWidth = 2; ctx.setLineDash([6, 4]);
+      ctx.beginPath(); ctx.moveTo(20, yc); ctx.lineTo(W - 20, yc); ctx.stroke(); ctx.setLineDash([]);
+      ctx.fillStyle = css("--shu"); ctx.font = "600 12px var(--sans, sans-serif)";
+      ctx.textAlign = "left"; ctx.fillText("水位 c", W - 60, yc - 6);
+
+      // 4) 臨界点を描く（通過済みは塗り、未通過は白）。index を色分けラベル。
+      let chi = 0, passed = 0;
+      for (const k of cs) {
+        const ky = hToY(k.h);
+        // 臨界点の代表位置（x）：球面/外周は中央下寄り、鞍点は穴の上下中央
+        const kx = cx;
+        const done = c >= k.h - 1e-9;
+        if (done) { chi += (k.index % 2 === 0 ? 1 : -1); passed++; }
+        ctx.beginPath(); ctx.arc(kx, ky, 7, 0, 2 * Math.PI);
+        ctx.fillStyle = done ? css("--ai") : css("--card");
+        ctx.fill();
+        ctx.lineWidth = 2; ctx.strokeStyle = css("--ai"); ctx.stroke();
+        ctx.fillStyle = css("--ink-faint"); ctx.font = "11px var(--sans, sans-serif)";
+        ctx.textAlign = "left";
+        ctx.fillText(`index ${k.index}`, kx + 12, ky + 4);
+      }
+
+      const chiFinal = mode === "sphere" ? 2 : 0;
+      const done = passed === cs.length;
+      capEl.innerHTML =
+        `<b>${mode === "sphere" ? "球面 S²" : "トーラス T²"}</b>に高さ関数 f=z を入れ、水位 c まで下を塗った` +
+        `<b class="shu">劣位集合 M_c={f ≤ c}（朱）</b>。<br>` +
+        `いまの M_c ＝ <b>${topoWord(mode, passed)}</b>。` +
+        `通過した臨界点：${passed}/${cs.length} 個。<br>` +
+        `<b class="ai">Σ(−1)^index ＝ ${chi}</b>（極小+1・鞍点−1・極大+1 を積み上げ）` +
+        (done ? `　<b class="shu">✓ = χ(${mode === "sphere" ? "S²" : "T²"}) = ${chiFinal}</b>` : `　（最後まで上げると χ になる）`) +
+        `<br><span class="ms-dim">臨界点を一つ通過するたびに index 次元のハンドルが付き、位相が変わる——これがモース理論。</span>`;
+    };
+
+    const setMode = (m: Mode) => {
+      mode = m; cEl.value = "0";
+      btnS.classList.toggle("is-on", m === "sphere");
+      btnT.classList.toggle("is-on", m === "torus");
+      render();
+    };
+    btnS.addEventListener("click", () => setMode("sphere"));
+    btnT.addEventListener("click", () => setMode("torus"));
+    cEl.addEventListener("input", render);
+    render();
+  }
+</script>
+
+<style>
+  .ms { margin: 26px 0; padding: 16px 18px 14px; border: 1px solid var(--line); border-radius: 10px; background: var(--card); }
+  .ms-controls { display: flex; flex-direction: column; gap: 10px; margin-bottom: 12px; }
+  .ms-modeswitch { display: inline-flex; gap: 4px; padding: 3px; border: 1px solid var(--line); border-radius: 9px; background: var(--paper-sunk); width: fit-content; }
+  .ms-mode { appearance: none; border: none; background: transparent; color: var(--ink-faint); font-family: var(--sans); font-size: 12.5px; font-weight: 600; padding: 5px 12px; border-radius: 7px; cursor: pointer; }
+  .ms-mode.is-on { background: var(--card); color: var(--ai); box-shadow: 0 1px 2px rgba(0,0,0,.08); }
+  .ms-label { font-size: 13px; font-weight: 600; color: var(--ink); font-family: var(--sans); display: flex; align-items: center; gap: 8px; }
+  .ms-range { flex: 1; max-width: 260px; accent-color: var(--shu); }
+  .ms-cv { display: block; margin: 0 auto; width: 100%; max-width: 380px; height: auto; border: 1px solid var(--line); border-radius: 6px; background: var(--paper-sunk); }
+  .ms-cap { margin-top: 12px; font-size: 13px; line-height: 1.85; color: var(--ink-faint); font-family: var(--sans); }
+  .ms-cap b { color: var(--ink); font-weight: 700; }
+  .ms-cap b.shu { color: var(--shu); }
+  .ms-cap b.ai { color: var(--ai); }
+  .ms-cap .ms-dim { color: var(--ink-faint); }
+</style>
