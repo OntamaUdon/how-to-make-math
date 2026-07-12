@@ -1,0 +1,151 @@
+---
+/* VariationWiggle.astro — 「第一変分が 0」を目で見る装置。
+   両端を固定した曲線 y を、決まった揺らし η(x)=sin(πx)（端点で 0）で ε だけ変形する：y_ε = base + ε·η。
+   汎関数 J[y]（長さ ∫√(1+y'^2) か ディリクレエネルギー ∫y'^2）の値を、ε を動かしながら描く。
+     ・ベースが「極値」（直線 y=0）なら：J(ε) は ε=0 を谷とする放物線 → どちら向きに揺らしても増える
+       → 第一変分 δJ=0（かつ δ²J>0）。これがオイラー–ラグランジュ方程式の条件。
+     ・ベースが「非極値」（たるんだ弧）なら：ε=0 は谷ではなく坂の途中 → δJ≠0 → 極値でない。
+   右下に J(ε) のグラフを添え、現在の ε を点で示す。node 検証済み
+   （直線ベースは J(ε) が ε=0 対称の谷、たるみベースは谷が ε≠0 側にずれる）。
+   状態はメモリ内のみ（storage 不使用）。 */
+---
+
+<figure class="vw" role="group" aria-label="第一変分の可視化">
+  <div class="vw-controls">
+    <label class="vw-label">汎関数
+      <select id="vw-fn" class="vw-sel">
+        <option value="len">長さ ∫√(1+y′²)</option>
+        <option value="dir">エネルギー ∫y′²</option>
+      </select>
+    </label>
+    <label class="vw-label">ベース曲線
+      <select id="vw-base" class="vw-sel">
+        <option value="straight">直線（極値）</option>
+        <option value="sag">たるんだ弧（非極値）</option>
+      </select>
+    </label>
+    <label class="vw-label">揺らし ε ＝ <span id="vw-eval">0.00</span>
+      <input id="vw-eps" type="range" min="-100" max="100" value="0" step="1" class="vw-range" />
+    </label>
+  </div>
+  <canvas id="vw-cv" width="420" height="250" class="vw-cv"></canvas>
+  <figcaption id="vw-cap" class="vw-cap"></figcaption>
+</figure>
+
+<script>
+  const fnSel = document.getElementById("vw-fn") as HTMLSelectElement | null;
+  const baseSel = document.getElementById("vw-base") as HTMLSelectElement | null;
+  const epsIn = document.getElementById("vw-eps") as HTMLInputElement | null;
+  const epsVal = document.getElementById("vw-eval");
+  const cv = document.getElementById("vw-cv") as HTMLCanvasElement | null;
+  const capEl = document.getElementById("vw-cap");
+
+  if (fnSel && baseSel && epsIn && epsVal && cv && capEl) {
+    const ctx = cv.getContext("2d")!;
+    const W = cv.width, H = cv.height;
+    const css = (v: string) => getComputedStyle(document.documentElement).getPropertyValue(v).trim() || "#888";
+    // 左：曲線パネル、右：J(ε) グラフ
+    const cxL = 20, cyT = 20, cwL = 240, chL = H - 40; // 曲線パネル
+    const gx = cxL + cwL + 34, gyT = 30, gw = W - (cxL + cwL + 34) - 14, gh = H - 60;
+
+    const eta = (x: number) => Math.sin(Math.PI * x);            // 端点0の揺らし
+    const base = (x: number) => baseSel.value === "sag" ? 0.5 * Math.sin(Math.PI * x) : 0;
+
+    // 汎関数 J[y_ε]
+    const J = (eps: number) => {
+      const Msamp = 400; let s = 0; const hh = 1 / Msamp;
+      let prev = base(0) + eps * eta(0);
+      for (let i = 1; i <= Msamp; i++) {
+        const x = i * hh; const cur = base(x) + eps * eta(x);
+        const yp = (cur - prev) / hh; prev = cur;
+        s += (fnSel.value === "len" ? Math.sqrt(1 + yp * yp) : yp * yp) * hh;
+      }
+      return s;
+    };
+
+    // 曲線パネル座標（x:0..1 → 右、y:-1.2..1.2 → 下向き）
+    const PX = (x: number) => cxL + x * cwL;
+    const PY = (y: number) => cyT + chL / 2 - y * (chL / 2) / 1.3;
+
+    const render = () => {
+      const eps = Number(epsIn.value) / 100;
+      epsVal.textContent = eps.toFixed(2);
+      ctx.clearRect(0, 0, W, H);
+
+      // === 左：曲線 ===
+      ctx.strokeStyle = css("--line"); ctx.lineWidth = 1;
+      ctx.strokeRect(cxL, cyT, cwL, chL);
+      // 中心線
+      ctx.strokeStyle = css("--line"); ctx.setLineDash([2, 3]);
+      ctx.beginPath(); ctx.moveTo(cxL, PY(0)); ctx.lineTo(cxL + cwL, PY(0)); ctx.stroke(); ctx.setLineDash([]);
+      // ベース（薄）
+      ctx.strokeStyle = css("--ink-faint"); ctx.globalAlpha = 0.5; ctx.lineWidth = 1.5;
+      ctx.beginPath(); for (let i = 0; i <= 200; i++) { const x = i / 200; const y = base(x); i ? ctx.lineTo(PX(x), PY(y)) : ctx.moveTo(PX(x), PY(y)); } ctx.stroke();
+      ctx.globalAlpha = 1;
+      // 現在の曲線 y_ε（朱）
+      ctx.strokeStyle = css("--shu"); ctx.lineWidth = 2.4;
+      ctx.beginPath(); for (let i = 0; i <= 200; i++) { const x = i / 200; const y = base(x) + eps * eta(x); i ? ctx.lineTo(PX(x), PY(y)) : ctx.moveTo(PX(x), PY(y)); } ctx.stroke();
+      // 端点（固定）
+      ctx.fillStyle = css("--ink");
+      for (const x of [0, 1]) { ctx.beginPath(); ctx.arc(PX(x), PY(base(x)), 4, 0, 7); ctx.fill(); }
+      ctx.font = "11px sans-serif"; ctx.fillStyle = css("--ink-faint");
+      ctx.fillText("両端は固定", cxL + 6, cyT + 14);
+
+      // === 右：J(ε) グラフ ===
+      const epsRange = 1;
+      const samples: number[] = [];
+      for (let i = 0; i <= 80; i++) samples.push(J(-epsRange + 2 * epsRange * i / 80));
+      const jMin = Math.min(...samples), jMax = Math.max(...samples);
+      const GX = (e: number) => gx + (e + epsRange) / (2 * epsRange) * gw;
+      const GY = (j: number) => gyT + gh - (j - jMin) / (jMax - jMin || 1) * gh;
+      // 軸
+      ctx.strokeStyle = css("--line"); ctx.lineWidth = 1;
+      ctx.beginPath(); ctx.moveTo(gx, gyT); ctx.lineTo(gx, gyT + gh); ctx.lineTo(gx + gw, gyT + gh); ctx.stroke();
+      // ε=0 の縦線
+      ctx.strokeStyle = css("--line"); ctx.setLineDash([2, 3]);
+      ctx.beginPath(); ctx.moveTo(GX(0), gyT); ctx.lineTo(GX(0), gyT + gh); ctx.stroke(); ctx.setLineDash([]);
+      // J(ε) 曲線
+      ctx.strokeStyle = css("--ai"); ctx.lineWidth = 2;
+      ctx.beginPath(); samples.forEach((j, i) => { const e = -epsRange + 2 * epsRange * i / 80; i ? ctx.lineTo(GX(e), GY(j)) : ctx.moveTo(GX(e), GY(j)); }); ctx.stroke();
+      // 現在点
+      ctx.fillStyle = css("--shu"); ctx.beginPath(); ctx.arc(GX(eps), GY(J(eps)), 5, 0, 7); ctx.fill();
+      ctx.font = "12px sans-serif"; ctx.fillStyle = css("--ink");
+      ctx.fillText("J(ε)", gx + 4, gyT + 12); ctx.fillText("ε", gx + gw - 8, gyT + gh + 15);
+      ctx.fillText("0", GX(0) - 3, gyT + gh + 15);
+
+      // 数値的な第一変分 δJ ≈ (J(δ)-J(-δ))/(2δ) at ε=0
+      const dd = 0.02; const dJ = (J(dd) - J(-dd)) / (2 * dd);
+      const isExtremal = Math.abs(dJ) < 1e-3;
+      let msg: string;
+      if (isExtremal) {
+        msg = `ベースは<b>直線</b>。J(ε) は ε=0 を<b class="shu">谷</b>とする放物線で、どちらへ揺らしても J は<b>増える</b>` +
+          `——<b>第一変分 δJ＝0</b>（かつ δ²J&gt;0）。これが「これ以上良くならない形」＝<b class="ai">極値</b>の条件、` +
+          `オイラー–ラグランジュ方程式そのもの。`;
+      } else {
+        msg = `ベースは<b>たるんだ弧</b>。ε=0 は谷ではなく<b>坂の途中</b>（傾き δJ≈<b>${dJ.toFixed(2)}</b>≠0）` +
+          `——揺らせば J をまだ<b>減らせる</b>。だからこれは<b>極値ではない</b>。極値なら必ず δJ=0 になる。`;
+      }
+      capEl.innerHTML =
+        `両端を固定した曲線を η(x)=sin(πx) で ε だけ揺らし、汎関数 <b>J[y]</b> の値を右に描いています。` +
+        `<br>現在 J ＝ <b>${J(eps).toFixed(4)}</b>。` + msg;
+    };
+
+    fnSel.addEventListener("change", render);
+    baseSel.addEventListener("change", render);
+    epsIn.addEventListener("input", render);
+    render();
+  }
+</script>
+
+<style>
+  .vw { margin: 26px 0; padding: 16px 18px 14px; border: 1px solid var(--line); border-radius: 10px; background: var(--card); }
+  .vw-controls { display: flex; flex-wrap: wrap; gap: 8px 14px; margin-bottom: 12px; align-items: center; }
+  .vw-label { font-size: 13px; font-weight: 600; color: var(--ink); font-family: var(--sans); display: flex; align-items: center; gap: 6px; }
+  .vw-sel { font-size: 13px; padding: 3px 6px; border: 1px solid var(--line); border-radius: 6px; background: var(--paper); color: var(--ink); }
+  .vw-range { width: 150px; accent-color: var(--shu); }
+  .vw-cv { display: block; margin: 0 auto; width: 100%; max-width: 420px; height: auto; border: 1px solid var(--line); border-radius: 6px; background: var(--paper-sunk); }
+  .vw-cap { margin-top: 12px; font-size: 13px; line-height: 1.85; color: var(--ink-faint); font-family: var(--sans); }
+  .vw-cap b { color: var(--ink); font-weight: 700; }
+  .vw-cap b.shu { color: var(--shu); }
+  .vw-cap b.ai { color: var(--ai); }
+</style>

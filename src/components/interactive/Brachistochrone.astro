@@ -1,0 +1,161 @@
+---
+/* Brachistochrone.astro — 「最短の道（直線）は、最速の道ではない」を体感するレース装置。
+   同じ2点 A,B を、重力の下でビーズが滑り降りる。速さは深さだけで決まる（エネルギー保存 v=√(2g y)）。
+   3本の道でビーズを同時に走らせる：
+     ・直線（最短経路）——いちばん短いのに、いちばん遅い
+     ・折れ線（急降下してから直進）——「まず落ちて速度を稼ぐ」直感的な道。直線より速い
+     ・サイクロイド——変分法が導く真の最速降下線。最初に急降下して速度を稼ぎ、なめらかに到達
+   降下時間はどの道でも T=∫√(1+y'^2)/√(2g y) dx。node 検証済みの値：
+     T_cyc≈0.806 < T_折れ線≈0.940 < T_直線≈1.007（順位は安定）。
+   状態はメモリ内のみ（storage 不使用）。 */
+---
+
+<figure class="br" role="group" aria-label="最速降下線のレース">
+  <div class="br-controls">
+    <button id="br-run" class="br-btn br-primary">スタート ▶</button>
+    <button id="br-reset" class="br-btn">リセット</button>
+    <label class="br-label"><input type="checkbox" id="br-slow" /> ゆっくり</label>
+  </div>
+  <canvas id="br-cv" width="420" height="280" class="br-cv"></canvas>
+  <figcaption id="br-cap" class="br-cap"></figcaption>
+</figure>
+
+<script>
+  const runBtn = document.getElementById("br-run") as HTMLButtonElement | null;
+  const resetBtn = document.getElementById("br-reset") as HTMLButtonElement | null;
+  const slowBox = document.getElementById("br-slow") as HTMLInputElement | null;
+  const cv = document.getElementById("br-cv") as HTMLCanvasElement | null;
+  const capEl = document.getElementById("br-cap");
+
+  if (runBtn && resetBtn && slowBox && cv && capEl) {
+    const ctx = cv.getContext("2d")!;
+    const W = cv.width, H = cv.height, padL = 34, padR = 20, padT = 26, padB = 20;
+    const css = (v: string) => getComputedStyle(document.documentElement).getPropertyValue(v).trim() || "#888";
+    const g = 9.8;
+    const B = [2, 1]; // 到達点（x 右、y 下）
+    const yMax = 1.35;
+    const X = (x: number) => padL + x / B[0] * (W - padL - padR);
+    const Y = (y: number) => padT + y / yMax * (H - padT - padB);
+
+    // --- 3本の道を点列で作る ---
+    const N = 500;
+    // サイクロイド：x=a(θ-sinθ), y=a(1-cosθ) が B を通る
+    const ratio = B[0] / B[1];
+    let lo = 1e-3, hi = 2 * Math.PI - 1e-3;
+    const fr = (t: number) => (t - Math.sin(t)) / (1 - Math.cos(t)) - ratio;
+    for (let i = 0; i < 100; i++) { const m = (lo + hi) / 2; if (fr(lo) * fr(m) <= 0) hi = m; else lo = m; }
+    const th1 = (lo + hi) / 2, a = B[1] / (1 - Math.cos(th1));
+    const cyc: number[][] = [];
+    for (let i = 0; i <= N; i++) { const th = th1 * i / N; cyc.push([a * (th - Math.sin(th)), a * (1 - Math.cos(th))]); }
+    // 直線
+    const line: number[][] = [];
+    for (let i = 0; i <= N; i++) { const x = B[0] * i / N; line.push([x, B[1] * x / B[0]]); }
+    // 折れ線：x=0 で深さ h まで急降下 → B へ直進
+    const h = 1.3;
+    const kink: number[][] = [];
+    const M = N / 2;
+    for (let i = 0; i <= M; i++) kink.push([0, h * i / M]);
+    for (let i = 1; i <= M; i++) { const s = i / M; kink.push([B[0] * s, h + (B[1] - h) * s]); }
+
+    // 各道の累積時間 t(s)（v=√(2g y)）
+    const cumTime = (pts: number[][]) => {
+      const t = [0];
+      for (let i = 1; i < pts.length; i++) {
+        const [x0, y0] = pts[i - 1], [x1, y1] = pts[i];
+        const ds = Math.hypot(x1 - x0, y1 - y0);
+        const ym = (y0 + y1) / 2;
+        t.push(t[i - 1] + ds / Math.sqrt(2 * g * Math.max(ym, 1e-9)));
+      }
+      return t;
+    };
+    const tracks = [
+      { name: "直線（最短経路）", pts: line, t: cumTime(line), color: css("--ink-faint"), tag: "最短なのに最も遅い" },
+      { name: "折れ線（急降下→直進）", pts: kink, t: cumTime(kink), color: css("--ai"), tag: "直感的な道・中間" },
+      { name: "サイクロイド（最速降下線）", pts: cyc, t: cumTime(cyc), color: css("--shu"), tag: "変分法の答え・最速" },
+    ];
+    const Ttot = tracks.map((tr) => tr.t[tr.t.length - 1]);
+
+    // 累積時間 τ での位置
+    const posAt = (tr: { pts: number[][]; t: number[] }, tau: number) => {
+      const t = tr.t, p = tr.pts;
+      if (tau >= t[t.length - 1]) return p[p.length - 1];
+      let i = 1; while (i < t.length && t[i] < tau) i++;
+      const f = (tau - t[i - 1]) / (t[i] - t[i - 1] || 1);
+      return [p[i - 1][0] + f * (p[i][0] - p[i - 1][0]), p[i - 1][1] + f * (p[i][1] - p[i - 1][1])];
+    };
+
+    let raf = 0, start = 0, running = false;
+
+    const drawStatic = (tau: number) => {
+      ctx.clearRect(0, 0, W, H);
+      // 端点
+      ctx.fillStyle = css("--ink");
+      for (const [x, y] of [[0, 0], B]) { ctx.beginPath(); ctx.arc(X(x), Y(y), 4, 0, 7); ctx.fill(); }
+      ctx.font = "12px sans-serif"; ctx.fillStyle = css("--ink");
+      ctx.fillText("A", X(0) - 14, Y(0) + 4); ctx.fillText("B", X(B[0]) + 6, Y(B[1]) + 4);
+      // 道
+      for (const tr of tracks) {
+        ctx.strokeStyle = tr.color; ctx.lineWidth = 2;
+        ctx.beginPath(); tr.pts.forEach(([x, y], i) => (i ? ctx.lineTo(X(x), Y(y)) : ctx.moveTo(X(x), Y(y)))); ctx.stroke();
+      }
+      // ビーズ
+      for (let k = 0; k < tracks.length; k++) {
+        const [x, y] = posAt(tracks[k], tau);
+        ctx.fillStyle = tracks[k].color;
+        ctx.beginPath(); ctx.arc(X(x), Y(y), 6, 0, 7); ctx.fill();
+        ctx.strokeStyle = css("--paper"); ctx.lineWidth = 1.5; ctx.stroke();
+      }
+      // 時計
+      ctx.font = "13px sans-serif"; ctx.fillStyle = css("--ink");
+      ctx.fillText(`t = ${tau.toFixed(3)} 秒`, W - 110, padT - 10);
+    };
+
+    const caption = (done: boolean) => {
+      const order = tracks.map((tr, k) => ({ n: tr.name, T: Ttot[k], c: tr.color }))
+        .sort((p, q) => p.T - q.T);
+      let s = `同じ2点 A→B を、重力だけで滑り降りるビーズの競走。速さは<b>深さだけ</b>で決まる` +
+        `（<b>v＝√(2g·深さ)</b>、摩擦なし）。<br>`;
+      if (done) {
+        s += `<b>到着タイム</b>：` +
+          order.map((o, i) => `${i + 1}位 ${o.n.replace(/（.*/, "")} <b>${o.T.toFixed(3)}秒</b>`).join(" ／ ") +
+          `。<br><b class="shu">サイクロイド</b>が最速、<b>直線（最短経路）が最も遅い</b>——` +
+          `「いちばん短い道」と「いちばん速い道」は違う。これを方程式にするのが変分法。`;
+      } else {
+        s += `<b class="ink">直線</b>は最短、<b class="ai">折れ線</b>は「まず急降下して速度を稼ぐ」直感的な道、` +
+          `<b class="shu">サイクロイド</b>は変分法が導く<b>最速降下線</b>。さあ、どれが最初に着く？`;
+      }
+      capEl.innerHTML = s;
+    };
+
+    const tick = () => {
+      const scale = slowBox.checked ? 5 : 2.2; // 実時間→アニメ秒
+      const tau = (performance.now() - start) / 1000 / scale;
+      drawStatic(tau);
+      if (tau >= Math.max(...Ttot)) { running = false; runBtn.textContent = "もう一度 ▶"; caption(true); return; }
+      raf = requestAnimationFrame(tick);
+    };
+
+    const reset = () => { cancelAnimationFrame(raf); running = false; runBtn.textContent = "スタート ▶"; drawStatic(0); caption(false); };
+    runBtn.addEventListener("click", () => {
+      if (running) return;
+      running = true; runBtn.textContent = "レース中…"; start = performance.now(); caption(false); tick();
+    });
+    resetBtn.addEventListener("click", reset);
+    reset();
+  }
+</script>
+
+<style>
+  .br { margin: 26px 0; padding: 16px 18px 14px; border: 1px solid var(--line); border-radius: 10px; background: var(--card); }
+  .br-controls { display: flex; flex-wrap: wrap; gap: 8px 14px; margin-bottom: 12px; align-items: center; }
+  .br-btn { font-size: 13px; font-family: var(--sans); padding: 4px 14px; border: 1px solid var(--line); border-radius: 6px; background: var(--paper); color: var(--ink); cursor: pointer; }
+  .br-btn:hover { border-color: var(--shu); }
+  .br-primary { border-color: var(--shu); color: var(--shu); font-weight: 600; }
+  .br-label { font-size: 13px; color: var(--ink); font-family: var(--sans); display: flex; align-items: center; gap: 5px; }
+  .br-cv { display: block; margin: 0 auto; width: 100%; max-width: 420px; height: auto; border: 1px solid var(--line); border-radius: 6px; background: var(--paper-sunk); }
+  .br-cap { margin-top: 12px; font-size: 13px; line-height: 1.85; color: var(--ink-faint); font-family: var(--sans); }
+  .br-cap b { color: var(--ink); font-weight: 700; }
+  .br-cap b.shu { color: var(--shu); }
+  .br-cap b.ai { color: var(--ai); }
+  .br-cap b.ink { color: var(--ink); }
+</style>

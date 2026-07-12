@@ -1,0 +1,104 @@
+---
+layout: ../../layouts/BaseLayout.astro
+title: 第2章 オイラー–ラグランジュ方程式
+description: 「すべての揺らし方で第一変分が 0」という無限個の条件を、部分積分と変分法の基本補題でたった一本の微分方程式に凝縮する。変分法の心臓、オイラー–ラグランジュ方程式を導く。
+---
+
+import Term from "../../components/assets/Term.astro";
+import Statement from "../../components/assets/Statement.astro";
+import VariationWiggle from "../../components/interactive/VariationWiggle.astro";
+
+# 第2章 オイラー–ラグランジュ方程式
+
+前章で、最適な形 $y$ の条件は「端点で消えるすべての揺らし $\eta$ について、第一変分
+$\delta J[y;\eta]=\frac{d}{d\varepsilon}\big|_{0}J[y+\varepsilon\eta]=0$」だと分かりました。でも「すべての $\eta$」は
+無限個の条件です。これをこのまま扱うのは大変。この章の目標は、この無限個の条件を、$y$ が満たすべき
+**たった一本の微分方程式**に凝縮すること。その方程式が、変分法の心臓部——オイラー–ラグランジュ方程式です。
+まずは「揺らすと値がどう動くか」を実際に見てみましょう。
+
+## まず体感：揺らして、値の谷を探す
+
+下の装置は、両端を固定した曲線を揺らし $\eta(x)=\sin(\pi x)$ で $\varepsilon$ だけ変形し、汎関数 $J$（長さ、または
+エネルギー）の値を右のグラフに描きます。ベースが「直線（極値）」のときと「たるんだ弧（非極値）」のときで、
+$\varepsilon=0$ での振る舞いがどう違うかに注目してください。
+
+<VariationWiggle />
+
+**直線ベース**では、$J(\varepsilon)$ は $\varepsilon=0$ を谷とする放物線——どちらに揺らしても値が増える。まさに
+$\delta J=0$（傾き $0$）。一方**たるみベース**では、$\varepsilon=0$ は谷ではなく坂の途中で、揺らせばまだ値を
+減らせる。$\delta J\neq0$、これは極値ではない。**「極値 ⟺ どの揺らし方でも第一変分が $0$」**を目で確かめられます。
+では、この条件を計算で書き下しましょう。
+
+## 第一変分を計算する
+
+$J[y]=\int_a^b L(x,y,y')\,dx$ に $y_\varepsilon=y+\varepsilon\eta$ を入れ、$\varepsilon$ で微分して $\varepsilon=0$ と
+置きます。合成関数の微分（連鎖律）で、$L$ の中の $y$ は $\varepsilon\eta$ だけ、$y'$ は $\varepsilon\eta'$ だけ動くので、
+$$\delta J[y;\eta]=\int_a^b\left(\frac{\partial L}{\partial y}\,\eta+\frac{\partial L}{\partial y'}\,\eta'\right)dx.$$
+ここで $\frac{\partial L}{\partial y}$ と $\frac{\partial L}{\partial y'}$ は、$L(x,y,y')$ を第2・第3引数で偏微分したもの
+（$x$ に沿って $y(x),y'(x)$ を代入した既知の関数）です。問題は、この式に $\eta$ と $\eta'$ の**両方**が入っていること。
+「すべての $\eta$ で $0$」を読み取るには、$\eta$ だけの形にそろえたい。ここで部分積分が効きます。
+
+## 部分積分で $\eta'$ を追い出す
+
+第二項を部分積分します。$\eta(a)=\eta(b)=0$（端点で揺らさない）なので、境界項がきれいに消えます。
+$$\int_a^b\frac{\partial L}{\partial y'}\,\eta'\,dx=\left[\frac{\partial L}{\partial y'}\,\eta\right]_a^b-\int_a^b\frac{d}{dx}\!\left(\frac{\partial L}{\partial y'}\right)\eta\,dx=-\int_a^b\frac{d}{dx}\!\left(\frac{\partial L}{\partial y'}\right)\eta\,dx.$$
+すると第一変分は、$\eta$ だけをくくり出した形になります。
+$$\delta J[y;\eta]=\int_a^b\left(\frac{\partial L}{\partial y}-\frac{d}{dx}\frac{\partial L}{\partial y'}\right)\eta\,dx.$$
+「端点で揺らさない」という約束が、ちょうど境界項を消してこの整理を可能にしました。あとは「これがすべての
+$\eta$ で $0$」の意味を読み取るだけです。
+
+## 変分法の基本補題：無限個の条件を一本に
+
+<Statement kind="lemma" title="変分法の基本補題">
+連続関数 $g(x)$ が、$\eta(a)=\eta(b)=0$ を満たす**すべての**滑らかな $\eta$ について $\int_a^b g(x)\eta(x)\,dx=0$ を
+満たすなら、$[a,b]$ 上で $g\equiv0$。
+</Statement>
+
+<Statement kind="proof">
+もし $g(x_0)\neq0$（たとえば正）なら、連続性より $x_0$ の小さな近傍 $(c,d)\subset(a,b)$ で $g>0$。この近傍だけに
+台を持つ山型の $\eta\ge0$（$(c,d)$ で正、外で $0$、端点で $0$）を選ぶと $\int_a^b g\eta\,dx>0$ となり仮定に反する。
+よって至るところ $g\equiv0$。「あらゆる重みで積分して常に $0$ なら、中身が $0$」。
+</Statement>
+
+この補題を $g=\frac{\partial L}{\partial y}-\frac{d}{dx}\frac{\partial L}{\partial y'}$ に適用すれば、無限個の条件
+「すべての $\eta$ で $\delta J=0$」が、たった一本の方程式 $g\equiv0$ に凝縮されます。
+
+<Statement kind="theorem" title="オイラー–ラグランジュ方程式">
+汎関数 $J[y]=\int_a^b L(x,y,y')\,dx$ の極値（停留形）$y$ は、微分方程式
+$$\boxed{\ \frac{\partial L}{\partial y}-\frac{d}{dx}\!\left(\frac{\partial L}{\partial y'}\right)=0\ }$$
+を満たす。これを<Term>オイラー–ラグランジュ方程式</Term>（E–L 方程式）という。
+</Statement>
+
+無限次元の最小化問題が、一本の（一般に二階の）**常微分方程式**に化けました。「形を探す」問題が「微分方程式を
+解く」問題になったのです。$x,y,y'$ に具体的なラグランジアンを入れて解けば、最適な形が求まります。
+
+## 使ってみる：最短経路は直線
+
+いちばん簡単な例で確かめます。曲線の長さ $L=\sqrt{1+y'^2}$ は $y$ を含まないので $\frac{\partial L}{\partial y}=0$。
+また $\frac{\partial L}{\partial y'}=\frac{y'}{\sqrt{1+y'^2}}$。E–L 方程式は
+$$0-\frac{d}{dx}\frac{y'}{\sqrt{1+y'^2}}=0\ \Longrightarrow\ \frac{y'}{\sqrt{1+y'^2}}=\text{定数}\ \Longrightarrow\ y'=\text{定数}.$$
+$y'$ が定数、すなわち $y$ は**直線**。「2点間の最短経路は直線」が、変分法から導かれました。当たり前の結果ですが、
+仕組みが正しく働くことの確認になります。次章以降、$y$ を含む場合・$y$ を含まない場合の解き方の型を整え、
+最速降下線のような非自明な形へ進みます。
+
+<Statement kind="remark" title="つまずきポイント">
+- **$\frac{d}{dx}$ は全微分**。$\frac{d}{dx}\frac{\partial L}{\partial y'}$ の中で、$\frac{\partial L}{\partial y'}$ は
+  $x,y(x),y'(x)$ を通して $x$ に依存する。展開すると $\frac{\partial^2 L}{\partial y'\partial x}+\frac{\partial^2 L}{\partial y'\partial y}y'+\frac{\partial^2 L}{\partial y'^2}y''$
+  となり、一般に $y''$ を含む二階 ODE。偏微分 $\frac{\partial}{\partial y'}$ と混同しない。
+- **E–L は必要条件**。$\delta J=0$ は停留の条件であって、最小である保証ではない。実際に最小かは第二変分・
+  直接法で確かめる（第9・10章）。装置の「たるみベース」が示すように、$\delta J\neq0$ なら極値ですらない。
+- **基本補題の $\eta$ は「端で $0$・滑らか」で十分**。それだけの自由度で中身 $g$ を完全に決められる——
+  少数の良いテスト関数が、関数全体を復元する。[PDE の弱解](/pde-advanced)の試験関数と同じ精神。
+</Statement>
+
+## この章のまとめ
+
+- 第一変分は部分積分で $\displaystyle\delta J[y;\eta]=\int_a^b\Big(\frac{\partial L}{\partial y}-\frac{d}{dx}\frac{\partial L}{\partial y'}\Big)\eta\,dx$ に
+  整理できる（端点で $\eta=0$ ゆえ境界項が消える）。
+- **変分法の基本補題**（あらゆる重みで積分して $0$ なら中身が $0$）により、「すべての $\eta$ で $\delta J=0$」は
+  一本の**オイラー–ラグランジュ方程式** $\frac{\partial L}{\partial y}-\frac{d}{dx}\frac{\partial L}{\partial y'}=0$ に凝縮。
+- 無限次元の最小化が、一本の常微分方程式を解く問題に化ける。最短経路 $\Rightarrow$ $y'=$ 定数 $\Rightarrow$ 直線。
+- E–L は必要条件（停留）。最小の保証は別途。
+
+次章は、E–L 方程式が解きやすくなる二つの「近道」——ラグランジアンが $x$ を含まないとき（エネルギー保存＝
+ベルトラミの公式）と $y$ を含まないとき（運動量保存）——を整えます。物理の保存則が、ここで顔を出します。
