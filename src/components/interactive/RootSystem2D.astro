@@ -1,0 +1,150 @@
+---
+/* RootSystem2D.astro — 半単純リー環を分類する「ルート系」を目で見る装置（階数2）。
+   カルタン部分環の作用でリー環が固有空間分解され、その固有値（ウェイト）＝ルートが平面に並ぶ。
+   単純ルート α1,α2 の間の角度と、その積 <α1,α2><α2,α1>（＝カルタン整数の積、0/1/2/3）が
+   ディンキン図形の結合本数を与える：
+     A1×A1（90°, 積0, 4本）・A2=sl3（120°, 積1, 6本）・B2=so5（135°, 積2, 8本）・G2（150°, 積3, 12本）。
+   全ルートは単純ルートからワイル反射 s_α(β)=β-2(β,α)/(α,α)·α の繰り返しで生成（＝ワイル群で閉じる）。
+   node 検証済み（ルート数 4/6/8/12、角度 90/120/135/150、カルタン積 0/1/2/3）。
+   状態はメモリ内のみ（storage 不使用）。 */
+---
+
+<figure class="rs" role="group" aria-label="階数2のルート系">
+  <div class="rs-controls">
+    <label class="rs-label">ルート系
+      <select id="rs-sys" class="rs-sel">
+        <option value="A1A1">A₁×A₁（so₄）</option>
+        <option value="A2" selected>A₂（sl₃）</option>
+        <option value="B2">B₂（so₅）</option>
+        <option value="G2">G₂</option>
+      </select>
+    </label>
+    <label class="rs-label"><input type="checkbox" id="rs-refl" /> ワイル反射の鏡を表示</label>
+  </div>
+  <canvas id="rs-cv" width="380" height="330" class="rs-cv"></canvas>
+  <figcaption id="rs-cap" class="rs-cap"></figcaption>
+</figure>
+
+<script>
+  const sysSel = document.getElementById("rs-sys") as HTMLSelectElement | null;
+  const reflBox = document.getElementById("rs-refl") as HTMLInputElement | null;
+  const cv = document.getElementById("rs-cv") as HTMLCanvasElement | null;
+  const capEl = document.getElementById("rs-cap");
+
+  if (sysSel && reflBox && cv && capEl) {
+    const ctx = cv.getContext("2d")!;
+    const W = cv.width, H = cv.height, cx = W / 2, cy = H / 2 - 6;
+    const css = (v: string) => getComputedStyle(document.documentElement).getPropertyValue(v).trim() || "#888";
+    const s3 = Math.sqrt(3);
+
+    const dot = (a: number[], b: number[]) => a[0] * b[0] + a[1] * b[1];
+    const refl = (b: number[], a: number[]) => { const c = 2 * dot(b, a) / dot(a, a); return [b[0] - c * a[0], b[1] - c * a[1]]; };
+    const eq = (a: number[], b: number[]) => Math.abs(a[0] - b[0]) < 1e-9 && Math.abs(a[1] - b[1]) < 1e-9;
+
+    const closure = (gens: number[][]) => {
+      const R: number[][] = [];
+      for (const g of gens) { R.push(g); R.push([-g[0], -g[1]]); }
+      let changed = true;
+      while (changed) {
+        changed = false;
+        for (const a of [...R]) for (const b of [...R]) { const r = refl(b, a); if (!R.some((w) => eq(w, r))) { R.push(r); changed = true; } }
+      }
+      return R;
+    };
+
+    const SYS: Record<string, { simple: number[][]; name: string; label: string; bonds: number }> = {
+      A1A1: { simple: [[1, 0], [0, 1]], name: "A₁×A₁", label: "so₄ ≅ sl₂×sl₂", bonds: 0 },
+      A2:   { simple: [[1, 0], [-0.5, s3 / 2]], name: "A₂", label: "sl₃", bonds: 1 },
+      B2:   { simple: [[1, -1], [0, 1]], name: "B₂", label: "so₅ ≅ sp₄", bonds: 2 },
+      G2:   { simple: [[1, 0], [-1.5, s3 / 2]], name: "G₂", label: "G₂", bonds: 3 },
+    };
+
+    const render = () => {
+      const S = SYS[sysSel.value];
+      const roots = closure(S.simple);
+      const maxLen = Math.max(...roots.map((r) => Math.hypot(r[0], r[1])));
+      const scale = 96 / maxLen;
+      const PX = (x: number) => cx + x * scale, PY = (y: number) => cy - y * scale;
+      ctx.clearRect(0, 0, W, H);
+
+      // 座標軸
+      ctx.strokeStyle = css("--line"); ctx.lineWidth = 1;
+      ctx.beginPath(); ctx.moveTo(20, cy); ctx.lineTo(W - 20, cy); ctx.moveTo(cx, 20); ctx.lineTo(cx, H - 60); ctx.stroke();
+
+      // ワイル反射の鏡（各ルートに垂直な超平面＝直線）
+      if (reflBox.checked) {
+        ctx.strokeStyle = css("--ai"); ctx.globalAlpha = 0.35; ctx.setLineDash([4, 4]); ctx.lineWidth = 1;
+        const seen: number[][] = [];
+        for (const r of roots) {
+          const n = Math.hypot(r[0], r[1]); const d = [r[0] / n, r[1] / n];
+          if (seen.some((w) => eq(w, d) || eq(w, [-d[0], -d[1]]))) continue;
+          seen.push(d);
+          const perp = [-d[1], d[0]];
+          ctx.beginPath();
+          ctx.moveTo(PX(-perp[0] * 3), PY(-perp[1] * 3)); ctx.lineTo(PX(perp[0] * 3), PY(perp[1] * 3)); ctx.stroke();
+        }
+        ctx.setLineDash([]); ctx.globalAlpha = 1;
+      }
+
+      // ルート（矢印）
+      const isSimple = (r: number[]) => S.simple.some((a) => eq(a, r));
+      const arrow = (r: number[], color: string, w: number) => {
+        const x = PX(r[0]), y = PY(r[1]);
+        ctx.strokeStyle = color; ctx.fillStyle = color; ctx.lineWidth = w;
+        ctx.beginPath(); ctx.moveTo(cx, cy); ctx.lineTo(x, y); ctx.stroke();
+        const ang = Math.atan2(y - cy, x - cx), h = 7;
+        ctx.beginPath(); ctx.moveTo(x, y);
+        ctx.lineTo(x - h * Math.cos(ang - 0.4), y - h * Math.sin(ang - 0.4));
+        ctx.lineTo(x - h * Math.cos(ang + 0.4), y - h * Math.sin(ang + 0.4));
+        ctx.closePath(); ctx.fill();
+      };
+      for (const r of roots) if (!isSimple(r)) arrow(r, css("--ink-faint"), 1.6);
+      for (const r of S.simple) arrow(r, css("--shu"), 2.4);
+      // 原点
+      ctx.fillStyle = css("--ink"); ctx.beginPath(); ctx.arc(cx, cy, 3, 0, 7); ctx.fill();
+      // 単純ルートのラベル
+      ctx.fillStyle = css("--shu"); ctx.font = "600 13px sans-serif";
+      ctx.fillText("α₁", PX(S.simple[0][0]) + 4, PY(S.simple[0][1]) - 4);
+      ctx.fillText("α₂", PX(S.simple[1][0]) + 4, PY(S.simple[1][1]) - 4);
+
+      // ディンキン図形（左下）
+      const dx = 42, dy = H - 30, gap = 30;
+      ctx.strokeStyle = css("--ink"); ctx.fillStyle = css("--ink"); ctx.lineWidth = 1.4;
+      const drawNode = (x: number, filled: boolean) => { ctx.beginPath(); ctx.arc(x, dy, 6, 0, 7); if (filled) ctx.fill(); else { ctx.fillStyle = css("--paper"); ctx.fill(); ctx.strokeStyle = css("--ink"); ctx.stroke(); ctx.fillStyle = css("--ink"); } };
+      const b = S.bonds;
+      if (b > 0) {
+        for (let i = 0; i < b; i++) { const off = (i - (b - 1) / 2) * 3.5; ctx.beginPath(); ctx.moveTo(dx + 6, dy + off); ctx.lineTo(dx + gap - 6, dy + off); ctx.stroke(); }
+        if (b >= 2) { // 長→短の矢印
+          const long1 = dot(S.simple[0], S.simple[0]) > dot(S.simple[1], S.simple[1]);
+          const ax = long1 ? dx + gap - 8 : dx + 8, dir = long1 ? 1 : -1;
+          ctx.beginPath(); ctx.moveTo(ax, dy); ctx.lineTo(ax - dir * 6, dy - 4); ctx.moveTo(ax, dy); ctx.lineTo(ax - dir * 6, dy + 4); ctx.stroke();
+        }
+      }
+      drawNode(dx, true); drawNode(dx + gap, true);
+      ctx.fillStyle = css("--ink-faint"); ctx.font = "12px sans-serif";
+      ctx.fillText("ディンキン図形", dx - 6, dy - 16);
+
+      const angle = Math.round(Math.acos(dot(S.simple[0], S.simple[1]) / Math.sqrt(dot(S.simple[0], S.simple[0]) * dot(S.simple[1], S.simple[1]))) * 180 / Math.PI);
+      capEl.innerHTML =
+        `<b>${S.name}</b>（${S.label}）：ルートは <b>${roots.length} 本</b>。<b class="shu">単純ルート α₁,α₂（朱）</b>の間の角は ` +
+        `<b>${angle}°</b>、カルタン整数の積は <b>${S.bonds}</b> ＝ ディンキン図形の<b>結合本数</b>。` +
+        `<br>すべてのルートは単純ルートから<b>ワイル反射</b>（各ルートに垂直な鏡での折り返し）で生成され、有限集合で閉じる。` +
+        `角度が 90°/120°/135°/150° の4通りしかないことが、半単純リー環の<b>分類</b>を生む。`;
+    };
+    sysSel.addEventListener("change", render);
+    reflBox.addEventListener("change", render);
+    render();
+  }
+</script>
+
+<style>
+  .rs { margin: 26px 0; padding: 16px 18px 14px; border: 1px solid var(--line); border-radius: 10px; background: var(--card); }
+  .rs-controls { display: flex; flex-wrap: wrap; gap: 8px 16px; margin-bottom: 12px; align-items: center; }
+  .rs-label { font-size: 13px; font-weight: 600; color: var(--ink); font-family: var(--sans); display: flex; align-items: center; gap: 6px; }
+  .rs-sel { font-size: 13px; padding: 3px 6px; border: 1px solid var(--line); border-radius: 6px; background: var(--paper); color: var(--ink); }
+  .rs-cv { display: block; margin: 0 auto; width: 100%; max-width: 380px; height: auto; border: 1px solid var(--line); border-radius: 6px; background: var(--paper-sunk); }
+  .rs-cap { margin-top: 12px; font-size: 13px; line-height: 1.85; color: var(--ink-faint); font-family: var(--sans); }
+  .rs-cap b { color: var(--ink); font-weight: 700; }
+  .rs-cap b.shu { color: var(--shu); }
+  .rs-cap b.ai { color: var(--ai); }
+</style>

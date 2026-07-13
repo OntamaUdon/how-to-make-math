@@ -1,0 +1,108 @@
+---
+/* WedderburnBlocks.astro — アルティン–ウェダーバーンの定理を目で見る装置。
+   有限群 G の複素群環 ℂ[G]（次元 |G|）は、マシュケの定理で半単純、ゆえに行列環の直積に分解する：
+     ℂ[G] ≅ M_{d_1}(ℂ) × M_{d_2}(ℂ) × … × M_{d_k}(ℂ),   Σ d_i² = |G|.
+   各ブロック M_{d_i}(ℂ) は「単純部品」で、d_i はその既約表現の次元、d_i² 個のセルを占める。
+   群を選ぶと、|G| 個のセルが d_i×d_i のブロック対角に組み変わり、Σd_i²=|G| が目に見える。
+   アーベル群は全ブロック 1×1（可換＝すべて 1 次元表現）。
+   node 検証済み（Z/n→1がn個, S3→1,1,2, D4/Q8→1,1,1,1,2, A4→1,1,1,3, S4→1,1,2,3,3、全て Σd²=|G|）。
+   状態はメモリ内のみ（storage 不使用）。 */
+---
+
+<figure class="wb" role="group" aria-label="群環のウェダーバーン分解">
+  <div class="wb-controls">
+    <label class="wb-label">群 G
+      <select id="wb-g" class="wb-sel">
+        <option value="Z4">ℤ/4（巡回・可換）</option>
+        <option value="Z6">ℤ/6（巡回・可換）</option>
+        <option value="S3" selected>S₃（=D₃）</option>
+        <option value="D4">D₄（二面体）</option>
+        <option value="Q8">Q₈（四元数群）</option>
+        <option value="A4">A₄（交代群）</option>
+        <option value="S4">S₄</option>
+      </select>
+    </label>
+  </div>
+  <canvas id="wb-cv" width="380" height="250" class="wb-cv"></canvas>
+  <figcaption id="wb-cap" class="wb-cap"></figcaption>
+</figure>
+
+<script>
+  const gSel = document.getElementById("wb-g") as HTMLSelectElement | null;
+  const cv = document.getElementById("wb-cv") as HTMLCanvasElement | null;
+  const capEl = document.getElementById("wb-cap");
+
+  if (gSel && cv && capEl) {
+    const ctx = cv.getContext("2d")!;
+    const W = cv.width, H = cv.height;
+    const css = (v: string) => getComputedStyle(document.documentElement).getPropertyValue(v).trim() || "#888";
+
+    const GROUPS: Record<string, { name: string; order: number; dims: number[]; abelian: boolean }> = {
+      Z4: { name: "ℤ/4", order: 4, dims: [1, 1, 1, 1], abelian: true },
+      Z6: { name: "ℤ/6", order: 6, dims: [1, 1, 1, 1, 1, 1], abelian: true },
+      S3: { name: "S₃", order: 6, dims: [1, 1, 2], abelian: false },
+      D4: { name: "D₄", order: 8, dims: [1, 1, 1, 1, 2], abelian: false },
+      Q8: { name: "Q₈", order: 8, dims: [1, 1, 1, 1, 2], abelian: false },
+      A4: { name: "A₄", order: 12, dims: [1, 1, 1, 3], abelian: false },
+      S4: { name: "S₄", order: 24, dims: [1, 1, 2, 3, 3], abelian: false },
+    };
+    const palette = ["--shu", "--ai", "--shu", "--ai", "--shu", "--ai"];
+
+    const render = () => {
+      const G = GROUPS[gSel.value];
+      ctx.clearRect(0, 0, W, H);
+      const cell = 20, gap = 10, pad = 12;
+      // ブロックを横に並べて配置（対角に積む代わりに、横並びで各ブロックを d×d 正方に）
+      const totalW = G.dims.reduce((a, d) => a + d * cell + gap, -gap);
+      let x0 = (W - totalW) / 2;
+      const yMid = H / 2 - 10;
+
+      G.dims.forEach((d, i) => {
+        const size = d * cell;
+        const y0 = yMid - size / 2;
+        const tone = css(palette[i % palette.length]);
+        // 枠
+        ctx.fillStyle = tone + "18"; ctx.strokeStyle = tone; ctx.lineWidth = 1.6;
+        ctx.fillRect(x0, y0, size, size); ctx.strokeRect(x0, y0, size, size);
+        // 内部セル格子
+        ctx.strokeStyle = tone; ctx.globalAlpha = 0.4; ctx.lineWidth = 0.7;
+        for (let r = 1; r < d; r++) { ctx.beginPath(); ctx.moveTo(x0, y0 + r * cell); ctx.lineTo(x0 + size, y0 + r * cell); ctx.stroke(); ctx.beginPath(); ctx.moveTo(x0 + r * cell, y0); ctx.lineTo(x0 + r * cell, y0 + size); ctx.stroke(); }
+        ctx.globalAlpha = 1;
+        // ラベル M_d(ℂ)  と d²
+        ctx.fillStyle = tone; ctx.font = "600 12px sans-serif"; ctx.textAlign = "center";
+        ctx.fillText(`M${d === 1 ? "₁" : d === 2 ? "₂" : d === 3 ? "₃" : d}(ℂ)`, x0 + size / 2, y0 - 8);
+        ctx.fillStyle = css("--ink-faint"); ctx.font = "11px sans-serif";
+        ctx.fillText(`${d}²=${d * d}`, x0 + size / 2, y0 + size + 14);
+        x0 += size + gap;
+      });
+      ctx.textAlign = "left";
+
+      const sum = G.dims.reduce((a, d) => a + d * d, 0);
+      const dimStr = G.dims.join(", ");
+      const sqStr = G.dims.map((d) => `${d}²`).join(" + ");
+      capEl.innerHTML =
+        `複素群環 <b>ℂ[${G.name}]</b>（次元 |G| = <b>${G.order}</b>）は、マシュケの定理で半単純。` +
+        `アルティン–ウェダーバーンにより<b>行列環の直積</b>に分解：<br>` +
+        `<b>ℂ[${G.name}] ≅ ${G.dims.map((d) => `M${d === 1 ? "₁" : d === 2 ? "₂" : d === 3 ? "₃" : d}(ℂ)`).join(" × ")}</b>。` +
+        `各ブロックは<b>単純環</b>（分解できない部品）、その大きさ d が<b>既約表現の次元</b>。` +
+        `<br>セルの総数 ${sqStr} = <b>${sum}</b> ＝ |G| ＝ <b>${G.order}</b>` +
+        (G.abelian
+          ? `。<b class="ai">可換群</b>だからすべて 1×1（1 次元表現ばかり）。`
+          : `。既約次元 (${dimStr}) の二乗和が群の位数に一致する。`);
+    };
+    gSel.addEventListener("change", render);
+    render();
+  }
+</script>
+
+<style>
+  .wb { margin: 26px 0; padding: 16px 18px 14px; border: 1px solid var(--line); border-radius: 10px; background: var(--card); }
+  .wb-controls { display: flex; flex-wrap: wrap; gap: 8px 16px; margin-bottom: 12px; align-items: center; }
+  .wb-label { font-size: 13px; font-weight: 600; color: var(--ink); font-family: var(--sans); display: flex; align-items: center; gap: 6px; }
+  .wb-sel { font-size: 13px; padding: 3px 6px; border: 1px solid var(--line); border-radius: 6px; background: var(--paper); color: var(--ink); }
+  .wb-cv { display: block; margin: 0 auto; width: 100%; max-width: 380px; height: auto; border: 1px solid var(--line); border-radius: 6px; background: var(--paper-sunk); }
+  .wb-cap { margin-top: 12px; font-size: 13px; line-height: 1.85; color: var(--ink-faint); font-family: var(--sans); }
+  .wb-cap b { color: var(--ink); font-weight: 700; }
+  .wb-cap b.shu { color: var(--shu); }
+  .wb-cap b.ai { color: var(--ai); }
+</style>
