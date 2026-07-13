@@ -1,0 +1,123 @@
+---
+/* HodgeDiamond.astro — ホッジ理論の心臓「ホッジ・ダイヤモンド」を見る装置。
+   コンパクトなケーラー多様体（複素次元 n）では、k 次コホモロジーが
+     H^k = ⊕_{p+q=k} H^{p,q},   h^{p,q}=dim H^{p,q}
+   と (p,q) 型に分解する。ホッジ数 h^{p,q} を p+q（縦）と p-q（横）で菱形に並べたのがホッジ・ダイヤモンド。
+   二つの対称性：
+     ・複素共役    h^{p,q} = h^{q,p}   （左右対称）
+     ・セール双対  h^{p,q} = h^{n-p,n-q}（上下＝180°対称）
+   そして各段の和がベッチ数：b_k = Σ_{p+q=k} h^{p,q}。ケーラー制約で b_奇数 は偶数。
+   node 検証済み（P¹/種数g曲線/楕円曲線/P²/2次元トーラス/K3/P³ で両対称性・ベッチ数・b_odd偶数）。
+   状態はメモリ内のみ（storage 不使用）。 */
+---
+
+<figure class="hd" role="group" aria-label="ホッジ・ダイヤモンド">
+  <div class="hd-controls">
+    <label class="hd-label">多様体
+      <select id="hd-m" class="hd-sel">
+        <option value="P1">ℙ¹（種数0曲線）</option>
+        <option value="g2">種数2の曲線</option>
+        <option value="ell">楕円曲線（1次元トーラス）</option>
+        <option value="P2" selected>ℙ²（複素曲面）</option>
+        <option value="T2">2次元複素トーラス</option>
+        <option value="K3">K3 曲面</option>
+        <option value="P3">ℙ³（複素3次元）</option>
+      </select>
+    </label>
+    <label class="hd-label"><input type="checkbox" id="hd-sym" /> 対称性を強調</label>
+  </div>
+  <canvas id="hd-cv" width="380" height="330" class="hd-cv"></canvas>
+  <figcaption id="hd-cap" class="hd-cap"></figcaption>
+</figure>
+
+<script>
+  const mSel = document.getElementById("hd-m") as HTMLSelectElement | null;
+  const symBox = document.getElementById("hd-sym") as HTMLInputElement | null;
+  const cv = document.getElementById("hd-cv") as HTMLCanvasElement | null;
+  const capEl = document.getElementById("hd-cap");
+
+  if (mSel && symBox && cv && capEl) {
+    const ctx = cv.getContext("2d")!;
+    const W = cv.width, H = cv.height;
+    const css = (v: string) => getComputedStyle(document.documentElement).getPropertyValue(v).trim() || "#888";
+
+    const MAN: Record<string, { name: string; n: number; h: number[][] }> = {
+      P1:  { name: "ℙ¹", n: 1, h: [[1, 0], [0, 1]] },
+      g2:  { name: "種数2曲線", n: 1, h: [[1, 2], [2, 1]] },
+      ell: { name: "楕円曲線", n: 1, h: [[1, 1], [1, 1]] },
+      P2:  { name: "ℙ²", n: 2, h: [[1, 0, 0], [0, 1, 0], [0, 0, 1]] },
+      T2:  { name: "2次元トーラス", n: 2, h: [[1, 2, 1], [2, 4, 2], [1, 2, 1]] },
+      K3:  { name: "K3 曲面", n: 2, h: [[1, 0, 1], [0, 20, 0], [1, 0, 1]] },
+      P3:  { name: "ℙ³", n: 3, h: [[1, 0, 0, 0], [0, 1, 0, 0], [0, 0, 1, 0], [0, 0, 0, 1]] },
+    };
+
+    const render = () => {
+      const M = MAN[mSel.value], n = M.n, h = M.h, sym = symBox.checked;
+      ctx.clearRect(0, 0, W, H);
+      const cx = W / 2 - 40, top = 34, rowH = (H - 80) / (2 * n), colW = Math.min(46, (W - 120) / (2 * n + 1));
+
+      // ベッチ数
+      const betti: number[] = [];
+      for (let k = 0; k <= 2 * n; k++) { let s = 0; for (let p = 0; p <= n; p++) { const q = k - p; if (q >= 0 && q <= n) s += h[p][q]; } betti.push(s); }
+
+      // セル描画：p+q=k を段（上が k=0）、p-q を横位置
+      for (let p = 0; p <= n; p++) for (let q = 0; q <= n; q++) {
+        const k = p + q;
+        const x = cx + (p - q) * colW / 2;
+        const y = top + k * rowH;
+        const val = h[p][q];
+        const onDiag = p === q;
+        let bg = css("--paper"), fg = val > 0 ? css("--ink") : css("--ink-faint"), bd = css("--line");
+        if (sym && p !== q) { bg = css("--ai") + "18"; bd = css("--ai"); }        // 共役対称のペア
+        if (sym && p === q) { bg = css("--shu") + "18"; bd = css("--shu"); }        // 対角（自己共役）
+        ctx.fillStyle = bg; ctx.strokeStyle = bd; ctx.lineWidth = 1;
+        ctx.beginPath(); ctx.arc(x, y, 15, 0, 7); ctx.fill(); ctx.stroke();
+        ctx.fillStyle = fg; ctx.font = (val > 9 ? "600 12px" : "600 14px") + " sans-serif"; ctx.textAlign = "center"; ctx.textBaseline = "middle";
+        ctx.fillText(String(val), x, y);
+      }
+      // 段ラベル（左）とベッチ数（右）
+      ctx.textAlign = "right"; ctx.font = "11px sans-serif";
+      for (let k = 0; k <= 2 * n; k++) {
+        const y = top + k * rowH;
+        ctx.fillStyle = css("--ink-faint"); ctx.fillText(`k=${k}`, cx - (n + 0.7) * colW / 2 - 4, y);
+      }
+      ctx.textAlign = "left";
+      const bx = W - 74;
+      ctx.fillStyle = css("--ink"); ctx.font = "600 12px sans-serif"; ctx.fillText("ベッチ数", bx - 6, top - 16);
+      for (let k = 0; k <= 2 * n; k++) {
+        const y = top + k * rowH;
+        ctx.fillStyle = css("--ink-faint"); ctx.font = "11px sans-serif";
+        ctx.fillText(`b${k}`, bx - 4, y - 7);
+        ctx.fillStyle = betti[k] % 2 === 1 && k % 2 === 1 ? css("--shu") : css("--ink");
+        ctx.font = "600 13px sans-serif"; ctx.fillText(String(betti[k]), bx + 16, y - 7);
+      }
+
+      const euler = betti.reduce((a, b, k) => a + (k % 2 ? -b : b), 0);
+      const hodgeStr = M.name === "種数2曲線" || M.name === "楕円曲線"
+        ? `h⁰⁰=${h[0][0]}, h¹⁰=h⁰¹=${h[1][0]}, h¹¹=${h[1][1]}`
+        : `対角 h^{p,p} と対称配置`;
+      capEl.innerHTML =
+        `<b>${M.name}</b>（複素次元 ${n}）のホッジ・ダイヤモンド。各丸が <b>h<sup>p,q</sup>=dim H<sup>p,q</sup></b>、` +
+        `段 k=p+q ごとに並ぶ。<br>各段の和がベッチ数 <b>b_k=Σ_{p+q=k} h<sup>p,q</sup></b>（右列）。` +
+        `オイラー数 χ=Σ(−1)^k b_k = <b>${euler}</b>。` +
+        (sym
+          ? `<br><b class="ai">左右対称</b>＝複素共役 <b>h<sup>p,q</sup>=h<sup>q,p</sup></b>、<b>上下（180°）対称</b>＝セール双対 <b>h<sup>p,q</sup>=h<sup>n−p,n−q</sup></b>。<b class="shu">対角（朱）</b>は自己共役。`
+          : `<br>ケーラーだから <b>b_奇数 は偶数</b>（複素共役対称の帰結）。「対称性を強調」で二つの対称を確認。`);
+    };
+    mSel.addEventListener("change", render);
+    symBox.addEventListener("change", render);
+    render();
+  }
+</script>
+
+<style>
+  .hd { margin: 26px 0; padding: 16px 18px 14px; border: 1px solid var(--line); border-radius: 10px; background: var(--card); }
+  .hd-controls { display: flex; flex-wrap: wrap; gap: 8px 16px; margin-bottom: 12px; align-items: center; }
+  .hd-label { font-size: 13px; font-weight: 600; color: var(--ink); font-family: var(--sans); display: flex; align-items: center; gap: 6px; }
+  .hd-sel { font-size: 13px; padding: 3px 6px; border: 1px solid var(--line); border-radius: 6px; background: var(--paper); color: var(--ink); }
+  .hd-cv { display: block; margin: 0 auto; width: 100%; max-width: 380px; height: auto; border: 1px solid var(--line); border-radius: 6px; background: var(--paper-sunk); }
+  .hd-cap { margin-top: 12px; font-size: 13px; line-height: 1.85; color: var(--ink-faint); font-family: var(--sans); }
+  .hd-cap b { color: var(--ink); font-weight: 700; }
+  .hd-cap b.shu { color: var(--shu); }
+  .hd-cap b.ai { color: var(--ai); }
+</style>

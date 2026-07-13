@@ -1,0 +1,135 @@
+---
+/* ComplexTorus.astro — 「格子から作る、いちばん簡単なコンパクト複素多様体」を見る装置。
+   複素平面 ℂ を格子 Λ=ℤ+τℤ（τ=τ₁+iτ₂, τ₂>0）で割った商 ℂ/Λ は、複素1次元のコンパクト多様体
+   ＝トーラス（＝楕円曲線）。基本平行四辺形の向かい合う辺を貼り合わせるとドーナツになる。
+   ・格子と基本平行四辺形（面積 = Im τ）を描く。
+   ・τ を動かすと「複素構造」が変わる＝別の楕円曲線。ただし SL(2,ℤ) で移り合う τ は同じ曲線：
+       τ → τ+1（同じ格子）、 τ → −1/τ（相似な格子）。ボタンで確認。
+   node 検証済み（基本領域面積=Im τ、τ+1 が同じ格子、−1/τ が Im>0 の相似格子）。
+   状態はメモリ内のみ（storage 不使用）。 */
+---
+
+<figure class="ct" role="group" aria-label="複素トーラス（格子と商）">
+  <div class="ct-controls">
+    <label class="ct-label">Re τ ＝ <span id="ct-rval">0.30</span>
+      <input id="ct-r" type="range" min="-100" max="100" value="30" step="1" class="ct-range" />
+    </label>
+    <label class="ct-label">Im τ ＝ <span id="ct-ival">1.30</span>
+      <input id="ct-i" type="range" min="40" max="240" value="130" step="1" class="ct-range" />
+    </label>
+    <div class="ct-btns">
+      <button id="ct-t" class="ct-btn">τ → τ+1</button>
+      <button id="ct-s" class="ct-btn">τ → −1/τ</button>
+    </div>
+  </div>
+  <canvas id="ct-cv" width="380" height="300" class="ct-cv"></canvas>
+  <figcaption id="ct-cap" class="ct-cap"></figcaption>
+</figure>
+
+<script>
+  const rIn = document.getElementById("ct-r") as HTMLInputElement | null;
+  const iIn = document.getElementById("ct-i") as HTMLInputElement | null;
+  const rVal = document.getElementById("ct-rval");
+  const iVal = document.getElementById("ct-ival");
+  const btnT = document.getElementById("ct-t") as HTMLButtonElement | null;
+  const btnS = document.getElementById("ct-s") as HTMLButtonElement | null;
+  const cv = document.getElementById("ct-cv") as HTMLCanvasElement | null;
+  const capEl = document.getElementById("ct-cap");
+
+  if (rIn && iIn && rVal && iVal && btnT && btnS && cv && capEl) {
+    const ctx = cv.getContext("2d")!;
+    const W = cv.width, H = cv.height;
+    const css = (v: string) => getComputedStyle(document.documentElement).getPropertyValue(v).trim() || "#888";
+    const ox = 120, oy = H - 60, scale = 70; // 原点位置と拡大率
+
+    const setTau = (re: number, im: number) => {
+      im = Math.max(0.4, Math.min(2.4, im));
+      re = ((re + 1) % 2 + 2) % 2 - 1; // 表示上 [-1,1) に丸める（見やすさ）
+      rIn.value = String(Math.round(re * 100));
+      iIn.value = String(Math.round(im * 100));
+    };
+
+    const render = () => {
+      const tr = Number(rIn.value) / 100, ti = Number(iIn.value) / 100;
+      rVal.textContent = tr.toFixed(2); iVal.textContent = ti.toFixed(2);
+      ctx.clearRect(0, 0, W, H);
+      const PX = (x: number) => ox + x * scale, PY = (y: number) => oy - y * scale;
+      const v1 = [1, 0], v2 = [tr, ti];
+
+      // 軸
+      ctx.strokeStyle = css("--line"); ctx.lineWidth = 1;
+      ctx.beginPath(); ctx.moveTo(10, oy); ctx.lineTo(W - 10, oy); ctx.moveTo(ox, 10); ctx.lineTo(ox, H - 10); ctx.stroke();
+
+      // 格子点
+      for (let m = -4; m <= 5; m++) for (let n = -1; n <= 4; n++) {
+        const x = m * v1[0] + n * v2[0], y = m * v1[1] + n * v2[1];
+        const px = PX(x), py = PY(y);
+        if (px < 4 || px > W - 4 || py < 4 || py > H - 4) continue;
+        ctx.fillStyle = (m === 0 && n === 0) ? css("--ink") : css("--ink-faint");
+        ctx.beginPath(); ctx.arc(px, py, 2.6, 0, 7); ctx.fill();
+      }
+
+      // 基本平行四辺形（0,1,1+τ,τ）
+      ctx.fillStyle = css("--shu") + "22"; ctx.strokeStyle = css("--shu"); ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.moveTo(PX(0), PY(0)); ctx.lineTo(PX(v1[0]), PY(v1[1]));
+      ctx.lineTo(PX(v1[0] + v2[0]), PY(v1[1] + v2[1])); ctx.lineTo(PX(v2[0]), PY(v2[1]));
+      ctx.closePath(); ctx.fill(); ctx.stroke();
+      // 辺の貼り合わせ矢印（下↔上：単一、左↔右：二重）
+      const midArrow = (ax: number, ay: number, bx: number, by: number, dbl: boolean) => {
+        const mx = (ax + bx) / 2, my = (ay + by) / 2, ang = Math.atan2(by - ay, bx - ax), h = 7;
+        const draw = (off: number) => {
+          const px = mx + off * Math.cos(ang + Math.PI / 2), py = my + off * Math.sin(ang + Math.PI / 2);
+          ctx.beginPath(); ctx.moveTo(px, py);
+          ctx.lineTo(px - h * Math.cos(ang - 0.5), py - h * Math.sin(ang - 0.5));
+          ctx.moveTo(px, py); ctx.lineTo(px - h * Math.cos(ang + 0.5), py - h * Math.sin(ang + 0.5)); ctx.stroke();
+        };
+        ctx.strokeStyle = css("--ai"); ctx.lineWidth = 1.6;
+        if (dbl) { draw(-2.5); draw(2.5); } else draw(0);
+      };
+      midArrow(PX(0), PY(0), PX(v1[0]), PY(v1[1]), false);                       // 下辺
+      midArrow(PX(v2[0]), PY(v2[1]), PX(v1[0] + v2[0]), PY(v1[1] + v2[1]), false); // 上辺
+      midArrow(PX(0), PY(0), PX(v2[0]), PY(v2[1]), true);                        // 左辺
+      midArrow(PX(v1[0]), PY(v1[1]), PX(v1[0] + v2[0]), PY(v1[1] + v2[1]), true); // 右辺
+
+      // ラベル
+      ctx.fillStyle = css("--ink"); ctx.font = "600 12px sans-serif"; ctx.textAlign = "center";
+      ctx.fillText("0", PX(0) - 8, PY(0) + 14); ctx.fillText("1", PX(1), PY(0) + 14);
+      ctx.fillText("τ", PX(v2[0]) - 8, PY(v2[1]) - 4);
+      ctx.textAlign = "left";
+
+      const area = ti;
+      capEl.innerHTML =
+        `複素平面 ℂ を格子 <b>Λ = ℤ + τℤ</b>（τ=${tr.toFixed(2)}+${ti.toFixed(2)}i）で割った商 ` +
+        `<b>ℂ/Λ</b> は、いちばん簡単なコンパクト複素多様体＝<b class="shu">トーラス（楕円曲線）</b>。` +
+        `基本平行四辺形の向かい合う辺（<b class="ai">矢印</b>）を貼り合わせるとドーナツになる。<br>` +
+        `基本領域の面積 ＝ <b>Im τ ＝ ${area.toFixed(2)}</b>。τ を動かすと<b>複素構造が変わる</b>＝別の楕円曲線。` +
+        `ただし <b>τ→τ+1</b>（同じ格子）と <b>τ→−1/τ</b>（相似な格子）は<b>同じ曲線</b>` +
+        `——SL(2,ℤ) で移り合う τ は区別できない（モジュライ）。`;
+    };
+
+    rIn.addEventListener("input", render);
+    iIn.addEventListener("input", render);
+    btnT.addEventListener("click", () => { const tr = Number(rIn.value) / 100, ti = Number(iIn.value) / 100; setTau(tr + 1, ti); render(); });
+    btnS.addEventListener("click", () => {
+      const tr = Number(rIn.value) / 100, ti = Number(iIn.value) / 100;
+      const d = tr * tr + ti * ti; setTau(-tr / d, ti / d); render();
+    });
+    render();
+  }
+</script>
+
+<style>
+  .ct { margin: 26px 0; padding: 16px 18px 14px; border: 1px solid var(--line); border-radius: 10px; background: var(--card); }
+  .ct-controls { display: flex; flex-direction: column; gap: 7px; margin-bottom: 12px; }
+  .ct-label { font-size: 13px; font-weight: 600; color: var(--ink); font-family: var(--sans); display: flex; align-items: center; gap: 8px; }
+  .ct-range { flex: 1; max-width: 220px; accent-color: var(--shu); }
+  .ct-btns { display: flex; gap: 8px; margin-top: 2px; }
+  .ct-btn { font-size: 12.5px; font-family: var(--sans); padding: 4px 12px; border: 1px solid var(--line); border-radius: 6px; background: var(--paper); color: var(--ink); cursor: pointer; }
+  .ct-btn:hover { border-color: var(--ai); color: var(--ai); }
+  .ct-cv { display: block; margin: 0 auto; width: 100%; max-width: 380px; height: auto; border: 1px solid var(--line); border-radius: 6px; background: var(--paper-sunk); }
+  .ct-cap { margin-top: 12px; font-size: 13px; line-height: 1.85; color: var(--ink-faint); font-family: var(--sans); }
+  .ct-cap b { color: var(--ink); font-weight: 700; }
+  .ct-cap b.shu { color: var(--shu); }
+  .ct-cap b.ai { color: var(--ai); }
+</style>

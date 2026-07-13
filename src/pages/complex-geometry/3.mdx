@@ -1,0 +1,103 @@
+---
+layout: ../../layouts/BaseLayout.astro
+title: 第3章 ドルボー作用素と (p,q) 形式
+description: 微分形式を正則・反正則方向で細分する。(p,q) 形式、外微分 d が ∂ と ∂̄ に分裂すること、∂̄²=0。正則性が「∂̄f=0」という一本の方程式に凝縮され、コーシー–リーマンが幾何の言葉に翻訳される。
+---
+
+import Term from "../../components/assets/Term.astro";
+import Statement from "../../components/assets/Statement.astro";
+
+# 第3章 ドルボー作用素と (p,q) 形式
+
+前章で、複素多様体の接空間は正則方向 $T^{1,0}$ と反正則方向 $T^{0,1}$ に分かれました。この分解を微分形式に
+持ち上げると、[多様体論](/manifolds)の微分形式が **$(p,q)$ 型**に細かく分類されます。すると外微分 $d$ が
+$\partial$ と $\bar\partial$ という二つの作用素に分裂する。この $\bar\partial$（ドルボー作用素）こそが複素幾何の
+主役です。「正則である」という条件が、$\bar\partial f=0$ というただ一本の方程式に凝縮され、複素解析の
+コーシー–リーマン方程式が幾何の言葉に翻訳されます。
+
+## (p,q) 形式：形式を正則・反正則で分ける
+
+微分形式は、余接空間 $dz_j$（正則）と $d\bar z_j$（反正則）の外積で書けます。正則な微分をいくつ、反正則な
+微分をいくつ含むかで、形式を分類します。
+
+<Statement kind="definition" title="(p,q) 形式">
+複素多様体上の微分形式が<Term>(p,q) 形式</Term>とは、局所座標で
+$$\alpha=\sum_{|I|=p,\,|J|=q}f_{IJ}\;dz_{i_1}\wedge\cdots\wedge dz_{i_p}\wedge d\bar z_{j_1}\wedge\cdots\wedge d\bar z_{j_q}$$
+と、正則な $dz$ を $p$ 個・反正則な $d\bar z$ を $q$ 個含む形に書けること。$(p,q)$ 形式の全体を
+$\mathcal A^{p,q}$ と書く。全次数 $k$ の複素微分形式は $(p,q)$ 型に分解する：
+$$\mathcal A^k=\bigoplus_{p+q=k}\mathcal A^{p,q}.$$
+</Statement>
+
+実の多様体では、微分形式は次数 $k$ だけで分類されました。複素構造が入ると、同じ $k$ 次形式が
+「正則をいくつ・反正則をいくつ含むか」で $(p,q)$ に細分される。$k=1$ の形式は $(1,0)$（$dz$）と $(0,1)$（$d\bar z$）に、
+$k=2$ の形式は $(2,0),(1,1),(0,2)$ に分かれる。この細分が、複素幾何のあらゆる構造の出発点です。
+
+## d が ∂ と ∂̄ に分裂する
+
+外微分 $d$ を $(p,q)$ 形式に施すと、$dz$ か $d\bar z$ が一つ増えるので、$(p+1,q)$ 型と $(p,q+1)$ 型の成分が
+出ます。この二つを別々の作用素として取り出します。
+
+<Statement kind="definition" title="ドルボー作用素 ∂ と ∂̄">
+$(p,q)$ 形式に対し、外微分を型で分解する：
+$$d=\partial+\bar\partial,\qquad \partial\colon\mathcal A^{p,q}\to\mathcal A^{p+1,q},\quad \bar\partial\colon\mathcal A^{p,q}\to\mathcal A^{p,q+1}.$$
+$\bar\partial$ を<Term>ドルボー作用素</Term>という。関数 $f$ に対しては
+$\partial f=\sum\frac{\partial f}{\partial z_j}dz_j$、$\bar\partial f=\sum\frac{\partial f}{\partial\bar z_j}d\bar z_j$。
+</Statement>
+
+$d=\partial+\bar\partial$ という分裂は、複素多様体（$J$ が可積分）だからこそ起こります——概複素多様体でも
+$J$ が可積分でないと $d$ に $(p+2,q-1)$ 型などの余計な成分が出て、この綺麗な分裂が崩れます（前章の可積分性が
+効く）。$d^2=0$ を型ごとに分けると、次の基本関係が出ます。
+
+<Statement kind="proposition" title="∂̄²=0">
+$d^2=0$ を $(p,q)$ 型に分解すると
+$$\partial^2=0,\qquad \bar\partial^2=0,\qquad \partial\bar\partial+\bar\partial\partial=0.$$
+とくに $\bar\partial^2=0$——ドルボー作用素は $d$ と同じく「二回で消える」複体を作る。
+</Statement>
+
+$\bar\partial^2=0$ が決定的です。[多様体論](/manifolds)で $d^2=0$ がド・ラームコホモロジーを生んだのと
+まったく同じ仕組みで、$\bar\partial^2=0$ が次章の**ドルボーコホモロジー**を生みます。複素幾何は、この
+$\bar\partial$-複体の上に築かれます。
+
+## 正則性 ＝ ∂̄f = 0
+
+ドルボー作用素の意味を、関数で確かめます。$\bar\partial f=\sum\frac{\partial f}{\partial\bar z_j}d\bar z_j$ が
+$0$ になる条件は、すべての反正則微分が消えること。これはまさに正則性の定義です。
+
+<Statement kind="theorem" title="正則関数はドルボー作用素の核">
+複素多様体上の関数 $f$ が<Term>正則</Term>（各座標で複素微分可能）$\Leftrightarrow$ $\bar\partial f=0$。
+すなわち $\frac{\partial f}{\partial\bar z_j}=0$（すべての $j$）。これは[複素解析](/complex-analysis)の
+**コーシー–リーマン方程式**そのもの。
+</Statement>
+
+複素解析で二本の実の方程式（$u_x=v_y,\ u_y=-v_x$）だったコーシー–リーマンが、複素幾何では
+$\bar\partial f=0$ という**一本の方程式**に凝縮されました。「正則 ＝ 反正則方向に定数 ＝ $\bar\partial$ で消える」。
+$\bar\partial$ は「どれだけ非正則か」を測る作用素で、その核が正則な対象を捉えます。同様に、$(p,0)$ 形式で
+$\bar\partial$ に消されるものが<Term>正則 $p$ 形式</Term>——係数が正則関数の $dz_{i_1}\wedge\cdots\wedge dz_{i_p}$——で、
+前章で予告した「関数の代わりに使う正則な対象」の正体です。
+
+<Statement kind="remark" title="なぜ ∂̄ が主役で ∂ でないのか">
+$\partial$ と $\bar\partial$ は対称に見えるが、「正則」を捉えるのは $\bar\partial$。正則関数・正則形式・正則直線束の
+切断は、すべて「$\bar\partial$ で消える」もの。$\bar\partial$-方程式 $\bar\partial u=\alpha$ の可解性
+（$\bar\partial$-コホモロジーの消滅）が、正則な対象を構成する鍵になる（第4章・第11章）。複素幾何の解析は
+$\bar\partial$ をめぐって展開する。
+</Statement>
+
+<Statement kind="remark" title="つまずきポイント">
+- **$(p,q)$ の $p,q$ は $dz$・$d\bar z$ の個数**。$p+q=k$（全次数）。実の $k$ 次形式が複素構造で $(p,q)$ に細分。
+- **$d=\partial+\bar\partial$ は複素多様体でこそ**。$J$ が可積分なとき $d$ が二つに綺麗に割れる。可積分性
+  （前章）が効いている。
+- **正則 ＝ $\bar\partial$ の核**。反正則微分 $\partial/\partial\bar z$ がゼロ。コーシー–リーマンの幾何版。
+  $\partial$ でなく $\bar\partial$ が正則性を担うことを取り違えない。
+</Statement>
+
+## この章のまとめ
+
+- 微分形式は複素構造で **$(p,q)$ 型**（$dz$ を $p$ 個・$d\bar z$ を $q$ 個）に細分：$\mathcal A^k=\bigoplus_{p+q=k}\mathcal A^{p,q}$。
+- 外微分が分裂 $d=\partial+\bar\partial$（$\partial$ は $(p{+}1,q)$、$\bar\partial$ は $(p,q{+}1)$ 型を上げる）。
+  $d^2=0$ から $\partial^2=\bar\partial^2=0$、$\partial\bar\partial+\bar\partial\partial=0$。
+- **$\bar\partial^2=0$** が次章のドルボーコホモロジーを生む（$d^2=0$ とド・ラームの複素版）。
+- **正則 ⟺ $\bar\partial f=0$**（コーシー–リーマンの一本化）。$\bar\partial$ が「非正則さ」を測り、その核が正則な
+  対象（正則関数・正則 $p$ 形式）を捉える。$\bar\partial$ が複素幾何の解析の主役。
+
+次章は、$\bar\partial^2=0$ から**ドルボーコホモロジー** $H^{p,q}_{\bar\partial}$ を定義し、それが正則な対象
+（層コホモロジー）と一致すること（ドルボーの定理）を見ます。複素多様体の不変量が姿を現します。

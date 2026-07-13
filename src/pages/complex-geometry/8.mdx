@@ -1,0 +1,102 @@
+---
+layout: ../../layouts/BaseLayout.astro
+title: 第8章 ケーラー恒等式とホッジ分解
+description: ケーラーの奇跡。d と ∂̄ から作る三つのラプラシアンが Δ=2Δ_∂̄ と一致し、k 次コホモロジーが H^k=⊕H^{p,q} と (p,q) 型に分裂する。位相的な穴が複素解析的な情報にぴたりと分解される。
+---
+
+import Term from "../../components/assets/Term.astro";
+import Statement from "../../components/assets/Statement.astro";
+import HodgeDiamond from "../../components/interactive/HodgeDiamond.astro";
+
+# 第8章 ケーラー恒等式とホッジ分解
+
+前章で、コンパクトリーマン多様体の各コホモロジー類に調和形式がちょうど一つ対応しました。ですがそこまでは
+複素構造を使っていません。この章で、ケーラー条件 $d\omega=0$ が起こす**奇跡**を見ます。$d$ から作る
+ラプラシアン $\Delta$ と、$\bar\partial$ から作るラプラシアン $\Delta_{\bar\partial}$ が、ケーラーのもとで
+$\Delta=2\Delta_{\bar\partial}$ と一致する。その帰結として、$k$ 次コホモロジーが $(p,q)$ 型に分裂する
+——**ホッジ分解** $H^k=\bigoplus_{p+q=k}H^{p,q}$。位相的な穴が、複素解析的な情報にぴたりと分解される、
+複素幾何の頂点です。
+
+## 三つのラプラシアン
+
+計量が入ると、$d$ だけでなく $\partial,\bar\partial$ からもラプラシアンが作れます。それぞれの随伴
+$\partial^*,\bar\partial^*$ を使って三つ組みます。
+
+<Statement kind="definition" title="三つのラプラシアン">
+$$\Delta_d=dd^*+d^*d,\qquad \Delta_\partial=\partial\partial^*+\partial^*\partial,\qquad \Delta_{\bar\partial}=\bar\partial\bar\partial^*+\bar\partial^*\bar\partial.$$
+一般のエルミート多様体では、この三つは互いに異なる。$\Delta_{\bar\partial}$ の核（$\bar\partial$-調和形式）が
+ドルボーコホモロジー $H^{p,q}_{\bar\partial}$ の代表を、$\Delta_d$ の核（調和形式）がド・ラームコホモロジー
+$H^k_{\mathrm{dR}}$ の代表を与える。
+</Statement>
+
+$\Delta_d$ は実のコホモロジー（穴、ベッチ数）を、$\Delta_{\bar\partial}$ は複素のコホモロジー（ホッジ数）を
+測ります。一般の複素多様体では両者に関係はなく、ド・ラームとドルボーは無関係な不変量でした（第4章）。ところが
+ケーラー条件を課すと——。
+
+## ケーラーの奇跡：三つが一致する
+
+<Statement kind="theorem" title="ケーラー恒等式">
+コンパクトケーラー多様体では、三つのラプラシアンが一致する（定数倍を除いて）：
+$$\Delta_d=2\Delta_{\partial}=2\Delta_{\bar\partial}.$$
+</Statement>
+
+<Statement kind="proof">
+（骨子）ケーラー条件 $d\omega=0$ から、ケーラー形式との縮約 $\Lambda$（$\omega\wedge$ の随伴）と $\partial,\bar\partial$ の
+間に**ケーラー恒等式** $[\Lambda,\bar\partial]=-i\partial^*$、$[\Lambda,\partial]=i\bar\partial^*$ が成り立つ。
+これらを $\Delta_d=(\partial+\bar\partial)(\partial^*+\bar\partial^*)+\cdots$ に代入して展開すると、交差項が
+$\omega$ の平行性（$\nabla\omega=0$、第5章）で消え、$\Delta_d=2\Delta_{\bar\partial}$ に整理される。
+$d\omega=0$ が交差項を殺すのが要。
+</Statement>
+
+これがケーラー幾何の核心的な恒等式です。$d\omega=0$ という一本の条件が、$d$（実）と $\bar\partial$（複素）の
+二つの解析を**同じラプラシアン**に統一する。前章で「$d\omega=0\Leftrightarrow\nabla J=0$（複素構造が計量と
+両立）」と見ましたが、その両立性がここで解析のレベルに効いて、実と複素の調和形式を一致させるのです。この一致
+から、決定的な帰結が転がり出ます。
+
+## ホッジ分解：位相が (p,q) に分裂する
+
+$\Delta_d=2\Delta_{\bar\partial}$ が意味するのは、「$d$-調和形式と $\bar\partial$-調和形式が**同じもの**」という
+こと。$\Delta_{\bar\partial}$ は $(p,q)$ 型を保つ（$\bar\partial$ が型を一つずつ動かすので）ので、$d$-調和形式も
+$(p,q)$ 成分に分解でき、その分解がそのままコホモロジーの分解になります。
+
+<Statement kind="theorem" title="ホッジ分解">
+コンパクトケーラー多様体 $X$ で、$k$ 次コホモロジーは $(p,q)$ 型に直和分解する：
+$$H^k(X,\mathbb C)=\bigoplus_{p+q=k}H^{p,q}(X),\qquad H^{p,q}=H^{p,q}_{\bar\partial}(X),\quad \overline{H^{p,q}}=H^{q,p}.$$
+したがってベッチ数はホッジ数の和 $b_k=\sum_{p+q=k}h^{p,q}$、そして**複素共役対称** $h^{p,q}=h^{q,p}$。
+</Statement>
+
+この定理の破壊力を味わってください。$k$ 次コホモロジー——純粋に**位相的**な穴——が、複素構造を使って
+$H^{p,q}$（複素解析的な情報）に**ぴたりと分解**される。第4章では無関係だったド・ラーム（$b_k$）とドルボー
+（$h^{p,q}$）が、ケーラーのもとで $b_k=\sum h^{p,q}$ と結ばれる。しかも複素共役 $\overline{H^{p,q}}=H^{q,p}$ から
+対称性 $h^{p,q}=h^{q,p}$ が出る。位相と複素解析の、これ以上ない深い一致です。
+
+すぐ出る帰結を装置で確かめましょう。$k$ が奇数のとき、$b_k=\sum_{p+q=k}h^{p,q}$ の項が対称性 $h^{p,q}=h^{q,p}$
+でペアを組む（$p\neq q$ しかない）ので、$b_k$ は**偶数**。これは「ケーラーでない複素多様体」を排除する強力な
+判定条件です（ホップ多様体は $b_1=1$ でケーラーになれない、第5章）。
+
+<HodgeDiamond />
+
+装置で「対称性を強調」を押すと、二つの対称——複素共役 $h^{p,q}=h^{q,p}$（左右）とセール双対
+$h^{p,q}=h^{n-p,n-q}$（上下）——が見えます。各段の和がベッチ数（右列）、奇数段が偶数になっていることも確認
+してください。ホッジ・ダイヤモンドは、コンパクトケーラー多様体の全コホモロジー情報を一枚に凝縮した“設計図”です。
+
+<Statement kind="remark" title="つまずきポイント">
+- **奇跡はケーラーでこそ**。$\Delta_d=2\Delta_{\bar\partial}$ はケーラー条件 $d\omega=0$ に依存。一般の複素多様体
+  では三つのラプラシアンは異なり、ホッジ分解は成り立たない。
+- **$H^{p,q}$ は複素係数**。ホッジ分解は $H^k(X,\mathbb C)$（複素係数コホモロジー）の分解。実係数のままでは
+  $(p,q)$ に分けられない。
+- **$b_{\mathrm{odd}}$ 偶数はケーラーの必要条件**。破れていれば非ケーラー。ただし十分条件ではない
+  （満たしても非ケーラーな複素多様体はある）。判定の一方向。
+</Statement>
+
+## この章のまとめ
+
+- 計量から三つのラプラシアン $\Delta_d,\Delta_\partial,\Delta_{\bar\partial}$ が作れ、一般には異なる。
+- **ケーラー恒等式**：コンパクトケーラーで $\Delta_d=2\Delta_{\bar\partial}$（$d\omega=0$ が交差項を殺す）。実の
+  調和形式と $\bar\partial$-調和形式が一致。
+- **ホッジ分解** $H^k(X,\mathbb C)=\bigoplus_{p+q=k}H^{p,q}$：位相的な穴が $(p,q)$ 型に分裂。
+  $b_k=\sum h^{p,q}$、複素共役対称 $h^{p,q}=h^{q,p}$、ゆえに $b_{\mathrm{odd}}$ は偶数（非ケーラー判定）。
+- ホッジ数を菱形に並べた**ホッジ・ダイヤモンド**が、コンパクトケーラー多様体の全コホモロジー情報を凝縮。
+
+次章は、このホッジ分解から流れ出る帰結を掘り下げます。ホッジ・ダイヤモンドのもう一つの対称（セール双対）、
+ベッチ数への制約、そして**ハード・レフシェッツの定理**——ケーラー類 $\omega$ が生む隠れた対称性を見ます。

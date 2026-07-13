@@ -1,0 +1,103 @@
+---
+layout: ../../layouts/BaseLayout.astro
+title: 第4章 ドルボーコホモロジー
+description: ∂̄²=0 から、ド・ラームと同じ仕組みでコホモロジーを作る。ドルボーコホモロジー H^{p,q}。それが正則な対象（層コホモロジー）と一致するドルボーの定理。複素多様体の基本不変量が姿を現す。
+---
+
+import Term from "../../components/assets/Term.astro";
+import Statement from "../../components/assets/Statement.astro";
+
+# 第4章 ドルボーコホモロジー
+
+前章で $\bar\partial^2=0$ を得ました。[多様体論](/manifolds)で $d^2=0$ からド・ラームコホモロジーを作ったのと
+まったく同じ仕組みで、$\bar\partial$ から**ドルボーコホモロジー** $H^{p,q}_{\bar\partial}$ が定義できます。しかも
+これは単なる形式的な構成ではありません。ドルボーの定理により、$H^{p,q}_{\bar\partial}$ は**正則な対象**
+（正則 $p$ 形式の層コホモロジー）と一致する——解析的に作った不変量が、代数幾何的な不変量と同じものになる。
+[代数幾何](/algebraic-geometry)と複素解析が握手する、この分野の基本不変量が姿を現します。
+
+## ドルボーコホモロジーの定義
+
+$\bar\partial\colon\mathcal A^{p,q}\to\mathcal A^{p,q+1}$ が $\bar\partial^2=0$ を満たすので、$q$ を動かすと複体
+$$\mathcal A^{p,0}\xrightarrow{\ \bar\partial\ }\mathcal A^{p,1}\xrightarrow{\ \bar\partial\ }\mathcal A^{p,2}\xrightarrow{\ \bar\partial\ }\cdots$$
+ができます。その[コホモロジー](/algebraic-topology)を取ります。
+
+<Statement kind="definition" title="ドルボーコホモロジー">
+$$H^{p,q}_{\bar\partial}(X)=\frac{\ker\big(\bar\partial\colon\mathcal A^{p,q}\to\mathcal A^{p,q+1}\big)}{\mathrm{im}\big(\bar\partial\colon\mathcal A^{p,q-1}\to\mathcal A^{p,q}\big)}$$
+を<Term>ドルボーコホモロジー</Term>という。分子は「$\bar\partial$ で閉じた $(p,q)$ 形式」（$\bar\partial$-閉）、分母は
+「$\bar\partial$ で完全なもの」。その次元 $h^{p,q}=\dim_{\mathbb C}H^{p,q}_{\bar\partial}(X)$ を<Term>ホッジ数</Term>という。
+</Statement>
+
+構造はド・ラームコホモロジー $H^k_{\mathrm{dR}}=\ker d/\mathrm{im}\,d$ とうり二つ。ただし $d$ の代わりに
+$\bar\partial$、次数 $k$ の代わりに二重次数 $(p,q)$。ド・ラームが「穴の数」（実の位相不変量）を測ったのに対し、
+ドルボーは「正則構造の穴」（複素構造まで込めた不変量）を測ります。ホッジ数 $h^{p,q}$ は、複素多様体の
+最も基本的な不変量で、後の章（第8–9章）でホッジ・ダイヤモンドとして整理されます。
+
+## ドルボーの定理：解析と正則対象の一致
+
+ドルボーコホモロジーの真価は、それが**正則な対象で書ける**ことです。$q=0$ の場合から見ましょう。$H^{p,0}$ は
+「$\bar\partial$ で閉じた $(p,0)$ 形式」、すなわち**正則 $p$ 形式**（第3章）の全体です。一般の $q$ については、
+層コホモロジーとの一致が成り立ちます。
+
+<Statement kind="theorem" title="ドルボーの定理">
+複素多様体 $X$ について、ドルボーコホモロジーは正則 $p$ 形式の層 $\Omega^p_X$ の層コホモロジーと同型：
+$$H^{p,q}_{\bar\partial}(X)\cong H^q\big(X,\Omega^p_X\big).$$
+とくに $H^{0,q}_{\bar\partial}(X)\cong H^q(X,\mathcal O_X)$（正則関数の層のコホモロジー）。
+</Statement>
+
+証明の心は、$\bar\partial$-**ポアンカレ補題**——「局所的には $\bar\partial$-閉な形式は $\bar\partial$-完全」
+（$\bar\partial u=\alpha$ が局所可解、[複素解析](/complex-analysis)の $\bar\partial$-方程式の可解性）——です。
+これにより、なめらかな $(p,q)$ 形式の複体が、正則 $p$ 形式の層の細層分解（[代数幾何](/algebraic-geometry)で
+学んだ層コホモロジーの計算法）になる。左辺は**解析的**（滑らかな形式と $\bar\partial$）、右辺は**代数幾何的**
+（正則な層とそのコホモロジー）。両者が一致するのがドルボーの定理で、[多様体論](/manifolds)のド・ラームの定理
+（$H^k_{\mathrm{dR}}\cong H^k(X,\mathbb R)$、滑らかな形式＝位相的コホモロジー）の複素版にあたります。
+
+<Statement kind="remark" title="三つのコホモロジーが並ぶ">
+複素多様体には三種のコホモロジーが住む：
+- **ド・ラーム** $H^k_{\mathrm{dR}}$（$d$、実の位相不変量、ベッチ数）、
+- **ドルボー** $H^{p,q}_{\bar\partial}$（$\bar\partial$、複素構造の不変量、ホッジ数）、
+- **層コホモロジー** $H^q(X,\Omega^p)$（正則な層、代数幾何）。
+ドルボーの定理が後ろ二つを結ぶ。そして一般には $\bigoplus_{p+q=k}H^{p,q}$ と $H^k_{\mathrm{dR}}$ の関係は
+自明でない——それを結ぶのが、ケーラー多様体でのホッジ分解（第8章）。三者が一致する舞台がケーラー幾何。
+</Statement>
+
+## 例：リーマン面と射影空間
+
+具体例でホッジ数を見ます。抽象的な定義に血を通わせましょう。
+
+<Statement kind="example" title="コンパクトリーマン面（種数 g）">
+種数 $g$ のコンパクトリーマン面 $\Sigma$（複素1次元）では：$h^{0,0}=1$（定数、正則関数）、
+$h^{1,0}=g$（正則1形式 ＝ アーベル微分、これが種数の解析的な意味）、$h^{0,1}=g$、$h^{1,1}=1$。
+正則1形式の次元がちょうど種数 $g$ に一致するのが、リーマン–ロッホの芽。
+</Statement>
+
+<Statement kind="example" title="複素射影空間 ℂℙⁿ">
+$\mathbb{CP}^n$ では $h^{p,q}=1$（$p=q$ のとき）、$0$（$p\neq q$ のとき）。対角だけが $1$ の、最も単純な
+ホッジ数の配置。ベッチ数は $b_{2k}=1,b_{\mathrm{odd}}=0$ で、$\mathbb{CP}^n$ の各偶数次元に「一つずつ穴」がある
+（$\mathbb{CP}^1$＝球面、$\mathbb{CP}^2$＝…）ことに対応。
+</Statement>
+
+種数 $g$ のリーマン面で $h^{1,0}=g$ となるのは印象的です。位相的な穴の数（種数）が、正則1形式という**解析的な
+対象の次元**として現れる。位相と解析の一致——複素幾何の中心テーマが、最も簡単な例ですでに顔を出しています。
+
+<Statement kind="remark" title="つまずきポイント">
+- **ドルボーはド・ラームの複素版**。$d\to\bar\partial$、次数 $k\to$ 二重次数 $(p,q)$。$\ker/\mathrm{im}$ の
+  作り方は同じ。測る対象が「実の穴」から「正則構造の穴」に変わる。
+- **$H^{p,0}$ ＝ 正則 $p$ 形式**。$q=0$ では分母（$\bar\partial$ の像）がなく、$\bar\partial$-閉＝正則。ホッジ数
+  $h^{p,0}$ は正則 $p$ 形式の次元。
+- **一般には $\bigoplus H^{p,q}\neq H^k_{\mathrm{dR}}$**。ドルボーとド・ラームが直接は結びつかない。両者を
+  結ぶには計量（ケーラー）が要る（第8章）。ここでは別々の不変量として押さえる。
+</Statement>
+
+## この章のまとめ
+
+- **ドルボーコホモロジー** $H^{p,q}_{\bar\partial}=\ker\bar\partial/\mathrm{im}\,\bar\partial$（$\bar\partial^2=0$ から、
+  ド・ラームの複素版）。次元が**ホッジ数** $h^{p,q}$＝複素多様体の基本不変量。
+- **ドルボーの定理** $H^{p,q}_{\bar\partial}\cong H^q(X,\Omega^p)$：解析的なドルボーが、正則 $p$ 形式の層
+  コホモロジー（代数幾何）と一致。証明は $\bar\partial$-ポアンカレ補題。ド・ラームの定理の複素版。
+- 複素多様体にはド・ラーム・ドルボー・層コホモロジーの三種が住み、後二者をドルボーが結ぶ。三者が一致する
+  舞台がケーラー幾何（第8章）。
+- 種数 $g$ のリーマン面で $h^{1,0}=g$（正則1形式＝種数）、$\mathbb{CP}^n$ は対角のみ $h^{p,p}=1$。位相と解析の
+  一致の芽。
+
+これで「複素構造と $\bar\partial$」（前半）が揃いました。次章から計量を導入します。正則構造と調和する
+**エルミート計量**と、そこから作られる**ケーラー形式** $\omega$、そして $d\omega=0$ というケーラー条件へ進みます。
