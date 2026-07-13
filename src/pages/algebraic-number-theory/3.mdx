@@ -1,0 +1,105 @@
+---
+layout: ../../layouts/BaseLayout.astro
+title: 第3章 ノルム・トレース・判別式
+description: 数体の元を「すべての共役の総和・総積」で測る。ノルムとトレース、そして整基底の“ねじれ具合”を測る判別式。これらは行列式・跡として計算でき、代数的整数論の基本不変量になる。
+---
+
+import Term from "../../components/assets/Term.astro";
+import Statement from "../../components/assets/Statement.astro";
+
+# 第3章 ノルム・トレース・判別式
+
+整数環 $\mathcal O_K$ が格子だと分かったので、その元を**数値で測る**道具を用意します。中心になるのが**ノルム**と
+**トレース**——一つの元を、そのすべての「分身（共役）」を通して測る量です。ノルムは元の“大きさ”をイデアルの
+理論へ橋渡しし、トレースは判別式を生みます。そして**判別式**は、整基底かどうかの判定や、後の分岐現象
+（第7章）を支配する、この分野で最も基本的な不変量です。まずは「共役」から始めましょう。
+
+## 共役と埋め込み：数の分身たち
+
+$\alpha=\sqrt2$ を考えると、$x^2-2=0$ の根は $\sqrt2$ と $-\sqrt2$ の二つ。代数の目には、この二つは
+**見分けがつかない双子**です（[ガロア理論](/field-and-galois)の精神）。一般に、次数 $n$ の数体 $K=\mathbb Q(\alpha)$ に
+対し、$\alpha$ の最小多項式は $n$ 個の根 $\alpha=\alpha_1,\dots,\alpha_n$（複素数）を持ち、これらが $\alpha$ の
+<Term>共役</Term>です。対応して、$K$ から $\mathbb C$ への体の埋め込み $\sigma_1,\dots,\sigma_n$（$\sigma_i(\alpha)=\alpha_i$）が
+ちょうど $n$ 個あります。$K$ の元 $\beta$ を測るとき、$\beta$ そのものだけでなく、その $n$ 個の分身
+$\sigma_1(\beta),\dots,\sigma_n(\beta)$ を一斉に見るのがコツです。
+
+<Statement kind="definition" title="ノルムとトレース">
+$\beta\in K$ の<Term>ノルム</Term>と<Term>トレース</Term>を、$n$ 個の共役の総積・総和で定める：
+$$N_{K/\mathbb Q}(\beta)=\prod_{i=1}^n\sigma_i(\beta),\qquad \mathrm{Tr}_{K/\mathbb Q}(\beta)=\sum_{i=1}^n\sigma_i(\beta).$$
+</Statement>
+
+分身の対称的な組み合わせなので、個々の共役を選ぶ曖昧さが消え、結果は**有理数**になります（$\beta$ が
+代数的整数なら整数）。ノルムは乗法的（$N(\beta\gamma)=N(\beta)N(\gamma)$）、トレースは加法的
+（$\mathrm{Tr}(\beta+\gamma)=\mathrm{Tr}(\beta)+\mathrm{Tr}(\gamma)$）——大きさと足し算の情報を、それぞれ
+一つの数に凝縮します。
+
+## 行列式・跡としてのノルムとトレース
+
+共役を持ち出さなくても、ノルムとトレースは[線形代数](/linear-algebra)で計算できます。$\beta$ による掛け算
+$m_\beta\colon K\to K$（$x\mapsto\beta x$）は $\mathbb Q$ 線形写像なので、基底を選べば $n\times n$ 行列で表せます。
+
+<Statement kind="proposition" title="掛け算行列の行列式・跡">
+$\beta$ の掛け算写像 $m_\beta$ の行列を $M_\beta$ とすると
+$$N_{K/\mathbb Q}(\beta)=\det M_\beta,\qquad \mathrm{Tr}_{K/\mathbb Q}(\beta)=\operatorname{tr}M_\beta.$$
+$M_\beta$ の固有値がちょうど共役 $\sigma_i(\beta)$ だから、行列式＝固有値の積＝ノルム、跡＝固有値の和＝トレース。
+</Statement>
+
+たとえば $K=\mathbb Q(\sqrt d)$ で $\beta=a+b\sqrt d$。基底 $\{1,\sqrt d\}$ での掛け算行列は
+$\begin{pmatrix}a & db\\ b & a\end{pmatrix}$ なので、$N(\beta)=a^2-db^2$、$\mathrm{Tr}(\beta)=2a$。
+$\mathbb Z[\sqrt{-5}]$ なら $N(a+b\sqrt{-5})=a^2+5b^2$——第4章で $6$ の分解を調べるのに使う、あのノルムです。
+**ノルムを取ると、$\mathcal O_K$ の割り算の問題が普通の整数 $\mathbb Z$ の割り算に落ちる**（$\alpha\mid\beta$ なら
+$N(\alpha)\mid N(\beta)$）。これがノルムの最大の効用です。
+
+## 判別式：整基底のねじれ具合
+
+トレースを使って、整基底の“質”を測る量を作ります。整基底 $\omega_1,\dots,\omega_n$ に対し、
+トレースを成分に並べた行列の行列式が**判別式**です。
+
+<Statement kind="definition" title="判別式">
+整基底 $\{\omega_1,\dots,\omega_n\}$ の<Term>判別式</Term>を
+$$d_K=\det\big(\mathrm{Tr}_{K/\mathbb Q}(\omega_i\omega_j)\big)_{i,j}=\det\big(\sigma_i(\omega_j)\big)^2$$
+で定める。二つ目の等号は、埋め込み行列 $(\sigma_i(\omega_j))$ の行列式の二乗に等しいこと（グラム行列の関係）。
+$d_K$ は整基底の選び方によらず $K$ だけで決まる整数で、$K$ の基本不変量。
+</Statement>
+
+判別式は「格子 $\mathcal O_K$ がどれだけ“歪んで/詰まって”いるか」を測ります。埋め込みで $\mathcal O_K$ を
+$\mathbb R^n$ の格子とみたとき（第9章）、$\sqrt{|d_K|}$ がその基本領域の体積にあたる——つまり判別式は格子の
+**体積の二乗**の役を果たします。二次体 $\mathbb Q(\sqrt d)$ なら
+$$d_K=\begin{cases}d & (d\equiv1\!\!\pmod4)\\ 4d & (d\equiv2,3\!\!\pmod4),\end{cases}$$
+で、$d\equiv1$ のとき整数環が大きくなった（第2章）ぶん、判別式が小さくなっているのが読み取れます。
+
+## 判別式の二つの仕事
+
+判別式は、この後の議論で二つの決定的な役割を果たします。先取りして意識しておきましょう。
+
+<Statement kind="remark" title="判別式が支配するもの">
+- **整基底の判定**：候補の基底 $\{\eta_i\}$ の判別式が $\mathcal O_K$ の判別式 $d_K$ に一致すれば整基底。
+  一般に $\mathrm{disc}(\eta)=[\mathcal O_K:\bigoplus\mathbb Z\eta_i]^2\cdot d_K$（指数の二乗ぶんずれる）。判別式が
+  平方因子を持たなければ、その基底は自動的に整基底。
+- **分岐の判定**：素数 $p$ が $\mathcal O_K$ で「分岐する」（重複を持って分解する）$\Leftrightarrow$ $p\mid d_K$
+  （第7章）。判別式を割る有限個の素数だけが分岐する。判別式は分岐の在り処を教える地図。
+</Statement>
+
+「元を測るノルム・トレース」と「格子を測る判別式」——この三つの不変量が、代数的整数論の計算の土台です。
+とくに判別式は、体 $K$ の“難しさ”を一つの整数に凝縮した指標で、この後あらゆる場面に顔を出します。
+
+<Statement kind="remark" title="つまずきポイント">
+- **ノルムは乗法的、トレースは加法的**。$N(\alpha\beta)=N(\alpha)N(\beta)$ が「割り算を $\mathbb Z$ に落とす」
+  効用の源。トレースは $\mathbb Q$ 双線形形式 $\mathrm{Tr}(xy)$ を通じて判別式を生む。
+- **判別式は基底に依らない不変量**。整基底同士は $\mathrm{GL}_n(\mathbb Z)$（行列式 $\pm1$）で移り合うので、
+  行列式の二乗である判別式は不変。一般の基底では指数の二乗ぶんずれる。
+- **符号にも意味がある**（数体の判別式）。実埋め込みと複素埋め込みの個数（第9章の $r_1,r_2$）で $d_K$ の符号が
+  決まる。ここでは絶対値 $|d_K|$＝格子体積の二乗として捉えれば十分。
+</Statement>
+
+## この章のまとめ
+
+- $K=\mathbb Q(\alpha)$ の元は $n$ 個の**共役**（埋め込み $\sigma_i$）を持つ。**ノルム**＝共役の総積（乗法的）、
+  **トレース**＝共役の総和（加法的）。
+- ノルム・トレースは掛け算写像 $m_\beta$ の**行列式・跡**として計算できる。$\mathbb Q(\sqrt d)$ では
+  $N(a+b\sqrt d)=a^2-db^2$。ノルムは $\mathcal O_K$ の割り算を $\mathbb Z$ の割り算に落とす。
+- **判別式** $d_K=\det(\mathrm{Tr}(\omega_i\omega_j))$＝格子 $\mathcal O_K$ の体積の二乗。整基底の判定と、
+  素数の分岐（$p\mid d_K$）を支配する基本不変量。
+
+道具が揃いました。次章はいよいよ本題——整数環で**素因数分解の一意性が壊れる**現象を、$\mathbb Z[\sqrt{-5}]$ の
+$6=2\cdot3=(1+\sqrt{-5})(1-\sqrt{-5})$ で目の当たりにします。ノルムが、その破れを見抜く道具になります。

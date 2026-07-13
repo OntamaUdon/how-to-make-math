@@ -1,0 +1,112 @@
+---
+/* MinkowskiLattice.astro — 「十分大きな対称凸領域は、必ず非零の格子点を含む」を体感する装置（幾何数論）。
+   格子 = 基底 v1=(1,0), v2=(s,h) の整数結合。基本領域の面積（共体積）covol=|h|。
+   中心対称な円板（半径 R、面積 πR²）を育てると、面積が 2ⁿ·covol = 4·covol を超えたところで
+   Minkowski の定理により非零格子点が必ず内部に入る（n=2）。
+   スライダーで R を動かし、閾値面積 4·covol と現在面積を比べ、円板内の非零格子点を点灯。
+   これが「各イデアル類にノルムの小さい代表がある → 類数が有限」の幾何的な芯。
+   node 検証済み（全格子で最短ベクトル λ1 ≤ √(4·covol/π) = 閾値円板の半径、保証成立）。
+   状態はメモリ内のみ（storage 不使用）。 */
+---
+
+<figure class="ml" role="group" aria-label="ミンコフスキーの格子点定理">
+  <div class="ml-controls">
+    <label class="ml-label">格子の傾き s ＝ <span id="ml-sval">0.40</span>
+      <input id="ml-s" type="range" min="0" max="90" value="40" step="1" class="ml-range" />
+    </label>
+    <label class="ml-label">高さ h ＝ <span id="ml-hval">1.60</span>
+      <input id="ml-h" type="range" min="80" max="260" value="160" step="1" class="ml-range" />
+    </label>
+    <label class="ml-label">円板の半径 R ＝ <span id="ml-rval">1.00</span>
+      <input id="ml-r" type="range" min="20" max="240" value="100" step="1" class="ml-range" />
+    </label>
+  </div>
+  <canvas id="ml-cv" width="360" height="330" class="ml-cv"></canvas>
+  <figcaption id="ml-cap" class="ml-cap"></figcaption>
+</figure>
+
+<script>
+  const sIn = document.getElementById("ml-s") as HTMLInputElement | null;
+  const hIn = document.getElementById("ml-h") as HTMLInputElement | null;
+  const rIn = document.getElementById("ml-r") as HTMLInputElement | null;
+  const sVal = document.getElementById("ml-sval");
+  const hVal = document.getElementById("ml-hval");
+  const rVal = document.getElementById("ml-rval");
+  const cv = document.getElementById("ml-cv") as HTMLCanvasElement | null;
+  const capEl = document.getElementById("ml-cap");
+
+  if (sIn && hIn && rIn && sVal && hVal && rVal && cv && capEl) {
+    const ctx = cv.getContext("2d")!;
+    const W = cv.width, H = cv.height, cx = W / 2, cy = H / 2, scale = 46;
+    const css = (v: string) => getComputedStyle(document.documentElement).getPropertyValue(v).trim() || "#888";
+    const PX = (x: number) => cx + x * scale;
+    const PY = (y: number) => cy - y * scale;
+
+    const render = () => {
+      const s = Number(sIn.value) / 100;
+      const h = Number(hIn.value) / 100;
+      const R = Number(rIn.value) / 100;
+      sVal.textContent = s.toFixed(2); hVal.textContent = h.toFixed(2); rVal.textContent = R.toFixed(2);
+      const covol = h;                      // |det [[1,s],[0,h]]| = h
+      const area = Math.PI * R * R;
+      const threshArea = 4 * covol;         // 2ⁿ·covol, n=2
+      const Rthresh = Math.sqrt(threshArea / Math.PI);
+      ctx.clearRect(0, 0, W, H);
+
+      // 基本平行四辺形（共体積）
+      const v1 = [1, 0], v2 = [s, h];
+      ctx.fillStyle = css("--ai") + "18"; ctx.strokeStyle = css("--ai"); ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.moveTo(PX(0), PY(0)); ctx.lineTo(PX(v1[0]), PY(v1[1]));
+      ctx.lineTo(PX(v1[0] + v2[0]), PY(v1[1] + v2[1])); ctx.lineTo(PX(v2[0]), PY(v2[1]));
+      ctx.closePath(); ctx.fill(); ctx.stroke();
+
+      // 閾値円（点線）
+      ctx.strokeStyle = css("--ink-faint"); ctx.setLineDash([4, 4]); ctx.lineWidth = 1;
+      ctx.beginPath(); ctx.arc(cx, cy, Rthresh * scale, 0, 7); ctx.stroke(); ctx.setLineDash([]);
+
+      // 現在の円板
+      const guaranteed = area > threshArea;
+      ctx.fillStyle = (guaranteed ? css("--shu") : css("--ink-faint")) + "1f";
+      ctx.strokeStyle = guaranteed ? css("--shu") : css("--ink-faint"); ctx.lineWidth = 2;
+      ctx.beginPath(); ctx.arc(cx, cy, R * scale, 0, 7); ctx.fill(); ctx.stroke();
+
+      // 格子点
+      let inside = 0;
+      for (let m = -5; m <= 5; m++) for (let n = -5; n <= 5; n++) {
+        const x = m * v1[0] + n * v2[0], y = m * v1[1] + n * v2[1];
+        const px = PX(x), py = PY(y);
+        if (px < 2 || px > W - 2 || py < 2 || py > H - 2) continue;
+        const isOrigin = m === 0 && n === 0;
+        const within = !isOrigin && Math.hypot(x, y) <= R;
+        if (within) inside++;
+        ctx.beginPath(); ctx.arc(px, py, within ? 5 : 3, 0, 7);
+        ctx.fillStyle = isOrigin ? css("--ai") : within ? css("--shu") : css("--ink");
+        ctx.fill();
+      }
+
+      const msg = guaranteed
+        ? `面積 πR² ＝ <b>${area.toFixed(2)}</b> が閾値 4·covol ＝ <b>${threshArea.toFixed(2)}</b> を<b>超えた</b>` +
+          `——ミンコフスキーの定理により、非零格子点（<b class="shu">朱</b>）が必ず内部にある（今 ${inside} 個）。`
+        : `面積 πR² ＝ <b>${area.toFixed(2)}</b> はまだ閾値 4·covol ＝ <b>${threshArea.toFixed(2)}</b> 以下。` +
+          `点線の円（半径 ${Rthresh.toFixed(2)}）まで広げれば、非零格子点の存在が<b>保証</b>される。`;
+      capEl.innerHTML =
+        `中心対称な円板を育てる。共体積（基本平行四辺形の面積）は covol ＝ <b>${covol.toFixed(2)}</b>。<br>` + msg +
+        `<br><span style="opacity:.8">この「小さなノルムの元が必ず取れる」が、<b>類数の有限性</b>の幾何的な芯。</span>`;
+    };
+    for (const el of [sIn, hIn, rIn]) el.addEventListener("input", render);
+    render();
+  }
+</script>
+
+<style>
+  .ml { margin: 26px 0; padding: 16px 18px 14px; border: 1px solid var(--line); border-radius: 10px; background: var(--card); }
+  .ml-controls { display: flex; flex-direction: column; gap: 7px; margin-bottom: 12px; }
+  .ml-label { font-size: 13px; font-weight: 600; color: var(--ink); font-family: var(--sans); display: flex; align-items: center; gap: 8px; }
+  .ml-range { flex: 1; max-width: 220px; accent-color: var(--shu); }
+  .ml-cv { display: block; margin: 0 auto; width: 100%; max-width: 360px; height: auto; border: 1px solid var(--line); border-radius: 6px; background: var(--paper-sunk); }
+  .ml-cap { margin-top: 12px; font-size: 13px; line-height: 1.85; color: var(--ink-faint); font-family: var(--sans); }
+  .ml-cap b { color: var(--ink); font-weight: 700; }
+  .ml-cap b.shu { color: var(--shu); }
+  .ml-cap b.ai { color: var(--ai); }
+</style>

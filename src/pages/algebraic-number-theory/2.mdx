@@ -1,0 +1,103 @@
+---
+layout: ../../layouts/BaseLayout.astro
+title: 第2章 数体と整数環の構造
+description: 一つの代数的数で生成される数体 K=Q(α)、その中の代数的整数を集めた整数環 O_K。O_K が Z 上の自由加群（整基底を持つ）であること——この分野のすべての計算が乗る足場を築く。
+---
+
+import Term from "../../components/assets/Term.astro";
+import Statement from "../../components/assets/Statement.astro";
+
+# 第2章 数体と整数環の構造
+
+前章で、代数的整数の全体 $\overline{\mathbb Z}$ が環をなすと分かりました。しかしこれは巨大すぎて扱いにくい。実際の
+数論では、$\mathbb Q$ に一つの代数的数（$\sqrt2$ や $i$）を添加した**有限次の世界**で仕事をします。この章では、
+その舞台である**数体** $K$ と、その中の“整数”を集めた**整数環** $\mathcal O_K$ を定義します。そして
+$\mathcal O_K$ が $\mathbb Z$ 上の自由加群——ちょうど $n$ 本の基底（**整基底**）を持つ——という、以降のすべての
+計算が乗る足場を確立します。
+
+## 数体：$\mathbb Q$ の有限次拡大
+
+<Statement kind="definition" title="数体（代数体）">
+$\mathbb Q$ 上有限次の体拡大 $K$ を<Term>数体</Term>（代数体）という。$K=\mathbb Q(\alpha)$（一つの代数的数 $\alpha$ を
+添加）の形に書け、拡大次数 $n=[K:\mathbb Q]$ を $K$ の<Term>次数</Term>という。次数 $2$ の数体を<Term>二次体</Term>、
+$\mathbb Q(\zeta_m)$（$1$ の $m$ 乗根）を<Term>円分体</Term>という。
+</Statement>
+
+[体論・ガロア理論](/field-and-galois)で学んだように、$K=\mathbb Q(\alpha)$ は $\alpha$ の最小多項式の次数 $n$ に
+等しい次元の $\mathbb Q$ ベクトル空間で、$1,\alpha,\dots,\alpha^{n-1}$ が基底です。もっとも身近な例が二次体
+$K=\mathbb Q(\sqrt d)$（$d$ は平方因子を持たない整数）。$\{1,\sqrt d\}$ が $\mathbb Q$ 上の基底で、次数 $2$。
+$d<0$ なら**虚二次体**、$d>0$ なら**実二次体**と呼び、両者は後で幾何的にも違う顔を見せます（第9章）。
+
+## 整数環：数体の中の“整数”
+
+数体 $K$ の中で、「整数にあたる元」を集めます。前章の代数的整数 $\overline{\mathbb Z}$ と $K$ の共通部分です。
+
+<Statement kind="definition" title="整数環">
+数体 $K$ に対し、$K$ に含まれる代数的整数の全体
+$$\mathcal O_K=\overline{\mathbb Z}\cap K=\{\alpha\in K:\alpha\text{ は代数的整数}\}$$
+を $K$ の<Term>整数環</Term>（整数の環）という。前章より $\mathcal O_K$ は環で、その分数体は $K$ に一致する。
+</Statement>
+
+$\mathcal O_K$ が $K$ に対して果たす役割は、$\mathbb Z$ が $\mathbb Q$ に対して果たす役割とちょうど同じ。
+「$\mathbb Q$ の中の整数が $\mathbb Z$」なら「$K$ の中の整数が $\mathcal O_K$」です。だから以降の数論は、
+$K$ ではなく $\mathcal O_K$ の中で（イデアル・素因数分解を）展開します。
+
+## 落とし穴：$\mathcal O_K$ は $\mathbb Z[\alpha]$ とは限らない
+
+素朴には「$K=\mathbb Q(\sqrt d)$ の整数環は $\mathbb Z[\sqrt d]=\{a+b\sqrt d:a,b\in\mathbb Z\}$ だろう」と思いますが、
+これは**間違うことがある**。前章で見た $\frac{1+\sqrt5}{2}$（黄金比）は、$x^2-x-1$ の根なので代数的整数なのに、
+$\mathbb Z[\sqrt5]$ には入っていません。$d\equiv1\pmod4$ のときは、半整数を含むもっと大きな環が正しい整数環です。
+
+<Statement kind="theorem" title="二次体の整数環">
+$K=\mathbb Q(\sqrt d)$（$d$ は平方因子なし）の整数環は
+$$\mathcal O_K=\begin{cases}\mathbb Z[\sqrt d]=\mathbb Z\oplus\mathbb Z\sqrt d & (d\equiv 2,3\!\!\pmod 4)\\[1mm]\mathbb Z\!\left[\dfrac{1+\sqrt d}{2}\right]=\mathbb Z\oplus\mathbb Z\dfrac{1+\sqrt d}{2} & (d\equiv 1\!\!\pmod 4).\end{cases}$$
+</Statement>
+
+判定は「$\frac{a+b\sqrt d}{2}$ が代数的整数になるのはいつか」を最小多項式の係数（トレースとノルム、次章）が
+整数になる条件で調べれば出ます。教訓は明快——**整数環は「見た目の素朴な環」より大きいことがある**。この
+ズレを見落とすと後の素因数分解がすべて狂うので、まず正しい $\mathcal O_K$ を突き止めることが第一歩です。
+
+## 核心：$\mathcal O_K$ は階数 $n$ の自由 $\mathbb Z$ 加群
+
+整数環の構造で決定的に重要なのが、その加群としての形です。$\mathbb Z$ が「$1$ 本の基底 $\{1\}$」を持つ自由加群で
+あったように、$\mathcal O_K$ も**ちょうど $n$ 本の基底**を持ちます。
+
+<Statement kind="theorem" title="整基底の存在">
+数体 $K$（次数 $n$）の整数環 $\mathcal O_K$ は、$\mathbb Z$ 上の階数 $n$ の**自由加群**である。すなわち
+$$\mathcal O_K=\mathbb Z\omega_1\oplus\mathbb Z\omega_2\oplus\cdots\oplus\mathbb Z\omega_n$$
+となる元 $\omega_1,\dots,\omega_n\in\mathcal O_K$（<Term>整基底</Term>）が存在する。$K$ のすべての元は
+これらの $\mathbb Q$ 係数結合で、$\mathcal O_K$ の元はちょうど $\mathbb Z$ 係数結合で書ける。
+</Statement>
+
+<Statement kind="proof">
+（骨子）$\mathcal O_K\subset K$ は次数 $n$ ゆえ $\mathbb Q$ 上 $n$ 次元。まず $\mathcal O_K$ が
+「$\mathbb Z^n$ に挟まれる」ことを示す：ある $\mathbb Q$ 基底 $\{e_i\}\subset\mathcal O_K$ をとると、判別式（次章）を
+使った評価で $\mathcal O_K\subseteq\frac1D\bigoplus\mathbb Z e_i$（$D$ は整数）が言え、$\mathcal O_K$ は有限生成
+$\mathbb Z$ 加群で捻れがない。[加群論](/module-theory)の**PID 上有限生成加群の構造定理**（$\mathbb Z$ は PID）より、
+捻れなし有限生成加群は自由。$\mathbb Q$ 上の次元が $n$ だから階数も $n$。
+</Statement>
+
+この定理の威力は絶大です。$\mathcal O_K$ が「$n$ 次元の格子」だと分かる——各元が座標 $(a_1,\dots,a_n)\in\mathbb Z^n$ で
+表せ、たし算は座標の足し算、かけ算は整数行列で書ける。抽象的な“整数の環”が、具体的な**格子と行列の言葉**で
+計算できるようになります。第9章の幾何数論（$\mathcal O_K$ を $\mathbb R^n$ の格子とみる）も、この構造が土台です。
+
+<Statement kind="remark" title="つまずきポイント">
+- **$\mathcal O_K\neq\mathbb Z[\alpha]$ に注意**。$\alpha$ の選び方や $d\bmod4$ によって、正しい整数環は素朴な環より
+  大きいことがある。半整数 $\frac{1+\sqrt d}{2}$ を忘れない。
+- **「整基底」と「$\mathbb Q$ 基底」の違い**。$K$ の $\mathbb Q$ 基底は無数にあるが、$\mathcal O_K$ の $\mathbb Z$ 基底
+  （整基底）は「整数係数でちょうど $\mathcal O_K$ を張る」特別なもの。整基底同士は $\mathrm{GL}_n(\mathbb Z)$ で移り合う。
+- **自由性は $\mathbb Z$ が PID だから**。$\mathcal O_K$ 自身は一般に PID でない（一意分解が壊れる）。あくまで
+  「$\mathbb Z$ 加群として」自由、という点に注意。この後 $\mathcal O_K$ の**イデアル**の構造が主役になる。
+</Statement>
+
+## この章のまとめ
+
+- **数体** $K$＝$\mathbb Q$ の有限次拡大 $\mathbb Q(\alpha)$。二次体 $\mathbb Q(\sqrt d)$、円分体 $\mathbb Q(\zeta_m)$ が基本例。
+- **整数環** $\mathcal O_K=\overline{\mathbb Z}\cap K$。$K$ に対する $\mathcal O_K$ は、$\mathbb Q$ に対する $\mathbb Z$ の役。
+  数論は $\mathcal O_K$ の中で展開する。
+- $\mathcal O_K$ は $\mathbb Z[\alpha]$ より大きいことがある（$d\equiv1\bmod4$ の二次体では $\frac{1+\sqrt d}{2}$ を含む）。
+- **整基底の存在**：$\mathcal O_K$ は階数 $n$ の自由 $\mathbb Z$ 加群。各元が $\mathbb Z^n$ の座標で表せ、格子と行列で
+  計算できる（PID 上の構造定理より）。
+
+次章は、整基底を具体的に扱う道具——**共役・ノルム・トレース・判別式**——を整えます。判別式は整基底かどうかの
+判定や、後の分岐（第7章）を支配する、この分野の基本不変量です。

@@ -1,0 +1,157 @@
+---
+/* IdealFactorization.astro — 「数では壊れた一意分解が、イデアルでは蘇る」を目で見る装置。
+   Z[√-5] で 6 = 2·3 = (1+√-5)(1-√-5) と、数としては本質的に異なる2通りに分解される。
+   だが素イデアル p1=(2,1+√-5), p2=(3,1+√-5), p3=(3,1-√-5)（ノルム 2,3,3）で見ると：
+     (2)=p1²,  (3)=p2p3,  (1+√-5)=p1p2,  (1-√-5)=p1p3
+   どちらの経路も (6)=p1²·p2·p3 という同じ素イデアル分解に収束する。
+   ボタンで2つの経路を切り替え／重ね、共通の素イデアル分解に降りることを可視化。
+   ノルムの整合性は node 検証済み（N(2)=4=2·2, N(3)=9=3·3, N(1±√-5)=6=2·3, 両経路の積=36）。
+   状態はメモリ内のみ（storage 不使用）。 */
+---
+
+<figure class="if" role="group" aria-label="イデアルによる一意分解の回復">
+  <div class="if-controls">
+    <button id="if-a" class="if-btn">経路A：6 = 2·3</button>
+    <button id="if-b" class="if-btn">経路B：6 = (1+√-5)(1-√-5)</button>
+    <button id="if-both" class="if-btn if-primary">両方を重ねる</button>
+  </div>
+  <canvas id="if-cv" width="440" height="300" class="if-cv"></canvas>
+  <figcaption id="if-cap" class="if-cap"></figcaption>
+</figure>
+
+<script>
+  const btnA = document.getElementById("if-a") as HTMLButtonElement | null;
+  const btnB = document.getElementById("if-b") as HTMLButtonElement | null;
+  const btnBoth = document.getElementById("if-both") as HTMLButtonElement | null;
+  const cv = document.getElementById("if-cv") as HTMLCanvasElement | null;
+  const capEl = document.getElementById("if-cap");
+
+  if (btnA && btnB && btnBoth && cv && capEl) {
+    const ctx = cv.getContext("2d")!;
+    const W = cv.width, H = cv.height;
+    const css = (v: string) => getComputedStyle(document.documentElement).getPropertyValue(v).trim() || "#888";
+    let mode: "A" | "B" | "both" = "both";
+
+    // ノード座標
+    const six = { x: W / 2, y: 34, label: "6" };
+    const elems = [
+      { id: "2", x: 70, y: 120, label: "2", route: "A", primes: ["p1", "p1"] },
+      { id: "3", x: 180, y: 120, label: "3", route: "A", primes: ["p2", "p3"] },
+      { id: "u", x: 285, y: 120, label: "1+√-5", route: "B", primes: ["p1", "p2"] },
+      { id: "v", x: 390, y: 120, label: "1−√-5", route: "B", primes: ["p1", "p3"] },
+    ];
+    const primes = [
+      { id: "p1", x: 110, y: 240, label: "p₁", sub: "N=2", n: 2 },
+      { id: "p2", x: 220, y: 240, label: "p₂", sub: "N=3", n: 3 },
+      { id: "p3", x: 330, y: 240, label: "p₃", sub: "N=3", n: 3 },
+    ];
+    const pPos = (id: string) => primes.find((p) => p.id === id)!;
+
+    const roundRect = (x: number, y: number, w: number, h: number, r: number) => {
+      ctx.beginPath();
+      ctx.moveTo(x + r, y); ctx.arcTo(x + w, y, x + w, y + h, r); ctx.arcTo(x + w, y + h, x, y + h, r);
+      ctx.arcTo(x, y + h, x, y, r); ctx.arcTo(x, y, x + w, y, r); ctx.closePath();
+    };
+    const box = (cx: number, cy: number, text: string, sub: string | null, active: boolean, tone: string) => {
+      const w = Math.max(46, ctx.measureText(text).width + 20), h = sub ? 40 : 30;
+      ctx.lineWidth = active ? 2.4 : 1;
+      ctx.strokeStyle = active ? tone : css("--line");
+      ctx.fillStyle = active ? tone + "22" : css("--paper");
+      roundRect(cx - w / 2, cy - h / 2, w, h, 7); ctx.fill(); ctx.stroke();
+      ctx.fillStyle = active ? tone : css("--ink-faint");
+      ctx.font = "600 15px sans-serif"; ctx.textAlign = "center"; ctx.textBaseline = "middle";
+      ctx.fillText(text, cx, sub ? cy - 6 : cy);
+      if (sub) { ctx.font = "11px sans-serif"; ctx.fillStyle = css("--ink-faint"); ctx.fillText(sub, cx, cy + 10); }
+    };
+
+    const render = () => {
+      ctx.clearRect(0, 0, W, H);
+      const showA = mode === "A" || mode === "both";
+      const showB = mode === "B" || mode === "both";
+      const cA = css("--shu"), cB = css("--ai");
+
+      // 6 → 元 の枝
+      ctx.textAlign = "center";
+      for (const e of elems) {
+        const on = e.route === "A" ? showA : showB;
+        if (!on) continue;
+        ctx.strokeStyle = e.route === "A" ? cA : cB; ctx.lineWidth = 1.6;
+        ctx.beginPath(); ctx.moveTo(six.x, six.y + 16); ctx.lineTo(e.x, e.y - 20); ctx.stroke();
+      }
+      // 元 → 素イデアル の線（分解）
+      for (const e of elems) {
+        const on = e.route === "A" ? showA : showB;
+        if (!on) continue;
+        const tone = e.route === "A" ? cA : cB;
+        for (const pid of e.primes) {
+          const p = pPos(pid);
+          ctx.strokeStyle = tone; ctx.globalAlpha = 0.5; ctx.lineWidth = 1.4; ctx.setLineDash([4, 3]);
+          ctx.beginPath(); ctx.moveTo(e.x, e.y + 20); ctx.lineTo(p.x, p.y - 20); ctx.stroke();
+          ctx.setLineDash([]); ctx.globalAlpha = 1;
+        }
+      }
+      // ノード
+      box(six.x, six.y, "6", null, true, css("--ink"));
+      for (const e of elems) {
+        const on = e.route === "A" ? showA : showB;
+        box(e.x, e.y, e.label, null, on, e.route === "A" ? cA : cB);
+      }
+      // 素イデアルの重複度（p1 が何回現れるか）
+      const count: Record<string, number> = { p1: 0, p2: 0, p3: 0 };
+      for (const e of elems) { const on = e.route === "A" ? showA : showB; if (on) for (const pid of e.primes) count[pid]++; }
+      // both のときは各元1回ずつ数える（経路A・Bで二重にせず、片方＝(6)の分解として数える）
+      const disp: Record<string, number> = mode === "both" ? { p1: 2, p2: 1, p3: 1 } : count;
+      for (const p of primes) {
+        const active = disp[p.id] > 0;
+        box(p.x, p.y, p.label, p.sub, active, css("--ink"));
+        if (active && mode === "both") {
+          ctx.fillStyle = css("--shu"); ctx.font = "700 13px sans-serif";
+          ctx.fillText("×" + disp[p.id], p.x + 34, p.y - 8);
+        }
+      }
+      // 見出し
+      ctx.fillStyle = css("--ink-faint"); ctx.font = "11px sans-serif"; ctx.textAlign = "left";
+      ctx.fillText("数（既約元）", 8, 96); ctx.fillText("素イデアル", 8, 214);
+
+      let msg: string;
+      if (mode === "A") {
+        msg = `<b class="shu">経路A</b>：6 を数として 2·3 に分解。イデアルで見ると (2)=<b>p₁²</b>、(3)=<b>p₂p₃</b>。` +
+          `合わせて (6)=<b>p₁²·p₂·p₃</b>。`;
+      } else if (mode === "B") {
+        msg = `<b class="ai">経路B</b>：6 を数として (1+√-5)(1−√-5) に分解。イデアルで見ると (1+√-5)=<b>p₁p₂</b>、` +
+          `(1−√-5)=<b>p₁p₃</b>。合わせて (6)=<b>p₁²·p₂·p₃</b>。`;
+      } else {
+        msg = `数としては <b class="shu">2·3</b> と <b class="ai">(1+√-5)(1−√-5)</b> の<b>別々の分解</b>だが、` +
+          `どちらもイデアルでは <b>(6)=p₁²·p₂·p₃</b> という<b>同じ素イデアル分解</b>に降りる` +
+          `——数で壊れた一意分解が、イデアルで<b>蘇る</b>。`;
+      }
+      capEl.innerHTML =
+        `Z[√-5] では 6 が二通りに分解する。素イデアル p₁=(2,1+√-5), p₂=(3,1+√-5), p₃=(3,1−√-5) を使うと…<br>` + msg;
+    };
+
+    const setMode = (m: "A" | "B" | "both") => {
+      mode = m;
+      for (const [b, key] of [[btnA, "A"], [btnB, "B"], [btnBoth, "both"]] as const)
+        b.classList.toggle("if-active", key === m);
+      render();
+    };
+    btnA.addEventListener("click", () => setMode("A"));
+    btnB.addEventListener("click", () => setMode("B"));
+    btnBoth.addEventListener("click", () => setMode("both"));
+    setMode("both");
+  }
+</script>
+
+<style>
+  .if { margin: 26px 0; padding: 16px 18px 14px; border: 1px solid var(--line); border-radius: 10px; background: var(--card); }
+  .if-controls { display: flex; flex-wrap: wrap; gap: 8px 10px; margin-bottom: 12px; }
+  .if-btn { font-size: 12.5px; font-family: var(--sans); padding: 4px 12px; border: 1px solid var(--line); border-radius: 6px; background: var(--paper); color: var(--ink); cursor: pointer; }
+  .if-btn:hover { border-color: var(--ai); }
+  .if-primary { font-weight: 600; }
+  .if-btn.if-active { border-color: var(--shu); color: var(--shu); font-weight: 600; }
+  .if-cv { display: block; margin: 0 auto; width: 100%; max-width: 440px; height: auto; border: 1px solid var(--line); border-radius: 6px; background: var(--paper-sunk); }
+  .if-cap { margin-top: 12px; font-size: 13px; line-height: 1.85; color: var(--ink-faint); font-family: var(--sans); }
+  .if-cap b { color: var(--ink); font-weight: 700; }
+  .if-cap b.shu { color: var(--shu); }
+  .if-cap b.ai { color: var(--ai); }
+</style>

@@ -1,0 +1,107 @@
+---
+layout: ../../layouts/BaseLayout.astro
+title: 第7章 分岐・惰性・分解
+description: 有理素数 p が整数環に上がると、分裂・惰性・分岐の三通りに振る舞う。分岐指数 e・剰余次数 f・素イデアルの個数 g と基本関係 efg=n、素イデアルの分解の判定、そして分岐を支配する判別式を見る。
+---
+
+import Term from "../../components/assets/Term.astro";
+import Statement from "../../components/assets/Statement.astro";
+
+# 第7章 分岐・惰性・分解
+
+前章で、$\mathcal O_K$ のイデアルは素イデアルの積に一意分解すると分かりました。では、いちばん基本的なイデアル
+——有理素数 $p$ が生成する $(p)$——は、$\mathcal O_K$ でどう分解するのでしょう。$p$ は $\mathcal O_K$ に上がると、
+そのまま素のまま（惰性）、複数の素イデアルに割れる（分裂）、あるいは重複して割れる（分岐）——三通りの
+振る舞いを見せます。この分解の様子を測るのが **$e,f,g$** という三つの数で、それらは基本関係 $efg=n$ で
+縛られています。素数の分解の法則を掴みましょう。
+
+## 素数 $p$ の分解：三つの数 $e,f,g$
+
+有理素数 $p$ に対し、イデアル $(p)=p\mathcal O_K$ を $\mathcal O_K$ で素イデアル分解します。
+
+<Statement kind="definition" title="分岐指数・剰余次数・分解数">
+$$p\mathcal O_K=\mathfrak p_1^{e_1}\mathfrak p_2^{e_2}\cdots\mathfrak p_g^{e_g}$$
+において、$e_i$ を素イデアル $\mathfrak p_i$ の<Term>分岐指数</Term>、$g$ を<Term>分解数</Term>（$p$ の上にある
+素イデアルの個数）という。また剰余体 $\mathcal O_K/\mathfrak p_i$ は有限体 $\mathbb F_p$ の拡大で、その次数
+$f_i=[\mathcal O_K/\mathfrak p_i:\mathbb F_p]$ を<Term>剰余次数</Term>という。
+</Statement>
+
+三つの数はばらばらに動けるわけではなく、体の次数 $n=[K:\mathbb Q]$ によって固く縛られています。
+
+<Statement kind="theorem" title="基本関係 efg = n">
+$$\sum_{i=1}^g e_i f_i=n.$$
+とくに $p$ が $K/\mathbb Q$ でガロア的なとき、対称性から全ての $e_i,f_i$ が等しく（$e_i=e,f_i=f$）、
+$$efg=n.$$
+</Statement>
+
+この関係は「$(p)$ を割る素イデアルの“重み” $e_if_i$ の総和が、ちょうど次数 $n$ になる」という保存則です。
+剰余体の個数（$g$）・各素イデアルの大きさ（$f$）・重複度（$e$）の三者が、$n$ を分け合う。証明は
+$\mathcal O_K/p\mathcal O_K$ を $\mathbb F_p$ ベクトル空間として次元を二通りに数える（片や $n$、片や $\sum e_if_i$）ことで
+出ます。
+
+## 三つの典型的な振る舞い
+
+二次体 $K=\mathbb Q(\sqrt d)$（$n=2$）で、$efg=2$ の可能なパターンを見ると、素数の分解が三種に尽きることが
+分かります。ちょうど $2=1\cdot1\cdot2=1\cdot2\cdot1=2\cdot1\cdot1$ の三通りです。
+
+<Statement kind="definition" title="分裂・惰性・分岐">
+- <Term>分裂</Term>（$g=2,e=f=1$）：$p\mathcal O_K=\mathfrak p_1\mathfrak p_2$。異なる二つの素イデアルに割れる。
+- <Term>惰性</Term>（$g=1,f=2,e=1$）：$p\mathcal O_K=\mathfrak p$。$p$ は $\mathcal O_K$ でも素のまま（分解しない）。
+- <Term>分岐</Term>（$g=1,e=2,f=1$）：$p\mathcal O_K=\mathfrak p^2$。一つの素イデアルの二乗、**重複**して割れる。
+</Statement>
+
+第4章の $\mathbb Z[\sqrt{-5}]$ で $(2)=\mathfrak p_1^2$ は $2$ の**分岐**、$(3)=\mathfrak p_2\mathfrak p_3$ は $3$ の
+**分裂**でした。分岐だけが $e>1$（重複）を持つ特別な現象で、後で見るように有限個の素数にしか起こりません。
+
+## 分解の判定：多項式の $\bmod\,p$ 分解と一致する
+
+どの素数がどう振る舞うかは、驚くほど具体的に判定できます。鍵は「素イデアル分解が、生成元の最小多項式の
+$\bmod\,p$ 分解を真似る」という定理です。
+
+<Statement kind="theorem" title="デデキントの判定法">
+$\mathcal O_K=\mathbb Z[\alpha]$ で $\alpha$ の最小多項式を $m(x)$ とする。$p\nmid[\mathcal O_K:\mathbb Z[\alpha]]$ なる
+素数 $p$ について、$m(x)$ を $\mathbb F_p$ 上で既約分解して $\overline{m}(x)=\prod_i \overline{g_i}(x)^{e_i}$ となるなら、
+$$p\mathcal O_K=\prod_i\mathfrak p_i^{e_i},\qquad \mathfrak p_i=(p,\,g_i(\alpha)),\quad f_i=\deg g_i.$$
+「多項式が $\bmod\,p$ でどう割れるか」が「素数が $\mathcal O_K$ でどう分解するか」をそのまま写す。
+</Statement>
+
+たとえば $K=\mathbb Q(i)$、$m(x)=x^2+1$。$p=5$ では $x^2+1\equiv(x-2)(x+2)\pmod5$ と分裂 → $5$ は分裂
+（$5=(2+i)(2-i)$）。$p=3$ では $x^2+1$ が $\mathbb F_3$ で既約 → $3$ は惰性。$p=2$ では $x^2+1\equiv(x+1)^2\pmod2$ と
+重根 → $2$ は分岐（$(2)=(1+i)^2$）。二次体の分解は、結局 $d$ が $p$ を法とする平方剰余かどうか
+（[ガロア理論](/field-and-galois)・平方剰余の相互法則）で決まります。**素数の分解法則は、平方剰余の言葉で
+書ける**——ここで数論の二大テーマが合流します。
+
+## 分岐と判別式：どこで重複が起きるか
+
+三つの振る舞いのうち、分岐（$e>1$）は特別です。それがどの素数で起こるかを、第3章の**判別式**が完全に
+言い当てます。
+
+<Statement kind="theorem" title="分岐する素数は判別式を割る">
+素数 $p$ が $K$ で<Term>分岐</Term>する（ある $e_i\ge2$）$\Leftrightarrow$ $p\mid d_K$。したがって分岐する素数は
+**有限個**（$d_K$ の素因数だけ）。
+</Statement>
+
+第3章で「判別式は分岐の在り処を教える地図」と予告した通りです。分岐は「最小多項式が $\bmod\,p$ で重根を持つ」
+＝「判別式が $p$ で消える」現象で、判別式 $d_K$ を割る有限個の素数でしか起こらない。$\mathbb Q(\sqrt{-5})$ なら
+$d_K=-20=-2^2\cdot5$ で、分岐するのは $2$ と $5$ だけ（実際 $(2)=\mathfrak p_1^2$、$(5)=(\sqrt{-5})^2$）。ほとんどの
+素数は分裂か惰性で、分岐という“ほころび”は判別式が押さえる有限個に限られます。
+
+<Statement kind="remark" title="つまずきポイント">
+- **$e,f,g$ の役割を混同しない**。$e$＝重複度（分岐指数）、$f$＝剰余体の拡大次数（素イデアルの“大きさ”）、
+  $g$＝素イデアルの個数。$\sum e_if_i=n$ で縛られる。
+- **デデキントの判定法には条件**（$p\nmid[\mathcal O_K:\mathbb Z[\alpha]]$）。$\mathbb Z[\alpha]$ が整数環と指数を
+  持つ場合、その指数を割る素数では判定法が使えず、別扱いが要る。
+- **分岐は有限個・例外的**。$p\mid d_K$ のときだけ。無限にある素数のほとんどは分裂／惰性で、分岐は判別式が
+  管理する“特異点”のようなもの。この有限性が後の解析（第12章のゼータ）で効く。
+</Statement>
+
+## この章のまとめ
+
+- 有理素数 $p$ は $\mathcal O_K$ で $p\mathcal O_K=\prod\mathfrak p_i^{e_i}$ と分解。**分岐指数 $e$・剰余次数 $f$・
+  分解数 $g$** が振る舞いを測り、**基本関係 $\sum e_if_i=n$**（ガロアなら $efg=n$）で縛られる。
+- 三つの典型：**分裂**（$\mathfrak p_1\mathfrak p_2$）・**惰性**（素のまま）・**分岐**（$\mathfrak p^2$、重複）。
+- **デデキントの判定法**：素イデアル分解は最小多項式の $\bmod\,p$ 既約分解を写す。二次体では平方剰余で決まる。
+- **分岐する素数は判別式 $d_K$ を割る有限個だけ**。判別式が分岐（ほころび）の在り処を完全に管理する。
+
+ここまでで「イデアルがどう分解するか」は尽くしました。次章からは視点を変え、「**そもそも一意分解がどれだけ
+壊れているか**」を測る量——イデアル類群——に進みます。$\mathcal O_K$ が PID からどれだけ遠いかの指標です。
