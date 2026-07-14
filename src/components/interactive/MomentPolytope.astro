@@ -1,0 +1,106 @@
+---
+/* MomentPolytope.astro — トーラス作用のモーメント写像の像＝凸多面体を見る装置（アティヤ–ギユマン–スターンバーグ）。
+   トーリック・シンプレクティック多様体（複素次元 n）に (S¹)ⁿ が作用し、モーメント写像 μ の像は
+   凸多面体（デルザント多面体）になる。頂点＝トーラスの固定点、その個数＝オイラー標数 χ。
+     ℂℙ¹→線分(2頂点), ℂℙ²→三角形(3頂点), ℂℙ¹×ℂℙ¹→正方形(4頂点), F1(ℂℙ²の1点爆発)→台形(4頂点)。
+   多面体・頂点(固定点)・辺（固定 S¹ の軌道）・内点上のトーラス束を描く。
+   node 検証済み（頂点数=χ=固定点数：2/3/4/4 が一致）。
+   状態はメモリ内のみ（storage 不使用）。 */
+---
+
+<figure class="mp" role="group" aria-label="モーメント写像の像（トーリック多面体）">
+  <div class="mp-controls">
+    <label class="mp-label">トーリック多様体
+      <select id="mp-m" class="mp-sel">
+        <option value="cp1">ℂℙ¹（＝S²）</option>
+        <option value="cp2" selected>ℂℙ²</option>
+        <option value="cp1cp1">ℂℙ¹×ℂℙ¹</option>
+        <option value="f1">F₁（ℂℙ² の1点爆発）</option>
+      </select>
+    </label>
+  </div>
+  <canvas id="mp-cv" width="380" height="300" class="mp-cv"></canvas>
+  <figcaption id="mp-cap" class="mp-cap"></figcaption>
+</figure>
+
+<script>
+  const mSel = document.getElementById("mp-m") as HTMLSelectElement | null;
+  const cv = document.getElementById("mp-cv") as HTMLCanvasElement | null;
+  const capEl = document.getElementById("mp-cap");
+
+  if (mSel && cv && capEl) {
+    const ctx = cv.getContext("2d")!;
+    const W = cv.width, H = cv.height;
+    const css = (v: string) => getComputedStyle(document.documentElement).getPropertyValue(v).trim() || "#888";
+
+    const POLY: Record<string, { name: string; dim: number; verts: number[][]; desc: string }> = {
+      cp1: { name: "ℂℙ¹ (S²)", dim: 1, verts: [[0], [2]], desc: "線分（区間）" },
+      cp2: { name: "ℂℙ²", dim: 2, verts: [[0, 0], [2, 0], [0, 2]], desc: "三角形" },
+      cp1cp1: { name: "ℂℙ¹×ℂℙ¹", dim: 2, verts: [[0, 0], [2, 0], [2, 2], [0, 2]], desc: "正方形" },
+      f1: { name: "F₁", dim: 2, verts: [[0, 0], [3, 0], [1, 2], [0, 2]], desc: "台形（ℂℙ² の角を切り落とした形）" },
+    };
+
+    const render = () => {
+      const P = POLY[mSel.value], n = P.dim;
+      ctx.clearRect(0, 0, W, H);
+      // 座標変換：多面体を中央に
+      const xs = P.verts.map((v) => v[0]), ys = P.verts.map((v) => (n === 2 ? v[1] : 0));
+      const minX = Math.min(...xs), maxX = Math.max(...xs), minY = Math.min(...ys), maxY = Math.max(...ys);
+      const spanX = maxX - minX || 1, spanY = maxY - minY || 1;
+      const pad = 60, sc = Math.min((W - 2 * pad) / spanX, n === 2 ? (H - 2 * pad) / spanY : 1e9, 90);
+      const ox = W / 2 - (minX + maxX) / 2 * sc, oy = H / 2 + (n === 2 ? (minY + maxY) / 2 * sc : 0);
+      const PX = (x: number) => ox + x * sc, PY = (y: number) => oy - y * sc;
+
+      if (n === 1) {
+        // 線分＋端点
+        const y = H / 2;
+        ctx.strokeStyle = css("--ai"); ctx.lineWidth = 3;
+        ctx.beginPath(); ctx.moveTo(PX(P.verts[0][0]), y); ctx.lineTo(PX(P.verts[1][0]), y); ctx.stroke();
+        // 内点のトーラス（S¹）束＝短い縦線
+        ctx.strokeStyle = css("--ink-faint"); ctx.lineWidth = 1;
+        for (let i = 1; i < 8; i++) { const x = P.verts[0][0] + (P.verts[1][0] - P.verts[0][0]) * i / 8; ctx.beginPath(); ctx.moveTo(PX(x), y - 12); ctx.lineTo(PX(x), y + 12); ctx.stroke(); }
+        for (const v of P.verts) { ctx.fillStyle = css("--shu"); ctx.beginPath(); ctx.arc(PX(v[0]), y, 6, 0, 7); ctx.fill(); }
+      } else {
+        // 多角形塗り
+        ctx.fillStyle = css("--ai") + "1f"; ctx.strokeStyle = css("--ai"); ctx.lineWidth = 2;
+        ctx.beginPath(); P.verts.forEach((v, i) => (i ? ctx.lineTo(PX(v[0]), PY(v[1])) : ctx.moveTo(PX(v[0]), PY(v[1])))); ctx.closePath(); ctx.fill(); ctx.stroke();
+        // 内点上のトーラス T² を小さな格子で示唆
+        ctx.strokeStyle = css("--ink-faint"); ctx.globalAlpha = 0.5; ctx.lineWidth = 0.7;
+        // 内部を格子線で（多面体内だけ）
+        for (let gx = Math.ceil(minX * 3); gx <= maxX * 3; gx++) { const x = gx / 3; ctx.beginPath(); ctx.moveTo(PX(x), PY(minY)); ctx.lineTo(PX(x), PY(maxY)); ctx.stroke(); }
+        for (let gy = Math.ceil(minY * 3); gy <= maxY * 3; gy++) { const y = gy / 3; ctx.beginPath(); ctx.moveTo(PX(minX), PY(y)); ctx.lineTo(PX(maxX), PY(y)); ctx.stroke(); }
+        ctx.globalAlpha = 1;
+        // 再度多角形の枠を上書き（クリップしていないので枠を強調）
+        ctx.strokeStyle = css("--ai"); ctx.lineWidth = 2;
+        ctx.beginPath(); P.verts.forEach((v, i) => (i ? ctx.lineTo(PX(v[0]), PY(v[1])) : ctx.moveTo(PX(v[0]), PY(v[1])))); ctx.closePath(); ctx.stroke();
+        // 頂点＝固定点
+        for (const v of P.verts) { ctx.fillStyle = css("--shu"); ctx.beginPath(); ctx.arc(PX(v[0]), PY(v[1]), 6, 0, 7); ctx.fill(); ctx.strokeStyle = css("--paper"); ctx.lineWidth = 1.5; ctx.stroke(); }
+      }
+      ctx.fillStyle = css("--ink-faint"); ctx.font = "12px sans-serif";
+      ctx.fillText("μ の像 ⊂ ℝ" + (n === 1 ? "" : "²"), 12, H - 12);
+
+      const nv = P.verts.length;
+      capEl.innerHTML =
+        `<b>${P.name}</b> に (S¹)<sup>${n}</sup> が回転で作用する。その<b>モーメント写像 μ</b> の像が ` +
+        `<b class="ai">${P.desc}</b>（凸多面体）——<b>アティヤ–ギユマン–スターンバーグの凸性定理</b>。` +
+        `<br><b class="shu">頂点（朱）</b>＝トーラスの<b>固定点</b>で ${nv} 個。内点の上には<b>トーラス T<sup>${n}</sup></b> が` +
+        `乗り、辺の上ではそれが退化する（作用が“畳まれる”）。` +
+        `<br>頂点の個数 ${nv} ＝ <b>オイラー標数 χ</b> ＝ 固定点の数。多面体という<b>組み合わせデータ</b>が、` +
+        `多様体の幾何を丸ごと決める（トーリック幾何）。`;
+    };
+    mSel.addEventListener("change", render);
+    render();
+  }
+</script>
+
+<style>
+  .mp { margin: 26px 0; padding: 16px 18px 14px; border: 1px solid var(--line); border-radius: 10px; background: var(--card); }
+  .mp-controls { display: flex; flex-wrap: wrap; gap: 8px 16px; margin-bottom: 12px; align-items: center; }
+  .mp-label { font-size: 13px; font-weight: 600; color: var(--ink); font-family: var(--sans); display: flex; align-items: center; gap: 6px; }
+  .mp-sel { font-size: 13px; padding: 3px 6px; border: 1px solid var(--line); border-radius: 6px; background: var(--paper); color: var(--ink); }
+  .mp-cv { display: block; margin: 0 auto; width: 100%; max-width: 380px; height: auto; border: 1px solid var(--line); border-radius: 6px; background: var(--paper-sunk); }
+  .mp-cap { margin-top: 12px; font-size: 13px; line-height: 1.85; color: var(--ink-faint); font-family: var(--sans); }
+  .mp-cap b { color: var(--ink); font-weight: 700; }
+  .mp-cap b.shu { color: var(--shu); }
+  .mp-cap b.ai { color: var(--ai); }
+</style>
