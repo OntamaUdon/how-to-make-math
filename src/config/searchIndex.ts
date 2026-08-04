@@ -101,13 +101,21 @@ for (const section of siteNav) {
   for (const item of section.items) sectionByHref.set(item.href, label);
 }
 
+/** siteNav に載らないページの見出し。/standalone は分野に属さない一話完結の記事 */
+function labelFor(href: string): { section: string; badge: string } {
+  const known = sectionByHref.get(href);
+  if (known) return known;
+  if (href.startsWith("/standalone/")) return { section: "一話完結", badge: "記事" };
+  return { section: "", badge: "" };
+}
+
 /** 全ページの索引。/search-index.json と /search-body.json は
     どちらもこの配列をそのままの順で出すので、添字で対応が取れる。 */
 export const searchDocs: SearchDoc[] = Object.entries(rawPages)
   .map(([filePath, raw]): SearchDoc => {
     const href = pathToHref(filePath);
     const { title, description } = readFrontmatter(raw);
-    const label = sectionByHref.get(href);
+    const label = labelFor(href);
     const allHeads = readHeadings(raw);
     const heads = allHeads.filter((h) => h !== title);
 
@@ -121,8 +129,8 @@ export const searchDocs: SearchDoc[] = Object.entries(rawPages)
     return {
       href,
       title: title || href,
-      section: label?.section ?? "",
-      badge: label?.badge ?? "",
+      section: label.section,
+      badge: label.badge,
       desc: description,
       heads,
       body,

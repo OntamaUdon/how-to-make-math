@@ -40,7 +40,22 @@ const sections = siteNav
     badge: section.badge ?? "",
   }));
 
-const config = { dev: isDev, sections, interactives, statementKinds };
+/* 分野に属さない一話完結の記事は src/pages/standalone に置く。
+   先頭に入れておくと、分野を選ばないときの既定になる。 */
+const STANDALONE_DIR = "standalone";
+sections.unshift({
+  dir: STANDALONE_DIR,
+  title: "分野なし（一話完結の記事）",
+  badge: "記事",
+});
+
+const config = {
+  dev: isDev,
+  sections,
+  interactives,
+  statementKinds,
+  standaloneDir: STANDALONE_DIR,
+};
 ---
 
 <!doctype html>
@@ -73,7 +88,7 @@ const config = { dev: isDev, sections, interactives, statementKinds };
               <label class="st-field st-field-mode">
                 <span>モード</span>
                 <select id="st-mode">
-                  <option value="new">新しい章を作る</option>
+                  <option value="new">新しい記事を書く</option>
                   <option value="edit">既存のページを直す</option>
                 </select>
               </label>
@@ -84,7 +99,7 @@ const config = { dev: isDev, sections, interactives, statementKinds };
               </label>
 
               <label class="st-field st-field-num" data-for="new">
-                <span>章番号</span>
+                <span id="st-order-label">番号</span>
                 <input id="st-order" type="number" min="1" step="1" />
               </label>
 
@@ -97,7 +112,7 @@ const config = { dev: isDev, sections, interactives, statementKinds };
             <div class="st-row" data-for="new">
               <label class="st-field st-field-wide">
                 <span>title</span>
-                <input id="st-title" type="text" placeholder="第13章 ○○" />
+                <input id="st-title" type="text" placeholder="記事のタイトル" />
               </label>
               <label class="st-field st-field-wide">
                 <span>description</span>
@@ -167,6 +182,8 @@ const config = { dev: isDev, sections, interactives, statementKinds };
         sections: Array<{ dir: string; title: string; badge: string }>;
         interactives: string[];
         statementKinds: Array<{ kind: string; label: string }>;
+        /** 分野に属さない一話完結の記事を置くディレクトリ */
+        standaloneDir: string;
       }
       interface PageEntry {
         rel: string;
@@ -565,8 +582,12 @@ const config = { dev: isDev, sections, interactives, statementKinds };
       const titleInput = document.getElementById("st-title") as HTMLInputElement | null;
       const descInput = document.getElementById("st-desc") as HTMLInputElement | null;
       const pathLabel = document.getElementById("st-path") as HTMLElement | null;
+      const orderLabel = document.getElementById("st-order-label") as HTMLElement | null;
 
       const mode = (): string => modeSelect?.value ?? "new";
+
+      /** いま「分野なし（一話完結）」を選んでいるか */
+      const isStandalone = (): boolean => sectionSelect?.value === config.standaloneDir;
 
       /** いま保存しようとしている src/pages からの相対パス */
       function targetRel(): string {
@@ -584,6 +605,12 @@ const config = { dev: isDev, sections, interactives, statementKinds };
 
       function syncTarget(): void {
         if (pathLabel) pathLabel.textContent = targetRel() || "—";
+        if (orderLabel) orderLabel.textContent = isStandalone() ? "記事番号" : "章番号";
+        if (titleInput) {
+          titleInput.placeholder = isStandalone()
+            ? "記事のタイトル"
+            : `第${orderInput?.value || "N"}章 ○○`;
+        }
         renderChecks(runChecks(src.value));
       }
 
@@ -628,7 +655,8 @@ const config = { dev: isDev, sections, interactives, statementKinds };
 
         // 雛形を作る
         document.getElementById("st-scaffold")?.addEventListener("click", () => {
-          const title = titleInput?.value.trim() || `第${orderInput?.value ?? 1}章`;
+          const fallback = isStandalone() ? "新しい記事" : `第${orderInput?.value ?? 1}章`;
+          const title = titleInput?.value.trim() || fallback;
           const desc = descInput?.value.trim() ?? "";
           if (src.value.trim() && !confirm("いま書いてある内容を雛形で置き換えます。よいですか？")) {
             return;
