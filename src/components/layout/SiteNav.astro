@@ -1,36 +1,38 @@
 ---
-/* SiteNav.astro — ページ下部に置く「サイト全体の目次（階層ナビ）」。
-   Sidebar と同じ siteNav から作るので、片方を直せば両方そろう。 */
+/* SiteNav.astro — ページ下部に置く「サイト全体の目次」。
+   分野名だけを並べる（章タイトルは載せない）。章までたどるには、
+   各分野の地図ページか、上部バーの検索を使う。
+   分野の一覧は Sidebar と同じ siteNav から作るので、片方を直せば両方そろう。 */
 import { siteNav, isCurrent } from "../../config/navigation";
 
 const pathname = Astro.url.pathname;
+
+/** その分野のページ（地図でも各章でも）を今開いているか */
+const inSection = (href?: string): boolean =>
+  !!href && (isCurrent(href, pathname) || pathname.startsWith(`${href}/`));
 ---
 
 <nav class="sitemap" aria-label="サイト全体の目次">
   <p class="sitemap-head">サイト全体の目次</p>
 
   <div class="sitemap-grid">
-    {siteNav.map((section) => (
-      <section class="sitemap-col">
-        <h2 class="sitemap-title">
+    {siteNav.map((section) =>
+      section.href ? (
+        <a
+          href={section.href}
+          class:list={["sitemap-item", { active: inSection(section.href) }]}
+          aria-current={inSection(section.href) ? "true" : undefined}
+        >
           {section.badge && <span class="badge">{section.badge}</span>}
-          {section.href
-            ? <a href={section.href}>{section.title}</a>
-            : <span>{section.title}</span>}
-        </h2>
-        <ul>
-          {section.items.map((item) => (
-            <li>
-              <a
-                href={item.href}
-                class:list={{ active: isCurrent(item.href, pathname) }}
-                aria-current={isCurrent(item.href, pathname) ? "page" : undefined}
-              >{item.title}</a>
-            </li>
-          ))}
-        </ul>
-      </section>
-    ))}
+          <span class="sitemap-name">{section.title}</span>
+        </a>
+      ) : (
+        <span class="sitemap-item is-plain">
+          {section.badge && <span class="badge">{section.badge}</span>}
+          <span class="sitemap-name">{section.title}</span>
+        </span>
+      )
+    )}
   </div>
 </nav>
 
@@ -45,26 +47,43 @@ const pathname = Astro.url.pathname;
     margin: 0 0 18px;
   }
 
-  /* 章を横並びのカラムに。画面幅に応じて自動で列数が変わる */
+  /* 分野名を横並びに。画面幅に応じて自動で列数が変わる */
   .sitemap-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
-    gap: 22px 30px;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 8px 14px;
   }
 
-  .sitemap-title {
+  .sitemap-item {
     display: flex;
     align-items: center;
     gap: 8px;
+    padding: 7px 10px;
+    border: 1px solid transparent;
+    border-radius: 9px;
     font-family: var(--serif);
-    font-size: 15px;
+    font-size: 14.5px;
     color: var(--ink);
-    margin: 0 0 8px;
-    padding-bottom: 6px;
-    border-bottom: 1px solid var(--line);
+    transition: border-color 0.15s, background 0.15s, color 0.15s;
   }
-  .sitemap-title a { color: inherit; }
+  a.sitemap-item:hover {
+    border-color: var(--line);
+    background: var(--card);
+    color: var(--ai);
+    text-decoration: none;
+  }
+  a.sitemap-item.active {
+    border-color: var(--ai);
+    background: var(--ai-wash);
+    color: var(--ai);
+    font-weight: 700;
+  }
+  .sitemap-item.is-plain { color: var(--ink-soft); }
+
+  .sitemap-name { min-width: 0; }
+
   .badge {
+    flex: none;
     font-family: var(--latin);
     font-size: 11px;
     background: var(--ai);
@@ -72,10 +91,4 @@ const pathname = Astro.url.pathname;
     border-radius: 5px;
     padding: 1px 7px;
   }
-
-  .sitemap-col ul { list-style: none; margin: 0; padding: 0; font-size: 13.5px; }
-  .sitemap-col li { margin: 4px 0; }
-  .sitemap-col a { color: var(--ink-soft); }
-  .sitemap-col a:hover { color: var(--ai); }
-  .sitemap-col a.active { color: var(--ai); font-weight: 700; }
 </style>

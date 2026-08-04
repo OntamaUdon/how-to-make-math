@@ -1,0 +1,1130 @@
+---
+/* studio.astro — 制作ページ「工房」。
+   ・本番（pages.dev）では MDX + 数式のプレビュー専用。保存まわりの HTML は出力されない。
+   ・ローカル（npm run dev）でだけ、ファイル一覧・読み込み・保存・公開のUIが現れる。
+     その裏方は src/integrations/studio.ts（dev サーバのミドルウェア）。
+   ・プレビューは marked + KaTeX のブラウザ描画。Astro 部品はビルド時に展開されるので
+     ここでは「簡略な枠」で位置と中身だけ確認する。正確な見た目は実ページで見ること。
+   ・スタイルは innerHTML で組む要素にも効かせたいので is:global。名前は st- / sp- で切っている。 */
+import SiteHead from "../components/layout/SiteHead.astro";
+import TopBar from "../components/layout/TopBar.astro";
+import { siteNav } from "../config/navigation";
+
+const isDev = import.meta.env.DEV;
+
+// interactive 部品の名前一覧。glob のキーはビルド時に静的に埋め込まれるので、
+// 実行時にディレクトリを読まずに済む（本番ビルドでは src/ が無いため readdir は使えない）。
+// 部品ファイルを足せば、ここも自動で増える。
+const interactives = Object.keys(import.meta.glob("../components/interactive/*.astro"))
+  .map((path) => path.replace(/^.*\//, "").replace(/\.astro$/, ""))
+  .sort();
+
+// Statement.astro の STYLES と同じ並び
+const statementKinds = [
+  { kind: "definition", label: "定義" },
+  { kind: "theorem", label: "定理" },
+  { kind: "proposition", label: "命題" },
+  { kind: "lemma", label: "補題" },
+  { kind: "corollary", label: "系" },
+  { kind: "example", label: "例" },
+  { kind: "remark", label: "注意" },
+  { kind: "proof", label: "証明" },
+  { kind: "metatheorem", label: "メタ定理" },
+];
+
+const sections = siteNav
+  .filter((section) => section.href)
+  .map((section) => ({
+    dir: (section.href as string).replace(/^\//, ""),
+    title: section.title,
+    badge: section.badge ?? "",
+  }));
+
+const config = { dev: isDev, sections, interactives, statementKinds };
+---
+
+<!doctype html>
+<html lang="ja">
+  <head>
+    <SiteHead title="工房 - 数学の作り方" description="MDX と数式の下書き場" />
+    <meta name="robots" content="noindex" />
+  </head>
+
+  <body>
+    <TopBar />
+
+    <script type="application/json" id="st-config" set:html={JSON.stringify(config)}></script>
+
+    <main class="st-wrap">
+      <header class="st-head">
+        <h1>工房</h1>
+        <p class="st-lead">
+          {isDev
+            ? "MDX を書いて、そのまま src/pages に保存できます。プレビューは構成確認用です。"
+            : "MDX と数式の下書き場です。書いたものは端末の中だけに残り、サイトには反映されません。"}
+        </p>
+        <span class="st-badge">{isDev ? "ローカル：保存できます" : "プレビュー専用"}</span>
+      </header>
+
+      {
+        isDev && (
+          <section class="st-panel">
+            <div class="st-row">
+              <label class="st-field st-field-mode">
+                <span>モード</span>
+                <select id="st-mode">
+                  <option value="new">新しい章を作る</option>
+                  <option value="edit">既存のページを直す</option>
+                </select>
+              </label>
+
+              <label class="st-field" data-for="new">
+                <span>分野</span>
+                <select id="st-section"></select>
+              </label>
+
+              <label class="st-field st-field-num" data-for="new">
+                <span>章番号</span>
+                <input id="st-order" type="number" min="1" step="1" />
+              </label>
+
+              <label class="st-field st-field-wide" data-for="edit" hidden>
+                <span>ページ</span>
+                <select id="st-file"></select>
+              </label>
+            </div>
+
+            <div class="st-row" data-for="new">
+              <label class="st-field st-field-wide">
+                <span>title</span>
+                <input id="st-title" type="text" placeholder="第13章 ○○" />
+              </label>
+              <label class="st-field st-field-wide">
+                <span>description</span>
+                <input id="st-desc" type="text" placeholder="この章で何が分かるかを一文で" />
+              </label>
+              <button type="button" id="st-scaffold" class="st-btn">雛形を作る</button>
+            </div>
+
+            <p class="st-target">
+              保存先 <code id="st-path">—</code>
+            </p>
+          </section>
+        )
+      }
+
+      <section class="st-panel st-insert">
+        <div class="st-row">
+          <button type="button" class="st-chip" data-ins="## ">見出し</button>
+          <button type="button" class="st-chip" data-wrap="**|**">太字</button>
+          <button type="button" class="st-chip" data-wrap="$|$">数式</button>
+          <button type="button" class="st-chip" data-ins="$$\n\n$$">別行立て数式</button>
+          <button type="button" class="st-chip" data-ins="> ">引用</button>
+          <button type="button" class="st-chip" data-ins="- ">箇条書き</button>
+          <button type="button" class="st-chip" id="st-ins-term">用語（Term）</button>
+
+          <select id="st-ins-statement" class="st-select">
+            <option value="">囲みを入れる…</option>
+          </select>
+
+          <select id="st-ins-widget" class="st-select">
+            <option value="">interactive 部品を入れる…</option>
+          </select>
+        </div>
+        <p class="st-note">部品を入れると、必要な import 文が先頭に自動で足されます。</p>
+      </section>
+
+      <div class="st-editor" data-active="code">
+        <div class="st-tabs" role="tablist">
+          <button type="button" class="st-tab" data-pane="code" role="tab" aria-selected="true">MDX</button>
+          <button type="button" class="st-tab" data-pane="preview" role="tab" aria-selected="false">プレビュー</button>
+        </div>
+        <textarea id="st-src" class="st-pane" data-pane="code" spellcheck="false"></textarea>
+        <div id="st-preview" class="prose st-pane st-preview" data-pane="preview" hidden></div>
+      </div>
+
+      <section class="st-panel">
+        <p class="st-note">保存前チェック</p>
+        <ul id="st-checks" class="st-checks"></ul>
+      </section>
+
+      <footer class="st-actions">
+        {isDev && <button type="button" id="st-save" class="st-btn st-btn-main">保存する</button>}
+        <button type="button" id="st-download" class="st-btn">.mdx をダウンロード</button>
+        {isDev && <button type="button" id="st-publish" class="st-btn st-btn-pub">保存して公開</button>}
+        <span id="st-msg" class="st-msg"></span>
+      </footer>
+
+      {isDev && <pre id="st-log" class="st-log" hidden></pre>}
+    </main>
+
+    <script>
+      import { marked } from "marked";
+      import katex from "katex";
+
+      interface StudioConfig {
+        dev: boolean;
+        sections: Array<{ dir: string; title: string; badge: string }>;
+        interactives: string[];
+        statementKinds: Array<{ kind: string; label: string }>;
+      }
+      interface PageEntry {
+        rel: string;
+        dir: string;
+        order: number | null;
+        isIndex: boolean;
+        title: string;
+      }
+
+      const configNode = document.getElementById("st-config");
+      const config: StudioConfig = JSON.parse(configNode?.textContent ?? "{}");
+
+      // ── Markdown + 数式（MdxPlayground と同じ組み立て） ─────────────
+      marked.use({
+        extensions: [
+          {
+            name: "blockMath",
+            level: "block",
+            start: (src: string) => src.indexOf("$$"),
+            tokenizer(src: string) {
+              const m = /^\$\$([\s\S]+?)\$\$/.exec(src);
+              if (m) return { type: "blockMath", raw: m[0], text: m[1].trim() };
+            },
+            renderer: (t: any) =>
+              `<div class="katex-display">${katex.renderToString(t.text, {
+                displayMode: true,
+                throwOnError: false,
+              })}</div>`,
+          },
+          {
+            name: "inlineMath",
+            level: "inline",
+            start: (src: string) => src.indexOf("$"),
+            tokenizer(src: string) {
+              const m = /^\$([^\n$]+?)\$/.exec(src);
+              if (m) return { type: "inlineMath", raw: m[0], text: m[1] };
+            },
+            renderer: (t: any) => katex.renderToString(t.text, { throwOnError: false }),
+          },
+        ],
+      });
+
+      const src = document.getElementById("st-src") as HTMLTextAreaElement;
+      const preview = document.getElementById("st-preview") as HTMLElement;
+      const checks = document.getElementById("st-checks") as HTMLUListElement;
+      const msg = document.getElementById("st-msg") as HTMLElement;
+
+      const labelOf = new Map(config.statementKinds.map((s) => [s.kind, s.label]));
+      const escapeHtml = (s: string): string =>
+        s.replace(/[&<>"]/g, (c) =>
+          c === "&" ? "&amp;" : c === "<" ? "&lt;" : c === ">" ? "&gt;" : "&quot;"
+        );
+
+      /** MDX を「だいたいの見た目」に変換する。Astro 部品は簡略な枠で示す。 */
+      function mdxToHtml(source: string): string {
+        let s = source.replace(/^---\r?\n[\s\S]*?\r?\n---\r?\n?/, "");
+        s = s.replace(/^[ \t]*import\s.+$/gm, "");
+
+        const blocks: string[] = [];
+        const stash = (html: string): string => {
+          blocks.push(html);
+          return `\n\n<div data-ph="${blocks.length - 1}"></div>\n\n`;
+        };
+
+        // 自己閉じの部品（<EpsilonN /> など）は入る場所だけ示す
+        s = s.replace(/<([A-Z][A-Za-z0-9]*)\s*\/>/g, (_m, name: string) =>
+          stash(`<div class="sp-widget">&lt;${escapeHtml(name)} /&gt;</div>`)
+        );
+
+        // <Term>…</Term> は本文と同じ見た目の下線付き
+        s = s.replace(
+          /<Term(?:\s[^>]*)?>([\s\S]*?)<\/Term>/g,
+          '<span class="sp-term">$1</span>'
+        );
+
+        // <Statement kind=… title=…>…</Statement> は簡略な枠
+        s = s.replace(
+          /<Statement([^>]*)>([\s\S]*?)<\/Statement>/g,
+          (_m, attrs: string, inner: string) => {
+            const kind = /kind=["']([^"']+)["']/.exec(attrs)?.[1] ?? "";
+            const title = /title=["']([^"']*)["']/.exec(attrs)?.[1] ?? "";
+            const label = labelOf.get(kind) ?? kind ?? "囲み";
+            return stash(
+              `<div class="sp-statement"><p class="sp-head"><span class="sp-label">${escapeHtml(
+                label
+              )}</span>${
+                title ? `<span class="sp-title">${escapeHtml(title)}</span>` : ""
+              }</p>${marked.parse(inner.trim()) as string}</div>`
+            );
+          }
+        );
+
+        let html = marked.parse(s) as string;
+        // 差し込んだ枠の中に、さらに枠が入っていることがあるので数回まわす
+        for (let i = 0; i < 5 && html.includes("data-ph="); i++) {
+          html = html.replace(
+            /<div data-ph="(\d+)"><\/div>/g,
+            (_m, at: string) => blocks[Number(at)] ?? ""
+          );
+        }
+        return html;
+      }
+
+      // ── 保存前チェック ──────────────────────────────────────────
+      type Issue = { level: "error" | "warn"; text: string };
+
+      /** 数式・コード・frontmatter・import を落とした「地の文」 */
+      function proseOnly(source: string): string {
+        return source
+          .replace(/^---\r?\n[\s\S]*?\r?\n---\r?\n?/, "")
+          .replace(/^[ \t]*import\s.+$/gm, "")
+          .replace(/```[\s\S]*?```/g, "")
+          .replace(/`[^`\n]*`/g, "")
+          .replace(/\$\$[\s\S]*?\$\$/g, "")
+          .replace(/\$[^$\n]*\$/g, "");
+      }
+
+      function runChecks(source: string): Issue[] {
+        const issues: Issue[] = [];
+        const count = (re: RegExp): number => (source.match(re) ?? []).length;
+
+        const fm = /^---\r?\n([\s\S]*?)\r?\n---/.exec(source);
+        if (!fm) {
+          issues.push({ level: "error", text: "frontmatter（--- で囲む部分）がありません。" });
+        } else {
+          for (const key of ["layout", "title", "description"]) {
+            if (!new RegExp(`^${key}\\s*:`, "m").test(fm[1])) {
+              issues.push({ level: "warn", text: `frontmatter に ${key} がありません。` });
+            }
+          }
+        }
+
+        // 閉じ忘れ（この原稿でいちばん多いミス）
+        const opens = count(/<Statement[\s>]/g);
+        const closes = count(/<\/Statement>/g);
+        if (opens !== closes) {
+          issues.push({
+            level: "error",
+            text: `<Statement> が ${opens} 個、</Statement> が ${closes} 個です。閉じ忘れがあります。`,
+          });
+        }
+        const termOpens = count(/<Term[\s>]/g);
+        const termCloses = count(/<\/Term>/g);
+        if (termOpens !== termCloses) {
+          issues.push({
+            level: "error",
+            text: `<Term> が ${termOpens} 個、</Term> が ${termCloses} 個です。`,
+          });
+        }
+        if (count(/\$\$/g) % 2 !== 0) {
+          issues.push({ level: "error", text: "$$ の数が奇数です。別行立て数式の閉じ忘れです。" });
+        }
+
+        // KaTeX が本当に描けるか（psmallmatrix のような非対応をここで捕まえる）
+        const body = source
+          .replace(/^---\r?\n[\s\S]*?\r?\n---\r?\n?/, "")
+          .replace(/```[\s\S]*?```/g, "");
+        const formulas: Array<{ tex: string; display: boolean }> = [];
+        for (const m of body.matchAll(/\$\$([\s\S]+?)\$\$/g))
+          formulas.push({ tex: m[1], display: true });
+        for (const m of body.replace(/\$\$[\s\S]*?\$\$/g, "").matchAll(/\$([^\n$]+?)\$/g))
+          formulas.push({ tex: m[1], display: false });
+
+        let shown = 0;
+        for (const f of formulas) {
+          try {
+            katex.renderToString(f.tex, { displayMode: f.display, throwOnError: true, strict: false });
+          } catch (error) {
+            if (shown++ < 5) {
+              issues.push({
+                level: "error",
+                text: `数式が描けません: ${f.tex.trim().slice(0, 40)}… — ${
+                  (error as Error).message.split("\n")[0]
+                }`,
+              });
+            }
+          }
+        }
+
+        // MDX は本文の { } を式として読もうとする
+        if (/[{}]/.test(proseOnly(source))) {
+          issues.push({
+            level: "warn",
+            text: "本文に裸の { } があります。MDX が式として読もうとしてビルドが落ちることがあります。",
+          });
+        }
+
+        // 章番号の重複（ローカルのみ）
+        if (config.dev && mode() === "new") {
+          const rel = targetRel();
+          if (rel && pages.some((p) => p.rel === rel)) {
+            issues.push({ level: "error", text: `${rel} は既にあります。章番号を変えてください。` });
+          }
+        }
+
+        return issues;
+      }
+
+      function renderChecks(issues: Issue[]): void {
+        if (issues.length === 0) {
+          checks.innerHTML = `<li class="st-ok">問題は見つかりませんでした。</li>`;
+          return;
+        }
+        checks.innerHTML = issues
+          .map(
+            (i) =>
+              `<li class="st-issue st-${i.level}"><span class="st-issue-tag">${
+                i.level === "error" ? "エラー" : "注意"
+              }</span>${escapeHtml(i.text)}</li>`
+          )
+          .join("");
+      }
+
+      /* 下書きの保存先。新しいページを保存すると Astro がルートを取り直して
+         この画面ごと再読み込みされるので、書きかけを必ず持ち越せるようにしておく。 */
+      const DRAFT_KEY = "studio-draft";
+
+      /* 復元が終わるまでは書き込まない。ファイル一覧は非同期で届くので、
+         それより先に保存すると「保存先が空」の状態で下書きを潰してしまう。 */
+      let draftReady = false;
+
+      function saveDraft(): void {
+        if (!config.dev || !draftReady) return;
+        try {
+          localStorage.setItem(
+            DRAFT_KEY,
+            JSON.stringify({
+              content: src.value,
+              mode: modeSelect?.value ?? "new",
+              dir: sectionSelect?.value ?? "",
+              order: orderInput?.value ?? "",
+              rel: fileSelect?.value ?? "",
+            })
+          );
+        } catch (e) {
+          /* 保存できなくても編集は続けられる */
+        }
+      }
+
+      function readDraft(): any {
+        try {
+          return JSON.parse(localStorage.getItem(DRAFT_KEY) ?? "null");
+        } catch (e) {
+          return null;
+        }
+      }
+
+      let timer = 0;
+      function refresh(): void {
+        preview.innerHTML = mdxToHtml(src.value);
+        renderChecks(runChecks(src.value));
+        saveDraft();
+      }
+      src.addEventListener("input", () => {
+        window.clearTimeout(timer);
+        timer = window.setTimeout(refresh, 200);
+      });
+
+      // ── 文字の差し込み ──────────────────────────────────────────
+      function insertAtCursor(text: string, selectOffset = 0): void {
+        const start = src.selectionStart;
+        const end = src.selectionEnd;
+        src.setRangeText(text, start, end, "end");
+        if (selectOffset) src.setSelectionRange(start + selectOffset, start + selectOffset);
+        src.focus();
+        refresh();
+      }
+
+      /** Statement や interactive のような「かたまり」は、カーソルがタグや文の途中に
+          あっても壊さないよう、その行の終わりに置く。 */
+      function insertBlockAtCursor(text: string, selectOffset = 0): void {
+        const lineEnd = src.value.indexOf("\n", src.selectionStart);
+        const at = lineEnd === -1 ? src.value.length : lineEnd;
+        src.setRangeText(text, at, at, "end");
+        const caret = at + (selectOffset || text.length);
+        src.setSelectionRange(caret, caret);
+        src.focus();
+        refresh();
+      }
+
+      function wrapSelection(pattern: string): void {
+        const [before, after] = pattern.split("|");
+        const start = src.selectionStart;
+        const end = src.selectionEnd;
+        const chosen = src.value.slice(start, end);
+        src.setRangeText(before + chosen + after, start, end, "end");
+        if (chosen === "") src.setSelectionRange(start + before.length, start + before.length);
+        src.focus();
+        refresh();
+      }
+
+      /** 部品の import 文を先頭（frontmatter の直後）に足す。既にあれば何もしない */
+      function ensureImport(name: string, folder: string): void {
+        if (new RegExp(`^\\s*import\\s+${name}\\s`, "m").test(src.value)) return;
+        const line = `import ${name} from "../../components/${folder}/${name}.astro";`;
+
+        const fm = /^---\r?\n[\s\S]*?\r?\n---\r?\n?/.exec(src.value);
+        const head = fm ? fm[0] : "";
+        const rest = src.value.slice(head.length);
+        const lines = rest.split("\n");
+
+        let last = -1;
+        for (let i = 0; i < lines.length; i++) {
+          if (/^\s*import\s/.test(lines[i])) last = i;
+        }
+        if (last >= 0) {
+          lines.splice(last + 1, 0, line);
+        } else {
+          lines.unshift("", line, "");
+        }
+
+        const before = src.value;
+        // import を足した拍子に空行が増えすぎないよう詰める
+        const after = (head + lines.join("\n")).replace(/\n{3,}/g, "\n\n");
+        const caret = src.selectionStart + (after.length - before.length);
+        src.value = after;
+        src.setSelectionRange(Math.max(0, caret), Math.max(0, caret));
+      }
+
+      document.querySelectorAll<HTMLButtonElement>("[data-ins]").forEach((btn) => {
+        btn.addEventListener("click", () => insertAtCursor(btn.dataset.ins!.replace(/\\n/g, "\n")));
+      });
+      document.querySelectorAll<HTMLButtonElement>("[data-wrap]").forEach((btn) => {
+        btn.addEventListener("click", () => wrapSelection(btn.dataset.wrap!));
+      });
+
+      document.getElementById("st-ins-term")?.addEventListener("click", () => {
+        ensureImport("Term", "assets");
+        wrapSelection("<Term>|</Term>");
+      });
+
+      const statementSelect = document.getElementById("st-ins-statement") as HTMLSelectElement;
+      for (const s of config.statementKinds) {
+        statementSelect.add(new Option(`${s.label}（${s.kind}）`, s.kind));
+      }
+      statementSelect.addEventListener("change", () => {
+        const kind = statementSelect.value;
+        if (!kind) return;
+        ensureImport("Statement", "assets");
+        // カーソルは title="" の中に置く（`\n<Statement kind="` が 18 文字）
+        insertBlockAtCursor(
+          `\n<Statement kind="${kind}" title="">\n\n</Statement>\n`,
+          27 + kind.length
+        );
+        statementSelect.value = "";
+      });
+
+      const widgetSelect = document.getElementById("st-ins-widget") as HTMLSelectElement;
+      for (const name of config.interactives) widgetSelect.add(new Option(name, name));
+      widgetSelect.addEventListener("change", () => {
+        const name = widgetSelect.value;
+        if (!name) return;
+        ensureImport(name, "interactive");
+        insertBlockAtCursor(`\n\n<${name} />\n`);
+        widgetSelect.value = "";
+      });
+
+      // ── タブ ────────────────────────────────────────────────────
+      const editor = document.querySelector<HTMLElement>(".st-editor")!;
+      editor.querySelectorAll<HTMLButtonElement>(".st-tab").forEach((tab) => {
+        tab.addEventListener("click", () => {
+          const name = tab.dataset.pane!;
+          editor.dataset.active = name;
+          editor.querySelectorAll<HTMLElement>(".st-tab").forEach((t) =>
+            t.setAttribute("aria-selected", String(t.dataset.pane === name))
+          );
+          editor.querySelectorAll<HTMLElement>(".st-pane").forEach((p) => {
+            p.hidden = p.dataset.pane !== name;
+          });
+          if (name === "preview") refresh();
+        });
+      });
+
+      // ── ダウンロード（本番でも使える） ───────────────────────────
+      document.getElementById("st-download")?.addEventListener("click", () => {
+        const title = /^title:\s*(.*)$/m.exec(src.value)?.[1]?.trim() ?? "draft";
+        const name = (targetRel() || `${title.replace(/[\\/:*?"<>|\s]+/g, "_")}.mdx`).replace(
+          /^.*\//,
+          ""
+        );
+        const url = URL.createObjectURL(new Blob([src.value], { type: "text/markdown" }));
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = name;
+        a.click();
+        URL.revokeObjectURL(url);
+      });
+
+      // ── ここから下はローカル専用 ────────────────────────────────
+      let pages: PageEntry[] = [];
+
+      const modeSelect = document.getElementById("st-mode") as HTMLSelectElement | null;
+      const sectionSelect = document.getElementById("st-section") as HTMLSelectElement | null;
+      const orderInput = document.getElementById("st-order") as HTMLInputElement | null;
+      const fileSelect = document.getElementById("st-file") as HTMLSelectElement | null;
+      const titleInput = document.getElementById("st-title") as HTMLInputElement | null;
+      const descInput = document.getElementById("st-desc") as HTMLInputElement | null;
+      const pathLabel = document.getElementById("st-path") as HTMLElement | null;
+
+      const mode = (): string => modeSelect?.value ?? "new";
+
+      /** いま保存しようとしている src/pages からの相対パス */
+      function targetRel(): string {
+        if (!config.dev) return "";
+        if (mode() === "edit") return fileSelect?.value ?? "";
+        const dir = sectionSelect?.value ?? "";
+        const order = orderInput?.value ?? "";
+        return dir && order ? `${dir}/${order}.mdx` : "";
+      }
+
+      function setMessage(text: string, kind: "ok" | "ng" | "" = ""): void {
+        msg.textContent = text;
+        msg.className = `st-msg${kind ? ` st-msg-${kind}` : ""}`;
+      }
+
+      function syncTarget(): void {
+        if (pathLabel) pathLabel.textContent = targetRel() || "—";
+        renderChecks(runChecks(src.value));
+      }
+
+      /** 分野を選んだら、空いている次の章番号を提案する */
+      function suggestOrder(): void {
+        if (!sectionSelect || !orderInput) return;
+        const dir = `/${sectionSelect.value}`;
+        const used = pages
+          .filter((p) => p.dir === dir && p.order !== null)
+          .map((p) => p.order as number);
+        orderInput.value = String(used.length ? Math.max(...used) + 1 : 1);
+        syncTarget();
+      }
+
+      if (config.dev && modeSelect && sectionSelect && fileSelect) {
+        for (const s of config.sections) {
+          sectionSelect.add(new Option(`${s.badge ? `[${s.badge}] ` : ""}${s.title}`, s.dir));
+        }
+
+        const applyMode = (): void => {
+          const isEdit = mode() === "edit";
+          document.querySelectorAll<HTMLElement>("[data-for]").forEach((el) => {
+            el.hidden = el.dataset.for !== (isEdit ? "edit" : "new");
+          });
+          syncTarget();
+        };
+        modeSelect.addEventListener("change", applyMode);
+        sectionSelect.addEventListener("change", suggestOrder);
+        orderInput?.addEventListener("input", syncTarget);
+
+        fileSelect.addEventListener("change", async () => {
+          const rel = fileSelect.value;
+          if (!rel) return;
+          const res = await fetch(`/__studio/read?rel=${encodeURIComponent(rel)}`);
+          const json = await res.json();
+          if (!res.ok) return setMessage(json.error ?? "読み込めませんでした", "ng");
+          src.value = json.content;
+          setMessage(`${rel} を読み込みました`, "ok");
+          refresh();
+          syncTarget();
+        });
+
+        // 雛形を作る
+        document.getElementById("st-scaffold")?.addEventListener("click", () => {
+          const title = titleInput?.value.trim() || `第${orderInput?.value ?? 1}章`;
+          const desc = descInput?.value.trim() ?? "";
+          if (src.value.trim() && !confirm("いま書いてある内容を雛形で置き換えます。よいですか？")) {
+            return;
+          }
+          src.value = `---
+layout: ../../layouts/BaseLayout.astro
+title: ${title}
+description: ${desc}
+---
+
+# ${title}
+
+##
+
+`;
+          src.focus();
+          src.setSelectionRange(src.value.length - 2, src.value.length - 2);
+          refresh();
+        });
+
+        // 書きかけを復元する（保存でこの画面が再読み込みされても続きから書ける）
+        const draft = readDraft();
+        if (draft && typeof draft.content === "string" && draft.content.trim()) {
+          src.value = draft.content;
+          if (draft.mode) modeSelect.value = draft.mode;
+          if (draft.dir) sectionSelect.value = draft.dir;
+          if (draft.order && orderInput) orderInput.value = draft.order;
+          setMessage("書きかけを復元しました", "ok");
+        }
+
+        // ファイル一覧を取ってくる
+        void (async () => {
+          try {
+            const json = await fetch("/__studio/list").then((r) => r.json());
+            pages = json.pages ?? [];
+            const byDir = new Map<string, PageEntry[]>();
+            for (const page of pages) {
+              if (!byDir.has(page.dir)) byDir.set(page.dir, []);
+              byDir.get(page.dir)!.push(page);
+            }
+            for (const section of config.sections) {
+              const list = byDir.get(`/${section.dir}`);
+              if (!list) continue;
+              const group = document.createElement("optgroup");
+              group.label = section.title;
+              for (const page of list.sort(
+                (a, b) => (a.order ?? -1) - (b.order ?? -1)
+              )) {
+                group.appendChild(new Option(page.title || page.rel, page.rel));
+              }
+              fileSelect.appendChild(group);
+            }
+            fileSelect.selectedIndex = -1;
+            if (draft?.rel) fileSelect.value = draft.rel;
+            // 復元した章番号があるときは、自動採番で上書きしない
+            if (draft?.order) syncTarget();
+            else suggestOrder();
+          } catch (error) {
+            setMessage("ファイル一覧を取得できませんでした", "ng");
+          } finally {
+            draftReady = true; // ここまで来て初めて下書きの保存を許す
+            saveDraft();
+          }
+        })();
+
+        applyMode();
+
+        // ── 保存 ──────────────────────────────────────────────────
+        document.getElementById("st-save")?.addEventListener("click", async () => {
+          const rel = targetRel();
+          if (!rel) return setMessage("保存先が決まっていません", "ng");
+
+          const issues = runChecks(src.value);
+          if (
+            issues.some((i) => i.level === "error") &&
+            !confirm("エラーが残っています。それでも保存しますか？")
+          ) {
+            return;
+          }
+
+          setMessage("保存中…");
+          const res = await fetch("/__studio/save", {
+            method: "POST",
+            headers: { "content-type": "application/json" },
+            body: JSON.stringify({
+              rel,
+              content: src.value,
+              mode: mode() === "edit" ? "overwrite" : "create",
+            }),
+          });
+          const json = await res.json();
+          if (!res.ok) return setMessage(json.error ?? "保存できませんでした", "ng");
+
+          setMessage(
+            `保存しました: src/pages/${rel}（${json.bytes} バイト）${
+              json.backup ? ` / 元の内容は ${json.backup} に退避` : ""
+            }`,
+            "ok"
+          );
+
+          // 一覧を取り直して、新規は編集モードに切り替える
+          const json2 = await fetch("/__studio/list").then((r) => r.json());
+          pages = json2.pages ?? [];
+          syncTarget();
+        });
+
+        // ── 公開（build → deploy をローカル実行） ──────────────────
+        const log = document.getElementById("st-log") as HTMLPreElement;
+        let seen = 0;
+
+        const poll = async (): Promise<void> => {
+          const json = await fetch(`/__studio/publish-status?since=${seen}`).then((r) => r.json());
+          seen = json.total;
+          if (json.lines.length) {
+            log.textContent += json.lines.join("\n") + "\n";
+            log.scrollTop = log.scrollHeight;
+          }
+          if (json.status === "building") setMessage("ビルド中…（数分かかります）");
+          else if (json.status === "deploying") setMessage("アップロード中…");
+          else if (json.status === "done") return setMessage(`公開しました → ${json.url}`, "ok");
+          else if (json.status === "error") return setMessage("公開に失敗しました（ログを見てください）", "ng");
+          window.setTimeout(poll, 1500);
+        };
+
+        document.getElementById("st-publish")?.addEventListener("click", async () => {
+          const ok = confirm(
+            "本番サイト（https://how-to-make-math.pages.dev/）に公開します。\n\n" +
+              "・保存が済んでいる内容だけが対象です（この画面の未保存分は含まれません）\n" +
+              "・ビルドに数分かかります\n\n実行しますか？"
+          );
+          if (!ok) return;
+
+          log.hidden = false;
+          log.textContent = "";
+          seen = 0;
+          const res = await fetch("/__studio/publish", { method: "POST" });
+          if (!res.ok) {
+            const json = await res.json();
+            return setMessage(json.error ?? "開始できませんでした", "ng");
+          }
+          void poll();
+        });
+      }
+
+      refresh();
+    </script>
+
+    <style is:global>
+      .st-wrap {
+        max-width: 1120px;
+        margin: 0 auto;
+        padding: 26px 24px 72px;
+      }
+
+      .st-head h1 {
+        font-family: var(--serif);
+        font-size: clamp(1.8rem, 4vw, 2.3rem);
+        margin: 0 0 8px;
+        color: var(--ink);
+      }
+      .st-lead {
+        margin: 0 0 10px;
+        font-size: 14px;
+        color: var(--ink-soft);
+      }
+      .st-badge {
+        display: inline-block;
+        font-family: var(--latin);
+        font-size: 11px;
+        letter-spacing: 0.08em;
+        padding: 2px 9px;
+        border-radius: 5px;
+        background: var(--ai);
+        color: #fff;
+      }
+
+      .st-panel {
+        margin: 18px 0;
+        padding: 14px 16px;
+        border: 1px solid var(--line);
+        border-radius: 12px;
+        background: var(--card);
+      }
+      .st-row {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: flex-end;
+        gap: 10px 14px;
+      }
+      .st-row + .st-row {
+        margin-top: 12px;
+      }
+      .st-field {
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+        min-width: 0;
+      }
+      .st-field[hidden] {
+        display: none;
+      }
+      .st-field > span {
+        font-size: 11px;
+        letter-spacing: 0.08em;
+        color: var(--ink-faint);
+      }
+      .st-field-wide {
+        flex: 1;
+        min-width: 200px;
+      }
+      .st-field-num input {
+        width: 90px;
+      }
+
+      .st-field input,
+      .st-field select,
+      .st-select {
+        font-family: var(--sans);
+        font-size: 13.5px;
+        color: var(--ink);
+        background: var(--paper);
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        padding: 6px 9px;
+      }
+      .st-field input:focus-visible,
+      .st-field select:focus-visible,
+      .st-select:focus-visible {
+        outline: 2px solid var(--ai);
+        outline-offset: 1px;
+      }
+
+      .st-target {
+        margin: 12px 0 0;
+        font-size: 12px;
+        color: var(--ink-faint);
+      }
+      .st-target code {
+        font-family: var(--mono);
+        font-size: 12.5px;
+        color: var(--ai);
+        background: var(--paper-sunk);
+        padding: 2px 7px;
+        border-radius: 5px;
+      }
+
+      .st-chip {
+        font-family: var(--sans);
+        font-size: 12.5px;
+        color: var(--ink-soft);
+        background: var(--paper);
+        border: 1px solid var(--line);
+        border-radius: 7px;
+        padding: 5px 11px;
+        cursor: pointer;
+      }
+      .st-chip:hover {
+        border-color: var(--ai);
+        color: var(--ai);
+      }
+      .st-note {
+        margin: 10px 0 0;
+        font-size: 11.5px;
+        color: var(--ink-faint);
+      }
+      .st-insert .st-row {
+        align-items: center;
+      }
+
+      /* ── エディタ（MdxPlayground と同じ作り） ── */
+      .st-editor {
+        margin: 18px 0;
+        border: 1px solid var(--line);
+        border-radius: 12px;
+        overflow: hidden;
+        background: var(--card);
+      }
+      .st-tabs {
+        display: flex;
+        gap: 2px;
+        padding: 6px 6px 0;
+        background: var(--paper-sunk);
+        border-bottom: 1px solid var(--line);
+      }
+      .st-tab {
+        appearance: none;
+        border: none;
+        background: transparent;
+        font-family: var(--sans);
+        font-size: 13px;
+        font-weight: 600;
+        color: var(--ink-faint);
+        padding: 8px 18px;
+        border-radius: 8px 8px 0 0;
+        cursor: pointer;
+      }
+      .st-tab:hover {
+        color: var(--ink);
+      }
+      .st-tab[aria-selected="true"] {
+        color: var(--ai);
+        background: var(--card);
+        box-shadow: inset 0 -2px 0 var(--ai);
+      }
+      .st-pane {
+        display: block;
+        width: 100%;
+        min-height: 520px;
+      }
+      .st-pane[hidden] {
+        display: none;
+      }
+      #st-src {
+        resize: vertical;
+        border: none;
+        font-family: var(--mono);
+        font-size: 14px;
+        line-height: 1.75;
+        color: var(--ink);
+        background: var(--card);
+        padding: 18px 20px;
+        tab-size: 2;
+      }
+      #st-src:focus-visible {
+        outline: 2px solid var(--ai);
+        outline-offset: -2px;
+      }
+      .st-preview {
+        overflow: auto;
+        padding: 22px 24px;
+      }
+      .st-preview > :first-child {
+        margin-top: 0;
+      }
+
+      /* ── チェック結果 ── */
+      .st-checks {
+        list-style: none;
+        margin: 10px 0 0;
+        padding: 0;
+        font-size: 13px;
+      }
+      .st-checks li {
+        margin: 5px 0;
+        line-height: 1.6;
+      }
+      .st-ok {
+        color: var(--ink-faint);
+      }
+      .st-issue-tag {
+        display: inline-block;
+        min-width: 46px;
+        margin-right: 9px;
+        padding: 1px 7px;
+        border-radius: 5px;
+        font-size: 11px;
+        text-align: center;
+        color: #fff;
+      }
+      .st-error {
+        color: var(--ink);
+      }
+      .st-error .st-issue-tag {
+        background: var(--shu);
+      }
+      .st-warn {
+        color: var(--ink-soft);
+      }
+      .st-warn .st-issue-tag {
+        background: var(--ink-faint);
+      }
+
+      /* ── 操作ボタン ── */
+      .st-actions {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 10px;
+        margin-top: 18px;
+      }
+      .st-btn {
+        font-family: var(--sans);
+        font-size: 13.5px;
+        color: var(--ink);
+        background: var(--card);
+        border: 1px solid var(--line);
+        border-radius: 9px;
+        padding: 8px 16px;
+        cursor: pointer;
+      }
+      .st-btn:hover {
+        border-color: var(--ai);
+        color: var(--ai);
+      }
+      .st-btn-main {
+        background: var(--ai);
+        border-color: var(--ai);
+        color: #fff;
+        font-weight: 700;
+      }
+      .st-btn-main:hover {
+        color: #fff;
+        opacity: 0.9;
+      }
+      .st-btn-pub {
+        border-color: var(--shu);
+        color: var(--shu);
+      }
+      .st-btn-pub:hover {
+        background: var(--shu-wash, var(--card));
+        color: var(--shu);
+      }
+      .st-msg {
+        font-size: 12.5px;
+        color: var(--ink-faint);
+      }
+      .st-msg-ok {
+        color: var(--ai);
+      }
+      .st-msg-ng {
+        color: var(--shu);
+      }
+
+      .st-log {
+        margin: 16px 0 0;
+        padding: 14px 16px;
+        max-height: 340px;
+        overflow: auto;
+        font-family: var(--mono);
+        font-size: 12px;
+        line-height: 1.65;
+        white-space: pre-wrap;
+        color: var(--ink-soft);
+        background: var(--paper-sunk);
+        border: 1px solid var(--line);
+        border-radius: 10px;
+      }
+      .st-log[hidden] {
+        display: none;
+      }
+
+      /* ── プレビュー内の「簡略な枠」── */
+      .sp-statement {
+        margin: 20px 0;
+        padding: 12px 16px;
+        border: 1px solid var(--line);
+        border-left: 4px solid var(--ai);
+        border-radius: 8px;
+        background: var(--paper);
+      }
+      .sp-head {
+        margin: 0 0 6px;
+        font-family: var(--serif);
+        font-size: 13px;
+      }
+      .sp-label {
+        display: inline-block;
+        margin-right: 9px;
+        padding: 1px 8px;
+        border-radius: 5px;
+        background: var(--ai);
+        color: #fff;
+        font-size: 11.5px;
+      }
+      .sp-title {
+        color: var(--ink);
+        font-weight: 700;
+      }
+      .sp-statement > :first-of-type ~ * {
+        margin-bottom: 0;
+      }
+      .sp-term {
+        color: var(--ai);
+        border-bottom: 1.5px dotted var(--ai);
+        font-weight: 600;
+      }
+      .sp-widget {
+        margin: 20px 0;
+        padding: 18px;
+        text-align: center;
+        font-family: var(--mono);
+        font-size: 12.5px;
+        color: var(--ink-faint);
+        border: 1px dashed var(--line);
+        border-radius: 8px;
+        background: var(--paper-sunk);
+      }
+
+      @media (max-width: 720px) {
+        .st-wrap {
+          padding: 20px 16px 56px;
+        }
+        .st-field-wide {
+          min-width: 100%;
+        }
+      }
+    </style>
+  </body>
+</html>

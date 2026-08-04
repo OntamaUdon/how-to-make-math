@@ -12,6 +12,10 @@ yarn-debug.log*
 yarn-error.log*
 pnpm-debug.log*
 astro-dev*.log
+astro-preview*.log
+
+# 工房（/studio）が上書き保存の前に残す退避ファイル
+*.mdx.bak
 
 # local harness settings
 .claude/settings.local.json

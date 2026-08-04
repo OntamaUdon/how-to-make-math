@@ -1,8 +1,10 @@
 ---
-/* TopBar.astro — 上部の固定バー（サイト名 + 配色テーマ切替）。
+/* TopBar.astro — 上部の固定バー（サイト名 + サイト内検索 + 配色テーマ切替）。
    テーマ切替に必要なもの（メニュー・反映スクリプト・見た目）をここに集約する。
-   切替は <head> の #site-theme-css の href を差し替え、localStorage に記憶する。 */
+   切替は <head> の #site-theme-css の href を差し替え、localStorage に記憶する。
+   検索は SiteSearch.astro に閉じている（ボタンと、開いたときだけ出るオーバーレイ）。 */
 import { themes, defaultTheme, themeStorageKey } from "../../config/themes";
+import SiteSearch from "./SiteSearch.astro";
 
 const lightThemes = themes.filter((t) => t.group === "light");
 const darkThemes = themes.filter((t) => t.group === "dark");
@@ -16,6 +18,12 @@ const funThemes = themes.filter((t) => t.group === "fun");
       <span class="brand-sub">How to make Mathematics</span>
     </span>
   </a>
+
+  <!-- 制作ページへの入口。ローカル（npm run dev）でだけ出る＝本番の HTML には含まれない -->
+  {import.meta.env.DEV && <a href="/studio" class="studio-link">工房</a>}
+
+  <!-- サイト内のワード検索（ボタンだけを置き、押すとオーバーレイが開く） -->
+  <SiteSearch />
 
   <!-- 配色テーマの切替（選ぶと即反映され、次回も記憶される） -->
   <div class="theme-switch">
@@ -78,7 +86,21 @@ const funThemes = themes.filter((t) => t.group === "fun");
   }
   .brand-sub { font-size: 10.5px; letter-spacing: 0.14em; color: var(--ink-faint); }
 
-  .theme-switch { display: flex; align-items: center; gap: 8px; margin-left: auto; }
+  /* 制作ページへの入口（ローカルのみ）。右寄せの起点をこちらに移す */
+  .studio-link {
+    margin-left: auto;
+    font-size: 12px;
+    letter-spacing: 0.08em;
+    color: var(--ink-faint);
+    border: 1px solid var(--line);
+    border-radius: 7px;
+    padding: 4px 10px;
+  }
+  .studio-link:hover { color: var(--ai); border-color: var(--ai); text-decoration: none; }
+  .studio-link + :global(#ss-open) { margin-left: 10px; }
+
+  /* 右寄せは検索ボタン側（#ss-open の margin-left: auto）が担当する */
+  .theme-switch { display: flex; align-items: center; gap: 8px; margin-left: 12px; }
   .theme-switch-label { font-size: 11px; letter-spacing: 0.12em; color: var(--ink-faint); }
   .theme-switch-select {
     font-family: var(--sans);
@@ -94,5 +116,15 @@ const funThemes = themes.filter((t) => t.group === "fun");
   .theme-switch-select:focus-visible { outline: 2px solid var(--ai); outline-offset: 1px; }
   @media (max-width: 560px) {
     .theme-switch-label { display: none; } /* 狭い画面はラベルを省く */
+  }
+
+  /* 検索ボタンが入ったぶん、狭い画面ではバーの中身が押し合って
+     サイト名が2行に折れてしまう（バーの高さ 60px をはみ出す）。
+     そこで欧文サブタイトルを畳み、テーマ選択の幅を詰めて一段のまま保つ。
+     広い画面の見た目はこれまでどおり。 */
+  @media (max-width: 620px) {
+    .brand-sub { display: none; }
+    .brand-name { white-space: nowrap; }
+    .theme-switch-select { max-width: 108px; padding: 5px 7px; }
   }
 </style>
