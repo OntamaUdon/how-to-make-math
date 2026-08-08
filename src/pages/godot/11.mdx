@@ -1,0 +1,478 @@
+---
+layout: ../../layouts/BaseLayout.astro
+title: 第11章 ゲーム③ ミニシューティング
+description: 弾を撃つ・敵を倒す・波状に襲われる縦スクロールシューティングを1章で完成させる。コリジョンレイヤーを本格的に使い分ける回。
+---
+
+import Term from "../../components/assets/Term.astro";
+import Statement from "../../components/assets/Statement.astro";
+
+# 第11章 ゲーム③ ミニシューティング
+
+## 作るもの
+
+**「スターファイター」**——縦スクロールのシューティングです。
+
+- 自機を**上下左右**に動かし、**弾を連射**する
+- 敵は**左右に揺れながら**降りてきて、**ときどき撃ち返す**
+- 敵は2発で撃破。**倒すとスコア**
+- 被弾でライフが減り、0でゲームオーバー。**ハイスコアを保存**
+- だんだん敵が増える
+
+<Statement kind="remark" title="この章から説明が短くなります">
+ノードの追加手順やスクリプトの貼り方は、もう説明しません。
+**前2本と同じ操作**だからです。分からなくなったら第7章・第9章を見返してください。
+
+代わりにこの章では、**設計の理由**と、**まだ使っていなかった機能**
+（コリジョンレイヤーの本格運用、`PackedScene` を `@export` で渡す、波状の出現）
+に紙面を使います。
+</Statement>
+
+## 設計
+
+| シーン | ルート | 仕事 |
+| --- | --- | --- |
+| `player.tscn` | `Area2D` | 8方向移動、連射、被弾 |
+| `bullet.tscn` | `Area2D` | まっすぐ飛ぶ。自機弾・敵弾で共用 |
+| `enemy.tscn` | `Area2D` | 揺れながら降下、耐久2、撃ち返す |
+| `main.tscn` | `Node2D` | 敵の生成、スコア、HUD、ゲームオーバー |
+| `title.tscn` | `Control` | タイトルとハイスコア表示 |
+
+プロジェクトは `star-fighter`、レンダラーは `Compatibility`。
+ビューポートは **`480 × 720`**（縦）、ストレッチは `canvas_items` / `keep`。
+
+### 入力アクション
+
+インプットマップに5つ登録します。
+
+| アクション | キー |
+| --- | --- |
+| `move_left` / `move_right` | ← → と A D |
+| `move_up` / `move_down` | ↑ ↓ と W S |
+| `shoot` | スペース と Z |
+
+## コリジョンレイヤーを設計する
+
+今回は**レイヤーとマスクをきちんと使い分けます**（第4章の実戦編）。
+これをやらないと、自機の弾が自機に当たる、敵の弾が敵に当たる、といった事故が起きます。
+
+**プロジェクト設定 → 一般 → レイヤー名 → 2D Physics** で名前を付けます。
+
+| 番号 | 名前 |
+| --- | --- |
+| 1 | player |
+| 2 | enemy |
+| 3 | player_bullet |
+| 4 | enemy_bullet |
+
+そのうえで、各シーンのインスペクタの `Collision` をこう設定します。
+
+| ノード | Layer（自分の所属） | Mask（見張る相手） |
+| --- | --- | --- |
+| `Player` | `player` | `enemy`, `enemy_bullet` |
+| `Enemy` | `enemy` | `player_bullet` |
+| 自機の弾 | `player_bullet` | （なし） |
+| 敵の弾 | `enemy_bullet` | （なし） |
+
+<Statement kind="definition" title="「見張る側」を1つに絞る">
+弾のマスクを空にしているのがポイントです。
+**「弾が敵を見る」のではなく「敵が弾を見る」**と決めています。
+
+両方が互いを見張ると、1回の衝突で**両方のシグナルが飛び**、
+処理が二重になったり順序に悩まされたりします。
+**当たり判定は片側だけが検知する**——この設計にすると、コードがすっきりします。
+
+今回の担当はこうです。
+
+- **敵**が「自機の弾が来た」を検知して、自分のHPを減らす
+- **自機**が「敵／敵弾が来た」を検知して、自分のHPを減らす
+</Statement>
+
+## 弾を作る（自機弾と敵弾で共用）
+
+`bullet.tscn`：`Area2D` + `ColorRect`（`Size` `(8, 24)`、`Position` `(-4, -12)`）
++ `CollisionShape2D`（`RectangleShape2D` `Size` `(8, 24)`）。
+
+`res://scripts/bullet.gd`：
+
+```gdscript
+extends Area2D
+
+@export var speed: float = 700.0
+@export var direction: float = -1.0    # -1 で上へ、1 で下へ
+
+func _process(delta: float) -> void:
+	position.y += direction * speed * delta
+
+	# 画面外に出たら消す（消さないと溜まり続ける）
+	var height := get_viewport_rect().size.y
+	if position.y < -40.0 or position.y > height + 40.0:
+		queue_free()
+```
+
+そして、これを**2つのシーンとして保存し分けます**。
+
+1. `bullet.tscn` … 自機の弾。`Direction` は `-1`、`Modulate` を水色に。
+   グループ **`player_bullet`** を追加。Layer は `player_bullet`、Mask は空。
+2. `bullet.tscn` を右クリック → **複製** → `enemy_bullet.tscn`。
+   ルート名を `EnemyBullet` に。`Direction` を `1`、`Speed` を `320`、`Modulate` を橙に。
+   グループを **`enemy_bullet`** に付け替え。Layer は `enemy_bullet`、Mask は空。
+
+**スクリプトは1つ、シーンが2つ**。第7章の星と岩と同じ考え方です。
+
+## 自機を作る
+
+`player.tscn`：`Area2D` + `Sprite2D`（`icon.svg`、`Scale` `(0.35, 0.35)`）
++ `CollisionShape2D`（`CircleShape2D`、`Radius` `14`）。
+
+<Statement kind="remark" title="自機の当たり判定は思い切り小さく">
+見た目が約45pxなのに、当たり判定の半径を14にしました。
+シューティングでは**自機の判定を極端に小さくする**のが定石です
+（弾幕ゲームでは1〜2pxの「点」まで小さくします）。
+
+「かすった気がするけど当たらなかった」という体験が、
+シューティングの快感の中心にあります。ここは遠慮なく小さくしてください。
+</Statement>
+
+`res://scripts/player.gd`：
+
+```gdscript
+extends Area2D
+
+signal hp_changed(new_hp: int)
+signal died
+
+@export var speed: float = 380.0
+@export var bullet_scene: PackedScene          # ★インスペクタで弾のシーンを渡す
+@export var fire_interval: float = 0.16
+@export var max_hp: int = 3
+@export var invincible_time: float = 1.5
+
+var hp := 3
+var fire_timer := 0.0
+var invincible_timer := 0.0
+var screen_size: Vector2
+
+func _ready() -> void:
+	hp = max_hp
+	screen_size = get_viewport_rect().size
+	area_entered.connect(_on_area_entered)
+
+func _process(delta: float) -> void:
+	fire_timer -= delta
+	invincible_timer -= delta
+
+	# --- 移動 ---
+	var input_vector := Input.get_vector("move_left", "move_right", "move_up", "move_down")
+	position += input_vector * speed * delta
+	position.x = clamp(position.x, 24.0, screen_size.x - 24.0)
+	position.y = clamp(position.y, 24.0, screen_size.y - 24.0)
+
+	# --- 連射 ---
+	if Input.is_action_pressed("shoot") and fire_timer <= 0.0:
+		_fire()
+		fire_timer = fire_interval
+
+	# --- 無敵中は半透明 ---
+	modulate.a = 0.45 if invincible_timer > 0.0 else 1.0
+
+func _fire() -> void:
+	if bullet_scene == null:
+		return
+	var bullet := bullet_scene.instantiate()
+	bullet.global_position = global_position + Vector2(0, -26)
+	get_parent().add_child(bullet)        # ★自分ではなく「親」に足す
+
+func _on_area_entered(area: Area2D) -> void:
+	if area.is_in_group("enemy"):
+		area.take_damage(99)              # 体当たりした敵も落ちる
+	elif area.is_in_group("enemy_bullet"):
+		area.queue_free()
+	take_damage()
+
+func take_damage() -> void:
+	if invincible_timer > 0.0:
+		return
+	hp -= 1
+	invincible_timer = invincible_time
+	hp_changed.emit(hp)
+	if hp <= 0:
+		died.emit()
+```
+
+### 押さえておきたい2点
+
+<Statement kind="definition" title="① 弾は「親」に追加する">
+```gdscript
+get_parent().add_child(bullet)     # ✅
+add_child(bullet)                   # ❌ 自機の子になってしまう
+```
+
+`add_child` だと弾が**自機の子**になります。すると第2章のとおり、
+**自機が動くと弾もついてきます**。撃った弾が自機の周りをぐるぐる回る、
+という珍事はこれが原因です。
+
+弾はワールドに置きたいので、自機ではなく**その親（`Main`）**に追加します。
+</Statement>
+
+<Statement kind="definition" title="② PackedScene を @export で受け取る">
+```gdscript
+@export var bullet_scene: PackedScene
+```
+
+これまでは `preload("res://scenes/bullet.tscn")` と**コードに直接**書いていました。
+今回は `@export` にして、**インスペクタから渡します**。
+
+`player.tscn` を開いて `Player` を選び、インスペクタの `Bullet Scene` の欄に
+ファイルシステムから `bullet.tscn` をドラッグしてください。
+
+こうすると、**弾を差し替えるのにコードを触らなくて済みます**。
+「強化アイテムを取ると弾のシーンが変わる」といった発展もしやすくなります。
+</Statement>
+
+## 敵を作る
+
+`enemy.tscn`：
+
+```text
+Enemy (Area2D)              [group: enemy]  Layer: enemy / Mask: player_bullet
+├── Sprite2D                (icon.svg / Scale 0.3 / Modulate 赤紫)
+├── CollisionShape2D        (CircleShape2D / Radius 22)
+└── FireTimer (Timer)       (Wait Time 1.0 / Autostart オン)
+```
+
+`res://scripts/enemy.gd`：
+
+```gdscript
+extends Area2D
+
+signal destroyed(points: int)
+
+@export var speed: float = 130.0            # 降下速度
+@export var hp: int = 2
+@export var points: int = 100
+@export var wave_amplitude: float = 90.0    # 左右の揺れ幅
+@export var wave_speed: float = 2.4         # 揺れの速さ
+@export var bullet_scene: PackedScene
+@export var fire_chance: float = 0.35       # FireTimer が鳴るたびに撃つ確率
+
+var base_x := 0.0
+var age := 0.0
+
+func _ready() -> void:
+	base_x = position.x
+	area_entered.connect(_on_area_entered)
+	$FireTimer.timeout.connect(_on_fire_timer_timeout)
+
+func _process(delta: float) -> void:
+	age += delta
+	position.y += speed * delta
+	position.x = base_x + sin(age * wave_speed) * wave_amplitude   # ★左右に揺れる
+
+	if position.y > get_viewport_rect().size.y + 48.0:
+		queue_free()
+
+func _on_area_entered(area: Area2D) -> void:
+	if area.is_in_group("player_bullet"):
+		area.queue_free()
+		take_damage(1)
+
+func take_damage(amount: int) -> void:
+	hp -= amount
+	if hp <= 0:
+		_explode()
+	else:
+		_flash()
+
+func _flash() -> void:
+	var tween := create_tween()
+	tween.tween_property(self, "modulate", Color(1.0, 0.7, 0.7), 0.04)
+	tween.tween_property(self, "modulate", Color.WHITE, 0.10)
+
+func _explode() -> void:
+	destroyed.emit(points)
+	set_process(false)
+	set_deferred("monitoring", false)
+	var tween := create_tween().set_parallel()
+	tween.tween_property(self, "scale", scale * 1.9, 0.2)
+	tween.tween_property(self, "modulate:a", 0.0, 0.2)
+	await tween.finished
+	queue_free()
+
+func _on_fire_timer_timeout() -> void:
+	if bullet_scene == null or randf() > fire_chance:
+		return
+	var bullet := bullet_scene.instantiate()
+	bullet.global_position = global_position + Vector2(0, 28)
+	get_parent().add_child(bullet)
+```
+
+`Enemy` のインスペクタで、`Bullet Scene` に `enemy_bullet.tscn` をドラッグしておきます。
+そして `Enemy` をグループ **`enemy`** に追加するのを忘れずに。
+
+<Statement kind="definition" title="sin で揺らす">
+```gdscript
+position.x = base_x + sin(age * wave_speed) * wave_amplitude
+```
+
+`sin()` は $-1$ から $1$ の間を滑らかに行き来する関数です。
+それに `wave_amplitude` を掛ければ「$\pm 90$ の範囲でゆらゆら」になり、
+`age`（生まれてからの秒数）に `wave_speed` を掛けることで揺れの速さが決まります。
+
+**この1行は、いろんなところで使えます。**
+浮遊するアイテム、明滅する光、揺れる草。
+「周期的に行ったり来たり」させたくなったら `sin` を思い出してください。
+</Statement>
+
+## Main を組む
+
+```text
+Main (Node2D)
+├── Player           (player.tscn / Position 240, 600)
+├── SpawnTimer       (Timer / Wait Time 1.1 / Autostart オン)
+└── HUD (CanvasLayer)
+	├── MarginContainer
+	│   └── VBoxContainer
+	│       ├── ScoreLabel (%)   "SCORE 0"
+	│       └── HpLabel (%)      "LIFE 3"
+	└── GameOverPanel (Control)     [Visible オフ / Process Mode: Always]  (%)
+		├── ColorRect (半透明の黒 / 全画面)
+		└── CenterContainer → VBoxContainer
+			├── Label            "GAME OVER"
+			├── ResultLabel (%)  "SCORE 0"
+			└── RetryButton (%)  "RETRY"
+```
+
+`res://scripts/main.gd`：
+
+```gdscript
+extends Node2D
+
+const ENEMY_SCENE := preload("res://scenes/enemy.tscn")
+
+@export var spawn_interval_min: float = 0.38
+@export var difficulty_rate: float = 0.97
+
+var score := 0
+
+func _ready() -> void:
+	$Player.died.connect(_on_player_died)
+	$Player.hp_changed.connect(_on_player_hp_changed)
+	$SpawnTimer.timeout.connect(_on_spawn_timer_timeout)
+	%RetryButton.pressed.connect(_on_retry_pressed)
+
+	_update_score(0)
+	_on_player_hp_changed($Player.max_hp)
+
+## 1回で1〜3体、横に散らして出す
+func _on_spawn_timer_timeout() -> void:
+	var count := randi_range(1, 3)
+	var width := get_viewport_rect().size.x
+	var margin := 90.0
+
+	for i in range(count):
+		var enemy := ENEMY_SCENE.instantiate()
+		# count 体を横に等間隔で配置する（両端に余白を残す）
+		var t := float(i + 1) / float(count + 1)
+		enemy.position = Vector2(lerp(margin, width - margin, t), -48.0 - i * 40.0)
+		enemy.destroyed.connect(_on_enemy_destroyed)
+		add_child(enemy)
+
+	# だんだん間隔を詰める（下限つき）
+	$SpawnTimer.wait_time = max($SpawnTimer.wait_time * difficulty_rate, spawn_interval_min)
+
+func _on_enemy_destroyed(points: int) -> void:
+	_update_score(score + points)
+
+func _update_score(value: int) -> void:
+	score = value
+	%ScoreLabel.text = "SCORE %d" % score
+
+func _on_player_hp_changed(new_hp: int) -> void:
+	%HpLabel.text = "LIFE %d" % new_hp
+
+func _on_player_died() -> void:
+	var is_record := GameData.submit_score(score)
+	if is_record:
+		%ResultLabel.text = "NEW RECORD  %d" % score
+	else:
+		%ResultLabel.text = "SCORE %d   (HIGH %d)" % [score, GameData.high_score]
+	%GameOverPanel.show()
+	get_tree().paused = true
+
+func _on_retry_pressed() -> void:
+	get_tree().paused = false
+	get_tree().reload_current_scene()
+```
+
+`GameData` は第8章で作ったものをそのまま使います
+（`res://scripts/game_data.gd` を作り、オートロードに `GameData` として登録。
+`SAVE_PATH` は `user://starfighter_save.json` に変えておきましょう）。
+
+タイトル画面も第8章と同じ作りで用意します。
+`STAR FIGHTER` / ハイスコア / `START` / `ARROW to move,  SPACE to shoot`。
+
+## 遊んで調整する
+
+`F5` で通しで遊んでみてください。そして**数字を詰めます**。
+
+| 感じたこと | 触る場所 |
+| --- | --- |
+| 弾が弱い / 敵が固い | `Enemy` の `Hp`、`Player` の `Fire Interval` |
+| 敵が多すぎる | `Main` の `Difficulty Rate` を `0.985` に、`Spawn Interval Min` を上げる |
+| よけられない | `Enemy` の `Wave Amplitude` を下げる、`Speed` を下げる |
+| 手応えがない | `Enemy` の `Fire Chance` を上げる、`Speed` を上げる |
+| 自機がもっさり | `Player` の `Speed` を上げる |
+
+<Statement kind="remark" title="難易度は「最初の30秒」で決まる">
+遊ぶ人の大半は、**最初の30秒**で続けるかどうかを決めます。
+そこが難しすぎると、その先の面白さは届きません。
+
+**開始直後はわざと簡単に**、そこから徐々に上げる。
+`difficulty_rate` を使った設計は、まさにそのための仕掛けです。
+</Statement>
+
+## 発展させるなら（余力があれば）
+
+1本目・2本目と違い、シューティングは**足せる要素が無限**にあります。
+どれも、ここまでの知識だけで実装できます。
+
+| アイデア | 実装のヒント |
+| --- | --- |
+| 3方向ショット | `_fire()` で3発生成し、それぞれ `rotation` と進行方向を変える |
+| パワーアップアイテム | `Area2D` を落として、取ったら `fire_interval` を下げる |
+| ボス | HP の多い `Enemy` を1体だけ出し、`hp` に応じて動きを変える |
+| ためて撃つ | `is_action_pressed` の長さを計り、離したら強い弾を出す |
+| 背景の星流し | 小さい `ColorRect` を上から流し、`z_index` を `-1` に |
+| ハイスコア上位5件 | `GameData` に配列で持ち、`sort()` して上位を残す |
+| コンボ | 一定時間内に連続で倒すと倍率が上がる。`Timer` で管理 |
+
+<Statement kind="remark" title="全部やらないこと">
+上の表から、**1つか2つだけ**選んでください。
+「あれもこれも」で完成しなくなるのが、3本目でいちばん多い失敗です。
+
+**公開したあとで足す**という順番なら、いくら足しても大丈夫です。
+</Statement>
+
+## 公開する
+
+手順は第8章と同じです。縦画面なので、
+itch.io の `Viewport dimensions` は **`480 × 720`** に合わせます。
+
+**忘れずに `Thread Support` のチェックを外して**書き出してください。
+
+## この章のまとめ
+
+- **コリジョンレイヤーは設計してから使う**。名前を付け、表にしてから設定する。
+- **当たり判定は片側だけが検知する**と決めると、コードが二重にならない。
+- 弾は `get_parent().add_child()` で**ワールドに置く**。自分の子にしない。
+- `PackedScene` を `@export` で渡すと、**コードを触らずに中身を差し替えられる**。
+- `sin()` の1行で「周期的な揺れ」が作れる。応用範囲が広い。
+- シューティングは**自機の当たり判定を思い切り小さく**する。
+- 難易度は最初の30秒。**簡単に始めて、だんだん上げる**。
+- 足したい要素は1〜2個に絞る。残りは**公開したあとで**。
+
+**3本目、完成おめでとうございます。**
+
+最終章では、公開まわりの知識を一通り整理します。
+Web以外への書き出し、スマホ、Steam、そして「次に何を学ぶか」。

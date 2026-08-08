@@ -1,0 +1,504 @@
+---
+layout: ../../layouts/BaseLayout.astro
+title: 第9章 ゲーム② 横スクロールアクション（前編）
+description: 重力とジャンプ、気持ちよく跳ぶための工夫（コヨーテタイム・ジャンプバッファ・可変ジャンプ）、地形の並べ方、カメラ追従、コイン集めまで。
+---
+
+import Term from "../../components/assets/Term.astro";
+import Statement from "../../components/assets/Statement.astro";
+
+# 第9章 ゲーム② 横スクロールアクション（前編）
+
+## 作るもの
+
+**「ジャンプ・ラン」**——横から見たアクションゲームです。
+
+- 左右に**走り**、**ジャンプ**する
+- 足場を渡ってコインを集める
+- スライムを**踏むと倒せる**、横から当たると**ダメージ**
+- ゴールに触れると**次のステージ**へ
+- 全2ステージ。クリア状況とコイン総数を**保存**する
+- 前回と同じく、**公開まで**やる
+
+前編（この章）で「走って跳んでコインを取る」まで、
+後編（第10章）で敵・ゴール・ステージ2・公開まで作ります。
+
+<Statement kind="remark" title="1本目との違い">
+1本目は「1画面で完結、部品は3つ」でした。今回は**画面がスクロールし、ステージが複数**あります。
+規模が一段上がるので、**フォルダ分けとシーン分割**が効いてきます。
+第2章の「迷ったら分ける」を思い出しながら進めてください。
+</Statement>
+
+## 設計
+
+| シーン | ルート | 仕事 |
+| --- | --- | --- |
+| `player.tscn` | `CharacterBody2D` | 走る・跳ぶ・落ちる・ダメージを受ける |
+| `platform.tscn` | `StaticBody2D` | 乗れる足場。伸ばして使う |
+| `coin.tscn` | `Area2D` | 触れたら消えて加点 |
+| `slime.tscn` | `CharacterBody2D` | 往復する敵（第10章） |
+| `goal.tscn` | `Area2D` | 触れたら次のステージへ（第10章） |
+| `hud.tscn` | `CanvasLayer` | コイン数とHPの表示 |
+| `stage_1.tscn` | `Node2D` | ステージ1の中身を並べる |
+| `stage_2.tscn` | `Node2D` | ステージ2（第10章） |
+
+つながりはこうです。
+
+```text
+Player ──「コイン取った」───▶ Stage ──▶ GameData に加算 ──▶ HUD 更新
+Player ──「ダメージ受けた」──▶ Stage ──▶ HUD 更新 / HP0 ならやり直し
+Player ──「落下死した」─────▶ Stage ──▶ ステージ最初から
+Goal   ──「触れた」────────▶ Stage ──▶ 次のシーンへ
+```
+
+## プロジェクトを作る
+
+新規プロジェクト `jump-run`、レンダラーは **`Compatibility`**。
+プロジェクト設定で次を設定します。
+
+| 設定 | 値 |
+| --- | --- |
+| `表示 → ウィンドウ → ビューポートの幅` | `1152` |
+| `表示 → ウィンドウ → ビューポートの高さ` | `648` |
+| `表示 → ウィンドウ → ストレッチ → モード` | `canvas_items` |
+| `表示 → ウィンドウ → ストレッチ → アスペクト` | `keep` |
+| `レンダリング → 環境 → Default Clear Color` | 明るい水色など |
+
+`res://` の下に `scenes` `scripts` の2フォルダを作っておきます。
+
+### 入力アクションを作る
+
+今回は矢印キー以外にも対応させたいので、自分でアクションを定義します。
+**プロジェクト設定 → インプットマップ**で、次の3つを追加してください。
+
+| アクション名 | 割り当てるキー |
+| --- | --- |
+| `move_left` | ← と A |
+| `move_right` | → と D |
+| `jump` | スペース と ↑ と W |
+
+追加は「アクション名を入力 → 追加 → できた行の＋ → キーを押す → OK」の繰り返しです。
+1つのアクションに複数のキーを登録できます。
+
+<Statement kind="remark" title="なぜ ui_left をそのまま使わないのか">
+`ui_left` などは Godot の**UI操作用**に予約されたアクションです。
+ボタンのフォーカス移動などにも使われるため、
+ゲーム操作と混ざると「メニューでキャラが動く」といった妙な挙動になりがちです。
+規模が大きくなるゲームでは、**ゲーム操作は自分のアクション名で定義する**のが定石です。
+</Statement>
+
+## 地形を作る
+
+### `platform.tscn`
+
+1. 新規シーン → `StaticBody2D` → 名前を **`Platform`** に。
+2. 子に **`ColorRect`** を追加。
+   - `Layout → Transform → Size` を `(64, 64)`
+   - `Position` は `(0, 0)` のまま
+   - `Color` を土色（茶色）などに
+3. 子に **`CollisionShape2D`** を追加。
+   - `Shape` → 新規 `RectangleShape2D`、`Size` を `(64, 64)`
+   - `CollisionShape2D` の `Position` を `(32, 32)`
+     （`ColorRect` は左上が原点、`CollisionShape2D` は中心が原点なので半分ずらす）
+4. `res://scenes/platform.tscn` として保存。
+
+```text
+Platform (StaticBody2D)
+├── ColorRect          (Size 64x64 / Position 0,0)
+└── CollisionShape2D   (Rectangle 64x64 / Position 32,32)
+```
+
+これで **64×64 の四角いブロック**が1個できました。原点は左上です。
+
+### 伸ばして使う
+
+床を作るのに64個並べるのは苦行です。**インスタンスごとに `Scale` を変えます。**
+
+置いた `Platform` を選び、インスペクタの `Transform → Scale` を `(10, 1)` にすると、
+横に10倍＝640×64 の床になります。**当たり判定も一緒に伸びます。**
+
+| 用途 | Scale の例 | 実寸 |
+| --- | --- | --- |
+| 長い地面 | `(16, 1)` | 1024×64 |
+| 小さい足場 | `(3, 1)` | 192×64 |
+| 壁 | `(1, 6)` | 64×384 |
+
+<Statement kind="remark" title="ColorRect を2Dの世界に置いていいのか">
+UI用のノードですが、`Node2D` の子として置いても普通に描画されます。
+「素材なしで四角を出す」いちばん手軽な方法なので、プロトタイプではよく使われます。
+絵に差し替えるときは `Sprite2D` に置き換えるだけです。
+</Statement>
+
+### グリッドに吸着させる
+
+足場をきれいに並べるために、スナップを入れます。
+
+- 2Dエディタ上部の **磁石アイコン**（スナップを使用）をオン。
+- その隣の **「スナップの設定」**（三点メニュー → スナップの設定）で
+  `グリッドステップ` を `(64, 64)` に。
+- 同じメニューの **「グリッドを表示」** をオンにすると線が見えます。
+
+これで、ドラッグした足場が64px単位でぴたっと揃います。
+
+## プレイヤーを作る
+
+### シーンを組む
+
+1. 新規シーン → **`CharacterBody2D`** → 名前を **`Player`** に。
+2. 子に `Sprite2D`：`Texture` に `icon.svg`、`Scale` を `(0.5, 0.5)`（64×64）。
+3. 子に `CollisionShape2D`：`Shape` → 新規 `RectangleShape2D`、`Size` を `(44, 60)`。
+4. 子に **`Camera2D`** を追加（これだけでカメラが追従します）。
+   - `Position Smoothing → Enabled` をオン、`Speed` は `6` くらい。
+5. ルートの `Player` を右のドックの「グループ」タブで **`player`** グループに追加。
+6. `res://scenes/player.tscn` として保存。
+
+```text
+Player (CharacterBody2D)  [group: player]
+├── Sprite2D            (icon.svg / Scale 0.5)
+├── CollisionShape2D    (Rectangle 44x60)
+└── Camera2D            (Position Smoothing オン)
+```
+
+### 「気持ちよく跳ぶ」ためのコード
+
+ここが今回の山場です。素朴に書いたジャンプは、**動くけれど気持ちよくありません。**
+市販のアクションゲームが当たり前にやっている工夫を3つ入れます。
+
+<Statement kind="definition" title="ジャンプを気持ちよくする3つの技">
+
+**① コヨーテタイム**
+足場から落ちた直後の**わずかな時間（0.1秒くらい）はジャンプを許す**。
+崖っぷちで飛ぼうとして落ちる「押したのに跳ばなかった」というストレスが消える。
+（走って崖から踏み出しても少し宙に留まる漫画の描写にちなんだ呼び名です。）
+
+**② ジャンプバッファ（先行入力）**
+着地の**少し前**にジャンプを押していたら、着地した瞬間にジャンプさせる。
+連続ジャンプで「押したのに反応しない」がなくなる。
+
+**③ 可変ジャンプ**
+ボタンを**早く離したら低く跳ぶ**。長押しで高く跳ぶ。
+プレイヤーが跳ぶ高さを操作できるので、一気に「操作している感」が出る。
+</Statement>
+
+`Player` にスクリプトをアタッチ（`res://scripts/player.gd`）。
+
+```gdscript
+extends CharacterBody2D
+
+signal coin_collected
+signal damaged
+signal died
+
+@export var speed: float = 320.0
+@export var acceleration: float = 2200.0
+@export var friction: float = 2600.0
+@export var jump_velocity: float = -560.0
+@export var gravity: float = 1400.0
+@export var max_fall_speed: float = 900.0
+@export var coyote_time: float = 0.12         # ①
+@export var jump_buffer_time: float = 0.12    # ②
+@export var jump_cut: float = 0.45            # ③ 離したとき上向き速度を何倍に
+
+var coyote_timer := 0.0
+var jump_buffer_timer := 0.0
+
+@onready var sprite: Sprite2D = $Sprite2D
+
+func _physics_process(delta: float) -> void:
+	# --- 重力（落下速度に上限をつける） ---
+	velocity.y = min(velocity.y + gravity * delta, max_fall_speed)
+
+	# --- ① コヨーテタイム ---
+	if is_on_floor():
+		coyote_timer = coyote_time
+	else:
+		coyote_timer -= delta
+
+	# --- ② ジャンプバッファ ---
+	if Input.is_action_just_pressed("jump"):
+		jump_buffer_timer = jump_buffer_time
+	else:
+		jump_buffer_timer -= delta
+
+	# 「跳びたい意思」と「跳べる状態」がそろったら跳ぶ
+	if jump_buffer_timer > 0.0 and coyote_timer > 0.0:
+		velocity.y = jump_velocity
+		jump_buffer_timer = 0.0
+		coyote_timer = 0.0
+
+	# --- ③ 可変ジャンプ ---
+	if Input.is_action_just_released("jump") and velocity.y < 0.0:
+		velocity.y *= jump_cut
+
+	# --- 左右移動 ---
+	var direction := Input.get_axis("move_left", "move_right")
+	if direction != 0.0:
+		velocity.x = move_toward(velocity.x, direction * speed, acceleration * delta)
+		sprite.flip_h = direction < 0.0
+	else:
+		velocity.x = move_toward(velocity.x, 0.0, friction * delta)
+
+	move_and_slide()
+
+## 敵を踏んだときに呼ばれる（第10章で使う）
+func bounce() -> void:
+	velocity.y = jump_velocity * 0.7
+```
+
+<Statement kind="remark" title="3つの技を消して比べてみてほしい">
+一度、この3つの行をコメントアウト（行頭に `#`）して遊んでみてください。
+**同じゲームとは思えないほど操作感が落ちます。**
+
+「なんとなく気持ちいい／悪い」の正体は、こういう細かい仕掛けの積み重ねです。
+これを知っているかどうかが、完成度の差になります。
+</Statement>
+
+数値の意味も押さえておきましょう。
+
+| 変数 | 意味 | 上げると |
+| --- | --- | --- |
+| `speed` | 最高速度 | 速く走る |
+| `acceleration` | 加速の鋭さ | キビキビ動く（低いとツルツル滑る） |
+| `friction` | 止まる鋭さ | ぴたっと止まる |
+| `jump_velocity` | ジャンプの初速（負） | （絶対値を上げると）高く跳ぶ |
+| `gravity` | 落下の加速 | 落ちるのが速い＝重い |
+| `max_fall_speed` | 落下速度の上限 | 高所から速く落ちる |
+
+**この6つを触るだけで、キャラの性格が決まります。** 遊びながら詰めてください。
+
+### 落下死
+
+穴に落ちたら、そのまま無限に落ち続けてしまいます。判定を足します。
+
+```gdscript
+@export var death_y: float = 1200.0    # この高さより下に落ちたら死亡
+
+func _physics_process(delta: float) -> void:
+	# ...（さっきまでの処理）...
+	move_and_slide()
+
+	if global_position.y > death_y:
+		died.emit()
+```
+
+## ステージ1を組む
+
+### シーンを作る
+
+1. 新規シーン → 「2Dシーン」（`Node2D`）→ 名前を **`Stage1`** に。
+2. `res://scenes/stage_1.tscn` として保存。
+3. ファイルシステムから `player.tscn` をドラッグして配置。`Position` を `(100, 300)` に。
+4. `platform.tscn` をドラッグして配置し、`Scale` を変えながら地形を作る。
+
+まずはこのくらいから始めましょう。
+
+| 役割 | Position | Scale |
+| --- | --- | --- |
+| 出発点の地面 | `(0, 500)` | `(12, 1)` |
+| 段差 | `(832, 436)` | `(4, 1)` |
+| 浮き足場 | `(1216, 372)` | `(3, 1)` |
+| （穴をあける） | — | — |
+| 中間の地面 | `(1600, 500)` | `(10, 1)` |
+| 高い足場 | `(2240, 340)` | `(4, 1)` |
+| ゴール前の地面 | `(2624, 500)` | `(8, 1)` |
+
+数字はあくまで出発点です。**自分で置き換えて構いません。**
+むしろ、置いて → `F6` で走って → 「跳べない」「簡単すぎる」を直す、
+という往復こそがレベルデザインです。
+
+<Statement kind="remark" title="整理のコツ：親ノードでまとめる">
+足場が増えるとシーンドックが見づらくなります。
+`Stage1` の子に `Node2D` を追加して名前を `Platforms` にし、その中に足場を全部入れましょう。
+`Coins` `Enemies` も同様に。**あとで「全部消す」「全部数える」もやりやすくなります。**
+</Statement>
+
+### カメラの範囲を決める
+
+このままだと、端でステージ外の空白が見えます。カメラに制限を付けます。
+
+`Stage1` にスクリプトをアタッチ（`res://scripts/stage.gd`）。
+**このスクリプトはステージ2でも使い回します。**
+
+```gdscript
+extends Node2D
+
+## このステージでカメラが動ける範囲
+@export var camera_limits: Rect2 = Rect2(0, -200, 3200, 900)
+
+@onready var player: CharacterBody2D = $Player
+
+func _ready() -> void:
+	_setup_camera()
+	player.died.connect(_on_player_died)
+
+func _setup_camera() -> void:
+	var cam: Camera2D = player.get_node("Camera2D")
+	cam.limit_left = int(camera_limits.position.x)
+	cam.limit_top = int(camera_limits.position.y)
+	cam.limit_right = int(camera_limits.position.x + camera_limits.size.x)
+	cam.limit_bottom = int(camera_limits.position.y + camera_limits.size.y)
+
+func _on_player_died() -> void:
+	get_tree().reload_current_scene()
+```
+
+インスペクタに出る `Camera Limits` を、実際のステージの広さに合わせて調整します。
+
+## コインを作る
+
+### `coin.tscn`
+
+1. 新規シーン → `Area2D` → 名前 **`Coin`**。
+2. 子に `Sprite2D`：`icon.svg`、`Scale` `(0.2, 0.2)`、`Modulate` を金色に。
+3. 子に `CollisionShape2D`：`CircleShape2D`、`Radius` `14`。
+4. `res://scenes/coin.tscn` として保存。
+5. スクリプトをアタッチ（`res://scripts/coin.gd`）。
+
+```gdscript
+extends Area2D
+
+signal collected
+
+func _ready() -> void:
+	body_entered.connect(_on_body_entered)
+	_start_float()
+
+func _on_body_entered(body: Node2D) -> void:
+	if not body.is_in_group("player"):
+		return
+	collected.emit()
+	_play_pickup()
+
+## ふわふわ上下させる（ただの飾りだが、あるとないとで大違い）
+func _start_float() -> void:
+	var tween := create_tween().set_loops()
+	tween.tween_property(self, "position:y", position.y - 8.0, 0.6)\
+		.set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
+	tween.tween_property(self, "position:y", position.y, 0.6)\
+		.set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
+
+## 取ったときに弾けて消える
+func _play_pickup() -> void:
+	set_deferred("monitoring", false)     # 二重取得を防ぐ
+	var tween := create_tween().set_parallel()
+	tween.tween_property(self, "scale", Vector2(1.8, 1.8), 0.18)
+	tween.tween_property(self, "modulate:a", 0.0, 0.18)
+	await tween.finished
+	queue_free()
+```
+
+<Statement kind="definition" title="なぜ `set_deferred` を使うのか">
+物理の判定中に当たり判定を切ろうとすると、Godot から
+「Function blocked during in/out signal」といった警告が出ることがあります。
+`set_deferred("monitoring", false)` と書くと、
+**いま処理中の物理計算が終わってから**設定が反映されるので安全です。
+
+当たり判定の有効・無効を切り替えるときは、この書き方を覚えておくと事故りません。
+</Statement>
+
+### コインを配置してつなぐ
+
+1. `stage_1.tscn` を開き、`Stage1` の子に `Node2D` を追加して名前を `Coins` に。
+2. `coin.tscn` を `Coins` の中に何個かドラッグして配置（足場の上や、ジャンプで届く空中に）。
+3. `stage.gd` に、コインの信号をまとめて受ける処理を足します。
+
+```gdscript
+var coins := 0
+
+func _ready() -> void:
+	_setup_camera()
+	player.died.connect(_on_player_died)
+
+	# 置いてあるコイン全部の signal をまとめて受け取る
+	for coin in $Coins.get_children():
+		coin.collected.connect(_on_coin_collected)
+
+func _on_coin_collected() -> void:
+	coins += 1
+	print("コイン: ", coins)
+```
+
+`get_children()` で子ノードの配列が取れるので、`for` でまとめて接続できます。
+**コインを何個置いてもコードを直さなくてよい**のがポイントです。
+
+## HUD を作る（使い回せる形で）
+
+1本目は HUD をメインシーンの中に直接作りましたが、
+今回は**ステージが複数ある**ので、独立したシーンにして使い回します。
+
+1. 新規シーン → **`CanvasLayer`** → 名前 **`HUD`**。
+2. 子に `MarginContainer` → レイアウト「全画面」→ `Theme Overrides → Constants` の
+   `Margin Left` `Margin Top` を `24` に。
+3. その子に `VBoxContainer`。さらにその子に `Label` を2つ。
+
+| 名前 | Text | Font Size | ユニーク名 |
+| --- | --- | --- | --- |
+| `CoinLabel` | `COIN 0` | `28` | `%` を付ける |
+| `HpLabel` | `HP 3` | `28` | `%` を付ける |
+
+4. `res://scenes/hud.tscn` として保存。スクリプトをアタッチ。
+
+```gdscript
+extends CanvasLayer
+
+func set_coins(value: int) -> void:
+	%CoinLabel.text = "COIN %d" % value
+
+func set_hp(value: int) -> void:
+	%HpLabel.text = "HP %d" % value
+```
+
+5. `stage_1.tscn` に `hud.tscn` をインスタンスとして追加する。
+6. `stage.gd` を更新。
+
+```gdscript
+@onready var hud: CanvasLayer = $HUD
+
+func _on_coin_collected() -> void:
+	coins += 1
+	hud.set_coins(coins)
+```
+
+`F5`（メインシーンを `stage_1.tscn` に設定してから）で実行してください。
+**走って、跳んで、コインを集められます。**
+
+## よくあるトラブル
+
+<Statement kind="remark" title="この章のつまずき集">
+
+**地面をすり抜けて落ちていく**
+- `Platform` の `CollisionShape2D` の `Shape` が空になっていないか。
+- `CollisionShape2D` の `Position` を `(32, 32)` にしたか
+  （`(0,0)` のままだと当たり判定が左上にずれています）。
+
+**ジャンプできない**
+- インプットマップに `jump` を作ったか。名前のスペルは合っているか。
+- 地面に立っているか（空中では跳べない仕様です）。
+- `jump_velocity` が**プラス**になっていないか。**マイナス**が上向きです。
+
+**カメラが動かない／変な場所を映す**
+- `Camera2D` が `Player` の**子**になっているか。
+- `Camera Limits` の範囲がステージより狭すぎないか。
+
+**コインを取っても反応しない**
+- `Player` を `player` グループに入れたか。
+- `Coin` を `Coins` ノードの**子**として置いたか（`stage.gd` が `$Coins` を見ています）。
+
+**足場に乗ると小刻みに震える**
+- `Position Smoothing` の `Speed` が低すぎる可能性があります。`6`〜`10` を試してください。
+</Statement>
+
+## この章のまとめ
+
+- 地形は `StaticBody2D` の**1ブロックを作って `Scale` で伸ばす**。グリッドスナップを使う。
+- ゲーム操作は `ui_*` ではなく**自分で定義したアクション名**を使う。
+- 気持ちよく跳ぶには **コヨーテタイム・ジャンプバッファ・可変ジャンプ** の3点セット。
+  数行で操作感が別物になる。
+- キャラの性格は `speed` / `acceleration` / `friction` / `jump_velocity` / `gravity` で決まる。
+- カメラは `Player` の子。**`limit_*` を必ず設定**してステージ外を映さない。
+- 同じ種類のノードは親でまとめ、`get_children()` で**まとめてシグナル接続**する。
+- HUD は**独立したシーン**にして、各ステージにインスタンスとして置く。
+- 当たり判定のオンオフは `set_deferred` で安全に。
+
+次章では、敵とゴールとステージ2を足し、
+セーブとクリア画面を付けて、**2本目も公開**します。

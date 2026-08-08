@@ -1,0 +1,477 @@
+---
+layout: ../../layouts/BaseLayout.astro
+title: 第3章 GDScript入門
+description: 変数とは何かというところから始めて、条件分岐・繰り返し・関数・クラス・エラーの読み方まで。プログラミングが初めてでも進めるGDScriptの入門。
+---
+
+import Term from "../../components/assets/Term.astro";
+import Statement from "../../components/assets/Statement.astro";
+
+# 第3章 GDScript入門
+
+## プログラムは「手順書」でしかない
+
+プログラミングと聞くと身構えますが、やっていることは
+**「コンピュータへの指示を、順番に書き並べる」**だけです。
+
+```text
+1. 右キーが押されているか調べる
+2. 押されていたら、位置を右に5だけずらす
+3. 画面の外に出ていたら、中に押し戻す
+```
+
+これを機械が読める書き方に直したものがプログラムです。
+難しいのは「考えること」であって、書くこと自体は覚えてしまえば単純作業になります。
+
+Godot で使う言語が <Term>GDScript</Term> です。Python によく似た見た目で、
+Godot 専用に作られています。Godot のことを何でも知っているので、
+外部の言語より圧倒的に書きやすい、というのが選ぶ理由です。
+
+## スクリプトを書く場所
+
+コードはファイル単体では意味を持ちません。**ノードに貼り付けて**使います。
+
+<Statement kind="example" title="やってみる：最初のスクリプト">
+
+1. `main.tscn` を開き、ルートの `Node2D` を選ぶ。
+2. シーンドック上部の **巻物のアイコン（スクリプトをアタッチ）** を押す。
+3. 出てくるダイアログはそのまま「作成」。`main.gd` ができ、`Script` 画面に切り替わる。
+4. すでにこう書かれています。
+
+```gdscript
+extends Node2D
+
+func _ready() -> void:
+	pass
+
+func _process(delta: float) -> void:
+	pass
+```
+
+5. `_ready()` の `pass` を消して、こう書き換える。
+
+```gdscript
+func _ready() -> void:
+	print("こんにちは")
+```
+
+6. `F6` で実行。**下部パネルの「出力」タブ**に `こんにちは` と出れば成功です。
+
+</Statement>
+
+`print()` は「出力タブに文字を出す」命令です。地味ですが、
+これから数え切れないほど使います。**うまく動かないときは、まず print で中身を見る。**
+
+### `extends` の意味
+
+一行目の `extends Node2D` は、
+**「このスクリプトは `Node2D` に貼るものです」**という宣言です。
+
+これを書いておくと、`Node2D` が持っている機能（`position` とか `rotation` とか）を
+自分のもののように使えます。貼る相手が `Sprite2D` なら `extends Sprite2D` になります。
+スクリプトをアタッチすると Godot が自動で書いてくれるので、自分で書く機会はあまりありません。
+
+## 変数 — 値に名前を付けて置いておく
+
+<Statement kind="definition" title="変数（variable）">
+値に名前を付けて覚えておく箱。`var 名前 = 値` で作る。
+あとから `名前 = 別の値` で中身を入れ替えられる（だから「変」数）。
+</Statement>
+
+```gdscript
+var score = 0
+var player_name = "ゆうしゃ"
+var speed = 300.0
+var is_alive = true
+
+score = score + 10     # 中身を 10 に更新
+score += 10            # 同じ意味の短い書き方。20 になる
+```
+
+### 型 — 箱に「何を入れるか」を書く
+
+値には種類があります。これを<Term>型</Term>といいます。
+
+| 型 | 意味 | 例 |
+| --- | --- | --- |
+| `int` | 整数 | `0` `42` `-7` |
+| `float` | 小数 | `3.14` `300.0` |
+| `String` | 文字列 | `"ゆうしゃ"` |
+| `bool` | 真か偽か | `true` `false` |
+| `Vector2` | 2Dの座標や向き | `Vector2(100, 50)` |
+| `Array` | 並んだ値の列 | `[1, 2, 3]` |
+| `Dictionary` | 名前と値の対応表 | `{"hp": 100}` |
+
+型は書かなくても動きますが、**書くと Godot がミスを見つけてくれます。**
+
+```gdscript
+var speed: float = 300.0     # 型を明示する書き方
+var speed := 300.0           # := は「右辺から型を推測して固定して」の意味
+```
+
+この部では `:=` を積極的に使います。1文字増えるだけで、
+「文字列を入れるべきところに数を入れた」といったミスが**実行前に**赤線で分かるからです。
+
+<Statement kind="remark" title="`=` と `:=` と `==` の違い">
+
+- `=` … 代入（右を左に入れる）
+- `:=` … 型を推測して固定しつつ代入（宣言のときだけ）
+- `==` … 比較（左と右が等しいか調べる）
+
+`if score = 100` と書いてしまうのは初心者の定番ミスです。比較は `==` です。
+</Statement>
+
+### `const` — 変わらない値
+
+```gdscript
+const MAX_HP := 100
+const BULLET_SCENE := preload("res://scenes/bullet.tscn")
+```
+
+途中で変わらない値は `const` にします。名前は大文字にするのが慣習です。
+「この数字はゲーム中ずっと同じ」と読み手（未来の自分）に伝わります。
+
+## 計算と比較
+
+```gdscript
+# 計算
+var a := 7 + 3      # 10
+var b := 7 - 3      # 4
+var c := 7 * 3      # 21
+var d := 7 / 3      # 2 ← 整数どうしの割り算は整数になる（注意）
+var e := 7.0 / 3    # 2.333... ← 片方が小数なら小数
+var f := 7 % 3      # 1 ← 余り
+
+# 比較（結果は true / false）
+5 == 5      # true（等しい）
+5 != 3      # true（等しくない）
+5 > 3       # true
+5 >= 5      # true
+
+# 論理
+true and false   # false（両方 true のときだけ true）
+true or false    # true（どちらかが true なら true）
+not true         # false（ひっくり返す）
+```
+
+`7 / 3` が `2` になるのは、**多くの言語に共通する定番の落とし穴**です。
+座標や速度の計算では `7.0 / 3` のように小数で書く癖をつけてください。
+
+## 条件分岐 — 「もし〜なら」
+
+```gdscript
+var hp := 30
+
+if hp <= 0:
+	print("ゲームオーバー")
+elif hp < 50:
+	print("危ない！")
+else:
+	print("元気")
+```
+
+<Statement kind="definition" title="インデント（字下げ）が構造そのもの">
+GDScript では、**行頭の字下げが「どこまでが if の中身か」を決めます。**
+`{ }` のような括弧は使いません。字下げがずれると、意味が変わるかエラーになります。
+
+Godot のエディタは既定で **タブ** で字下げします。
+ネットからコピーしたコードが**半角スペース**で書かれていると混ざってエラーになるので、
+うまくいかないときは字下げを疑ってください。
+</Statement>
+
+複数の値を比べるときは `match` が読みやすくなります。
+
+```gdscript
+match state:
+	"idle":
+		print("待機中")
+	"run":
+		print("走ってる")
+	_:
+		print("それ以外")     # _ は「どれにも当てはまらないとき」
+```
+
+## 繰り返し
+
+```gdscript
+# 0, 1, 2, 3, 4 と5回まわる
+for i in range(5):
+	print(i)
+
+# 配列の中身を順に取り出す
+for enemy in enemies:
+	enemy.take_damage(10)
+
+# 条件が true の間ずっと
+var count := 0
+while count < 3:
+	print(count)
+	count += 1
+```
+
+`range(5)` は「0 から 4 まで」。`range(2, 5)` なら「2, 3, 4」。
+最後の値を含まないのがポイントです。
+
+<Statement kind="remark" title="while は止まらなくなることがある">
+`while` の条件がずっと true のままだと、ゲームが固まります（無限ループ）。
+Godot ごと固まったら `F8` かタスクマネージャで止めてください。
+慣れるまでは `for` を使うほうが安全です。
+</Statement>
+
+## 配列と辞書 — たくさんの値をまとめる
+
+```gdscript
+# 配列（順番のある並び。0 から数える）
+var items := ["ポーション", "剣", "盾"]
+print(items[0])        # ポーション
+print(items.size())    # 3
+items.append("兜")      # 末尾に追加
+items.erase("剣")       # 中身を指定して削除
+print(items.has("盾"))  # true
+
+# 辞書（名前と値の対応表）
+var player := {
+	"name": "ゆうしゃ",
+	"hp": 100,
+	"level": 3,
+}
+print(player["hp"])          # 100
+player["hp"] = 80            # 更新
+player["mp"] = 20            # 新しい項目を追加
+print(player.has("mp"))      # true
+```
+
+配列は**順番が大事なもの**（インベントリ、敵のリスト）に、
+辞書は**名前で引きたいもの**（セーブデータ、設定）に使います。
+
+## 関数 — 手順に名前を付ける
+
+<Statement kind="definition" title="関数（function）">
+まとまった手順に名前を付けたもの。`func 名前(引数):` で定義し、`名前(値)` で呼び出す。
+**同じ処理を何度も書かないため**と、**名前を付けて意味を分かりやすくするため**に使う。
+</Statement>
+
+```gdscript
+# 定義
+func take_damage(amount: int) -> void:
+	hp -= amount
+	if hp <= 0:
+		die()
+
+# 呼び出し
+take_damage(25)
+```
+
+- `amount: int` が<Term>引数</Term>。呼び出すときに渡す値です。
+- `-> void` が<Term>戻り値</Term>の型。`void` は「何も返さない」の意味。
+
+値を返す関数はこうなります。
+
+```gdscript
+func calculate_damage(base: int, level: int) -> int:
+	return base + level * 2
+
+var dmg := calculate_damage(10, 3)   # 16
+```
+
+`return` に来た時点で関数は終わります。途中で抜けたいときにも使えます。
+
+```gdscript
+func heal(amount: int) -> void:
+	if not is_alive:
+		return          # 死んでいたら何もせず終わり
+	hp = min(hp + amount, MAX_HP)
+```
+
+## スクリプトはクラスである
+
+GDScript のファイル1つは、それ自体が<Term>クラス</Term>（設計図）です。
+だから、ファイルの一番上に書いた `var` は、**そのノードが持ち続ける値**になります。
+
+```gdscript
+extends CharacterBody2D
+
+# ここに書いた変数は、このノードのもの。他の関数からも見える
+var hp := 100
+var speed := 300.0
+
+func _ready() -> void:
+	print(hp)      # 100
+
+func take_damage(amount: int) -> void:
+	hp -= amount   # 別の関数からも同じ hp を触れる
+```
+
+関数の**中**で `var` した変数は、その関数の中だけの一時的なものです。
+外からは見えません（この範囲の違いをスコープと呼びます）。
+
+### `@export` — インスペクタから値をいじれるようにする
+
+これは Godot 特有で、とても便利です。
+
+```gdscript
+@export var speed: float = 300.0
+@export var max_hp: int = 100
+@export var bullet_scene: PackedScene
+```
+
+`@export` を付けると、**その変数がインスペクタに出てきます。**
+コードを書き換えずに、エディタ上で数値をいじって試せる。
+しかも、置いたインスタンスごとに違う値にできます（第2章の「敵Aだけ速い」がこれです）。
+
+<Statement kind="remark" title="調整したい数字は全部 @export にする">
+速度、体力、出現間隔、ジャンプ力……。「あとで調整するかも」と思った数値は
+最初から `@export` にしておくと、遊びながら数字を詰める作業が劇的に楽になります。
+実行中にインスペクタで変えて、その場で結果を見ることもできます。
+</Statement>
+
+### `@onready` — 子ノードを安全に受け取る
+
+```gdscript
+@onready var sprite: Sprite2D = $Sprite2D
+@onready var timer: Timer = $SpawnTimer
+```
+
+`@onready` を付けると、**`_ready()` の直前に代入されます**。
+これがないと、子ノードがまだ存在しないタイミングで `$Sprite2D` を探しに行って
+`null` になり、次の行でエラーになります。
+
+> **覚え方**：`$` で子ノードを変数に入れるときは、必ず `@onready` を付ける。
+
+## ゲーム作りでよく使う組み込み関数
+
+覚えておくと世界が変わるものを挙げます。
+
+```gdscript
+# 範囲に収める（画面外に出さない、HPを0〜100に留める）
+position.x = clamp(position.x, 0, 480)
+
+# 目標に向かって少しずつ近づける（滑らかな加速・減速）
+velocity.x = move_toward(velocity.x, 0, 20)
+
+# 2つの値の間を割合で混ぜる（0.0 で a、1.0 で b）
+var mid := lerp(0.0, 100.0, 0.5)      # 50.0
+
+# 乱数
+randi_range(1, 6)         # 1〜6 の整数（サイコロ）
+randf()                   # 0.0〜1.0 の小数
+randf_range(-1.0, 1.0)    # 範囲つきの小数
+
+# その他
+abs(-5)          # 5
+min(3, 8)        # 3
+max(3, 8)        # 8
+round(2.7)       # 3
+floor(2.7)       # 2（切り捨て）
+```
+
+`clamp` と `move_toward` は、この部の後半で何度も出てきます。
+`clamp` は「はみ出させない」、`move_toward` は「ぬるっと止める」ための道具です。
+
+### `Vector2` — 2Dの座標と向き
+
+2Dゲームでは、位置も速度も向きも、すべて `Vector2`（x と y の組）で表します。
+
+```gdscript
+var pos := Vector2(100, 50)     # x=100, y=50
+pos.x += 10                      # 右に10
+pos.y -= 10                      # 上に10（★ y は下が正！）
+
+var v := Vector2(3, 4)
+v.length()        # 5.0（長さ）
+v.normalized()    # 長さ1にした向きだけのベクトル
+Vector2.ZERO      # Vector2(0, 0)
+Vector2.RIGHT     # Vector2(1, 0)
+Vector2.UP        # Vector2(0, -1) ← y は下が正なので、上は -1
+```
+
+<Statement kind="remark" title="y は下が正">
+数学のグラフと逆で、画面座標は**下に行くほど y が大きい**です。
+「上に動かしたいのに下に行く」は、ほぼ全員が一度は踏みます。
+`Vector2.UP` が `(0, -1)` なのはそのためです。
+</Statement>
+
+## デバッグ — うまくいかないときの手順
+
+**エラーは失敗ではなく、情報です。** 読み方を覚えれば怖くありません。
+
+### 手順1：出力タブを見る
+
+下部パネルの **「出力」** に、赤い文字でエラーが出ています。
+だいたいこの3つのどれかです。
+
+<Statement kind="definition" title="頻出エラー3種と、その意味">
+
+**`Invalid access to property or key '...' on a base object of type 'Nil'`**
+または **`Attempt to call function '...' in base 'null instance'`**
+→ **変数が空っぽ**です。`$Sprite2D` のパスが間違っているか、
+`@onready` を付け忘れて早すぎるタイミングで取りに行っています。
+
+**`Invalid call. Nonexistent function '...' in base '...'`**
+→ **その関数は、その相手にはありません。** 名前のつづり間違いか、
+Godot 3 用の古い記事を見ています（`instance()` など）。
+
+**`Identifier "..." not declared in the current scope`**
+→ **その名前の変数がありません。** つづり間違いか、
+関数の中で `var` したものを外から使おうとしています。
+</Statement>
+
+エラー行をダブルクリックすると、その場所にジャンプできます。
+
+### 手順2：print を挟む
+
+```gdscript
+func _physics_process(delta: float) -> void:
+	var direction := Input.get_axis("ui_left", "ui_right")
+	print("direction = ", direction)     # 本当に入力が来ているか？
+	velocity.x = direction * speed
+	print("velocity = ", velocity)       # 速度は変わっているか？
+	move_and_slide()
+```
+
+「思ったとおりに動かない」ときは、**思い込みのどこが間違っているか**を探す作業です。
+1行ずつ `print` で確かめれば、必ず「ここまでは合ってる」の境目が見つかります。
+確認が終わったら消しておきましょう。
+
+### 手順3：ブレークポイント
+
+コード行の左端の余白をクリックすると赤い点が付きます。
+実行するとそこで**一時停止**し、下部パネルの「デバッガ」で
+その瞬間の全変数の中身を見られます。`print` より強力です。
+
+## 読みやすく書くための最低限
+
+```gdscript
+# 良い名前を付ける
+var s = 300          # 悪い：何の 300 か分からない
+var speed := 300.0   # 良い
+
+# コメントは「なぜ」を書く
+# 悪い：hp を10減らす（コードを読めば分かる）
+# 良い：無敵時間中でもボス攻撃だけは通す仕様のため、ここは判定を飛ばす
+
+# 1つの関数は1つの仕事
+func _physics_process(delta: float) -> void:
+	handle_input()
+	apply_gravity(delta)
+	move_and_slide()
+```
+
+3つ目が特に効きます。`_physics_process` に100行書くのではなく、
+意味のかたまりごとに関数へ切り出す。デバッグのとき、
+どこが怪しいかを絞り込む速度がまったく変わります。
+
+## この章のまとめ
+
+- プログラムは**手順書**。難しいのは書き方ではなく、手順を考えること。
+- スクリプトは**ノードに貼って**使う。1行目の `extends` が貼る相手を示す。
+- `var` で変数、`:=` で型を固定。`==` は比較、`=` は代入。
+- 字下げが構造を作る。**混ざるとエラー**なので、コピペしたら字下げを疑う。
+- `func` で関数。**同じ処理を繰り返さない**ため、**名前で意味を伝える**ために切り出す。
+- `@export` でインスペクタから調整可能に。`@onready` で子ノードを安全に取得。
+- `clamp` `move_toward` `randi_range` は今後ずっと使う。
+- `Vector2` は **y が下向きに正**。`Vector2.UP` は `(0, -1)`。
+- 詰まったら **出力タブ → print → ブレークポイント** の順に調べる。
+
+次章では、この言葉を使って**実際にキャラを動かし、ぶつけます**。
+ゲームらしくなるのはここからです。

@@ -1,0 +1,370 @@
+---
+layout: ../../layouts/BaseLayout.astro
+title: 第5章 見た目と音
+description: 画像の取り込みからスプライト・アニメーション・Tween・カメラ・パーティクル・効果音まで。日本語が表示できない問題の解決と、無料素材の探し方も。
+---
+
+import Term from "../../components/assets/Term.astro";
+import Statement from "../../components/assets/Statement.astro";
+
+# 第5章 見た目と音
+
+## 見た目と音は「あとから足す」でいい。でも侮れない
+
+先に結論を言います。**ゲームの中身は四角と丸で作って構いません。**
+むしろそのほうが早く完成します。第7章で実際にそうします。
+
+ただし、絵と音が入った瞬間の変化は劇的です。
+同じプログラムなのに、四角が跳ねているだけの画面が「ゲーム」になる。
+効果音を1つ足すだけで、操作の手応えがまるで変わります。
+
+この章はその道具一式です。作りながら戻ってくる**辞書**として使ってください。
+
+## 画像を取り込む
+
+### 入れ方
+
+**エクスプローラ（Finder）から、Godot のファイルシステムパネルへドラッグ＆ドロップ。**
+これだけです。プロジェクトフォルダに直接コピーしても構いません（自動で認識されます）。
+
+対応する形式は `.png` `.jpg` `.svg` `.webp` など。
+**基本は PNG** を使ってください。透明部分を持てるのが理由です。
+
+<Statement kind="remark" title="ファイル名は半角英数字で">
+日本語やスペースを含むファイル名は、Web書き出しや他OSで問題を起こすことがあります。
+`player_run_01.png` のように、**半角小文字・アンダースコア区切り**で統一しましょう。
+</Statement>
+
+### ドット絵がぼやける問題
+
+小さいドット絵を拡大すると、既定では**ぼやけます**。これは補間（なめらか化）が効いているため。
+ドット絵をくっきり出したいときは、次のどちらかで設定します。
+
+- **プロジェクト全体**：プロジェクト設定 → `Rendering → Textures → Canvas Textures`
+  → **Default Texture Filter** を `Nearest` に。
+- **画像1枚ずつ**：ファイルシステムで画像を選び、上部の **「インポート」タブ** →
+  `Filter` のチェックを外す → **「再インポート」** ボタン。
+
+<Statement kind="definition" title="インポートタブとは">
+Godot は取り込んだ画像や音を、そのまま使うのではなく**内部形式に変換**して使います。
+その変換の設定をするのが「インポート」タブです。
+設定を変えたら **必ず「再インポート」を押す**こと。押さないと反映されません。
+</Statement>
+
+## `Sprite2D` — 絵を1枚出す
+
+```text
+Player (CharacterBody2D)
+└── Sprite2D          ← ここに画像を入れる
+```
+
+`Sprite2D` を選び、インスペクタの `Texture` に画像をドラッグ。よく使う設定はこれだけです。
+
+| 項目 | 意味 |
+| --- | --- |
+| `Texture` | 表示する画像 |
+| `Modulate` | 色を掛ける。白なら元のまま。**赤くしてダメージ表現**などに使う |
+| `Flip H` / `Flip V` | 左右／上下の反転。左向きの絵を用意せずに済む |
+| `Centered` | オンなら画像の中心が原点。オフなら左上が原点 |
+| `Offset` | 位置のずらし。足元を原点にしたいときなどに |
+| `Z Index` | 手前・奥の調整。大きいほど手前 |
+
+コードから触るのはこのあたりです。
+
+```gdscript
+@onready var sprite: Sprite2D = $Sprite2D
+
+func face_direction(dir: float) -> void:
+	if dir != 0.0:
+		sprite.flip_h = dir < 0.0        # 左を向いていたら反転
+
+func flash_damage() -> void:
+	sprite.modulate = Color.RED
+	await get_tree().create_timer(0.1).timeout
+	sprite.modulate = Color.WHITE
+```
+
+`await get_tree().create_timer(0.1).timeout` は
+**「0.1秒待ってから続きを実行する」**という書き方です。とても便利なので覚えてください。
+
+## アニメーション — 2つのやり方
+
+Godot にはアニメの作り方が2通りあります。目的が違うので使い分けます。
+
+<Statement kind="definition" title="AnimatedSprite2D と AnimationPlayer">
+
+**`AnimatedSprite2D`** … **パラパラ漫画専用**。
+絵をn枚ならべて「歩く」「跳ぶ」と名前を付け、切り替えて再生する。手軽。
+
+**`AnimationPlayer`** … **何でもアニメにできる汎用機**。
+位置・色・音量・スクリプトの変数・関数呼び出しまで、時間軸に沿って動かせる。
+</Statement>
+
+### `AnimatedSprite2D` の使い方
+
+1. `Sprite2D` の代わりに `AnimatedSprite2D` を追加する。
+2. インスペクタの `Sprite Frames` で **「新規 SpriteFrames」** を選び、それをクリック。
+3. 下部パネルに「スプライトフレーム」エディタが開く。
+4. 左の一覧で `default` の名前を `idle` に変更。
+5. **フィルムのアイコン（スプライトシートからフレームを追加）** を押し、
+   1枚の画像に並んだアニメ絵（スプライトシート）を読み込む。
+   横◯枚・縦◯枚を指定し、使うコマを選ぶ。
+   バラバラのPNGなら、隣のアイコンから複数選択でも追加できます。
+6. `FPS` を `8` くらいに、ループをオンに。
+7. 「＋」で `run` `jump` など別のアニメも作る。
+
+コードからの再生はこうです。
+
+```gdscript
+@onready var anim: AnimatedSprite2D = $AnimatedSprite2D
+
+func _physics_process(delta: float) -> void:
+	# ...移動処理...
+
+	if not is_on_floor():
+		anim.play("jump")
+	elif abs(velocity.x) > 10.0:
+		anim.play("run")
+	else:
+		anim.play("idle")
+
+	if velocity.x != 0.0:
+		anim.flip_h = velocity.x < 0.0
+```
+
+`play()` は**同じアニメを指定しても最初から再生し直したりしない**ので、
+毎フレーム呼んで大丈夫です。これは地味に親切な仕様です。
+
+### `AnimationPlayer` の使い方
+
+「宝箱がふわっと開く」「ボスの登場演出」のような、
+複数の要素が絡む動きはこちらです。
+
+1. `AnimationPlayer` ノードを追加。
+2. 下部パネルの「アニメーション」→ **アニメーション → 新規** で名前を付ける。
+3. タイムラインの再生ヘッドを `0秒` に置き、
+   動かしたいノードのプロパティ横の**鍵アイコン**を押すとキーが打たれる。
+4. 再生ヘッドを `0.5秒` に動かし、値を変えて、また鍵を押す。
+5. 再生ボタンで確認。
+
+さらに強力なのが **Call Method Track**（関数呼び出しトラック）です。
+「この瞬間に効果音を鳴らす」「この瞬間に当たり判定をオンにする」を
+タイムライン上に置けます。攻撃モーションを作るときの定番です。
+
+```gdscript
+$AnimationPlayer.play("open")
+await $AnimationPlayer.animation_finished      # 終わるまで待つ
+print("開き終わった")
+```
+
+## `Tween` — コードで作るなめらかな動き
+
+「1秒かけてスッと消える」「ポンと弾む」程度なら、
+アニメーションを作らずコードで書けます。それが `Tween` です。
+
+```gdscript
+func pop() -> void:
+	var tween := create_tween()
+	tween.tween_property(self, "scale", Vector2(1.3, 1.3), 0.1)
+	tween.tween_property(self, "scale", Vector2(1.0, 1.0), 0.1)
+
+func fade_out_and_die() -> void:
+	var tween := create_tween()
+	tween.tween_property(self, "modulate:a", 0.0, 0.3)   # 透明度だけを0へ
+	tween.tween_callback(queue_free)                      # 終わったら自分を消す
+```
+
+`tween_property(対象, "プロパティ名", 最終値, 秒数)` が基本形です。
+続けて書くと**順番に**実行され、`tween.set_parallel()` を挟むと**同時に**実行されます。
+
+イージング（動きの緩急）も付けられます。
+
+```gdscript
+tween.tween_property(self, "position:y", 300.0, 0.5)\
+	.set_trans(Tween.TRANS_BOUNCE)\
+	.set_ease(Tween.EASE_OUT)
+```
+
+<Statement kind="remark" title="演出の8割は Tween で足りる">
+UIがふわっと出る、取得したコインが弾ける、ダメージで画面が揺れる。
+凝ったアニメーションを用意しなくても、`Tween` を2〜3行足すだけで
+「手触りの良さ」が跳ね上がります。**費用対効果が最も高い演出手段**です。
+</Statement>
+
+## カメラ — `Camera2D`
+
+プレイヤーの子として `Camera2D` を追加すると、**それだけでカメラが追従します**。
+親についていくという第2章の性質そのものです。
+
+| 項目 | 意味 |
+| --- | --- |
+| `Zoom` | 拡大率。`Vector2(2, 2)` で2倍に寄る |
+| `Position Smoothing → Enabled` | オンにすると追従が滑らかに遅れる（酔いにくい） |
+| `Limit`（Left/Top/Right/Bottom） | カメラが動ける範囲。**ステージの外を映さないため必須** |
+
+`Limit` を設定しないと、端に行ったときにステージ外の何もない空間が見えてしまいます。
+横スクロールを作るときは必ず設定しましょう（第9章でやります）。
+
+## UIが一緒にスクロールしてしまう問題 — `CanvasLayer`
+
+スコア表示をシーンに置くと、カメラが動いたときに**一緒に流れていきます**。当然です。
+これを防ぐのが `CanvasLayer` です。
+
+```text
+Main (Node2D)
+├── Player
+├── Enemies
+└── HUD (CanvasLayer)     ← この中のものはカメラの影響を受けない
+	└── ScoreLabel (Label)
+```
+
+`CanvasLayer` の中に置いたものは、**常に画面に貼り付いたまま**になります。
+スコア、体力バー、ポーズメニューは全部この中に入れます。
+
+## パーティクル — 粒をばらまく
+
+爆発、煙、キラキラ。`GPUParticles2D` を追加して、
+
+1. `Process Material` に **「新規 ParticleProcessMaterial」** を作る。
+2. `Amount`（粒の数）、`Lifetime`（1粒の寿命）を決める。
+3. マテリアルを開いて `Direction` `Spread` `Initial Velocity` `Gravity` `Scale` `Color` を調整。
+4. `One Shot` をオンにすると1回だけ噴く（爆発用）。`Emitting` で開始・停止。
+
+```gdscript
+func explode() -> void:
+	$GPUParticles2D.emitting = true
+```
+
+<Statement kind="remark" title="粒がなくても演出はできる">
+パーティクルは調整に時間を吸われがちです。1本目のゲームでは、
+「敵が消えるときに `Tween` で拡大しながら透明化」で十分に見栄えがします。
+凝るのは2本目からで構いません。
+</Statement>
+
+## 音を鳴らす
+
+### ノードの種類
+
+| ノード | 特徴 |
+| --- | --- |
+| `AudioStreamPlayer` | 位置に関係なく鳴る。**BGMとUI音はこれ** |
+| `AudioStreamPlayer2D` | 音源の位置で左右・音量が変わる。**世界の中の効果音** |
+
+### 使い方
+
+1. ノードを追加し、インスペクタの `Stream` に音声ファイルをドラッグ。
+2. コードで `play()` を呼ぶ。
+
+```gdscript
+@onready var jump_sound: AudioStreamPlayer = $JumpSound
+
+func jump() -> void:
+	velocity.y = jump_velocity
+	jump_sound.play()
+```
+
+音量は `Volume Db` で調整します。**デシベルなので `0` が原寸大、マイナスで小さく**なります。
+`-6` でだいたい半分の体感、`-80` でほぼ無音です。`1.0` などと入れても大きくなりません。
+
+### BGMをループさせる
+
+音声ファイルを選び、**「インポート」タブ**を見てください。
+
+- `.ogg` / `.mp3` … `Loop` のチェックをオンにして「再インポート」。
+- `.wav` … `Loop Mode` を `Forward` にして「再インポート」。
+
+**BGMは `.ogg`、短い効果音は `.wav`** が定番です。
+`.wav` は容量を食いますが遅延がなく、`.ogg` は圧縮が効きます。
+
+<Statement kind="remark" title="音が途中で切れる／重ならない">
+`AudioStreamPlayer` は**1つにつき同時に1音**しか鳴りません。
+コイン取得音が連続で鳴らないときは、音のノードを複数用意するか、
+効果音を鳴らす専用シーンを作って `add_child` で増やします（第7章で作ります）。
+</Statement>
+
+### オーディオバス
+
+下部パネルの「オーディオ」タブで、`Master` の下に `BGM` `SE` といった
+**バス**（音量のグループ）を作れます。各プレイヤーの `Bus` でどれに流すか選びます。
+
+こうしておくと、設定画面で「BGM音量」「効果音音量」を別々に変えられます。
+
+```gdscript
+# BGM バスの音量を 50% にする
+var bus := AudioServer.get_bus_index("BGM")
+AudioServer.set_bus_volume_db(bus, linear_to_db(0.5))
+```
+
+## 日本語が表示されない問題
+
+これは日本語で作る人が全員ぶつかります。
+
+**`Label` に日本語を入れても、何も表示されない（または四角が並ぶ）。**
+
+原因は、Godot に最初から入っているフォントが**日本語の字を持っていない**ためです。
+英数字は出るのに日本語だけ出ない、という症状になります。
+
+<Statement kind="example" title="解決手順：日本語フォントを入れる">
+
+1. 日本語フォントを入手する。**Noto Sans JP**（Google Fonts、オープンフォントライセンス）や
+   **M PLUS 1p**、**源ノ角ゴシック / Noto Sans CJK** などが定番で、商用利用も可能です。
+2. `.ttf` または `.otf` を `res://fonts/` にドラッグして取り込む。
+3. **プロジェクト設定 → 一般 → `GUI → Theme`** を開く。
+   （`高度な設定` のトグルをオンにしないと出ないことがあります）
+4. **Custom Font** に、取り込んだフォントファイルを指定する。
+5. これでプロジェクト全体の既定フォントが変わり、日本語が出ます。
+
+ラベル1つだけ変えたいときは、`Label` の `Label Settings` に
+**新規 LabelSettings** を作り、その `Font` に指定します。
+</Statement>
+
+<Statement kind="remark" title="フォントのライセンスは必ず確認する">
+フォントは配布条件が厳しいものがあります。ゲームに埋め込んで配布するので、
+**「埋め込み可」「再配布可」**であることを確認してください。
+SIL Open Font License（OFL）のフォントなら、まず問題ありません（Noto 系はこれです）。
+ライセンス文の同梱が求められる場合は、ゲーム内のクレジット画面か
+配布ページに記載します。
+</Statement>
+
+## 素材はどこで手に入れるか
+
+絵も音も、自分で作らなくて構いません。**無料で商用利用できる素材**がたくさんあります。
+
+| サイト | 内容 | ライセンス |
+| --- | --- | --- |
+| Kenney（kenney.nl） | 2D/3D素材の定番。統一感があって使いやすい | 多くが CC0 |
+| OpenGameArt | 絵・音・BGMの投稿サイト | 素材ごとに異なる |
+| freesound | 効果音 | 素材ごとに異なる |
+| itch.io の Asset パック | 個人作家の素材。質が高い | 作者ごとに異なる |
+| Godot の AssetLib タブ | エディタ内から直接導入できる拡張・素材 | 個別に確認 |
+
+<Statement kind="definition" title="ライセンスの読み方（最低限）">
+
+- **CC0 / パブリックドメイン** … 何をしてもよい。表記も不要（するのが礼儀ではある）。**初心者はこれを選ぶのが安全。**
+- **CC BY** … 使ってよいが、**作者名の表示が必要**。ゲーム内のクレジット画面に書く。
+- **CC BY-SA** … 表示が必要で、かつ**改変物も同じ条件で公開**する必要がある。ゲームには使いにくい。
+- **CC BY-NC** … **非営利のみ**。無料公開なら使えるが、後で売れなくなるので注意。
+
+そして当然ですが、**他社ゲームの画像や音を抜き出して使うのは不可**です。
+練習で手元に置くのは自由ですが、公開した瞬間に権利侵害になります。
+</Statement>
+
+最初のうちは「Kenney の CC0 素材だけ使う」と決めてしまうのが、
+迷わないし事故らないしで、いちばん賢い選択です。
+
+## この章のまとめ
+
+- 画像はドラッグ＆ドロップで取り込む。**ドット絵は `Filter` をオフ**にしてくっきりさせる。
+- 1枚絵は `Sprite2D`。`Modulate` で色、`Flip H` で向き。
+- パラパラアニメは `AnimatedSprite2D`、複雑な演出は `AnimationPlayer`。
+- **`Tween` は費用対効果が最強**。2〜3行で手触りが変わる。
+- カメラはプレイヤーの子に `Camera2D`。`Limit` でステージ外を映さない。
+- UIは `CanvasLayer` の中に。そうしないとカメラと一緒に流れる。
+- 音は `AudioStreamPlayer`（BGM・UI）と `AudioStreamPlayer2D`（世界の音）。
+  ループ設定は**インポートタブ**で行う。
+- **日本語が出ないのはフォントのせい**。Noto Sans JP などを入れて
+  プロジェクト設定の `GUI → Theme → Custom Font` に指定する。
+- 素材は **CC0** を選ぶのがいちばん安全。
+
+次章は、ばらばらの部品を「ゲーム」にまとめる回です。
+シグナル、UI、シーン遷移、そしてセーブ。ここまで来れば、第7章で作り始められます。

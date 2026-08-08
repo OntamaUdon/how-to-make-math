@@ -8,12 +8,16 @@ export interface NavSection {
   badge?: string;
   href?: string;
   items: NavLink[];
+  /** true なら「隠し部」。目次・ホームの地図・検索・前後送りの連鎖に出さない。
+      URL を直接開いた人だけが読める（中のパンくずとページ送りは普通に効く）。 */
+  hidden?: boolean;
 }
 
 interface SectionDef {
   dir: string;
   title: string;
   badge?: string;
+  hidden?: boolean;
 }
 
 const sections: SectionDef[] = [
@@ -51,7 +55,20 @@ const sections: SectionDef[] = [
   { dir: "/set-topology", title: "集合と位相", badge: "基礎" },
   { dir: "/logic-foundations", title: "数理論理学・数学基礎論", badge: "基礎" },
   { dir: "/category-theory", title: "圏論", badge: "基礎" },
+  // ── 番外（隠し部） ──
+  // 目次には載せない。URL を知っている人だけが読める番外編。
+  { dir: "/godot", title: "Godotの使い方", badge: "ゲーム制作", hidden: true },
 ];
+
+/** 隠し部のディレクトリ（"/godot" など）。検索の索引づくりが参照する。 */
+export const hiddenDirs: string[] = sections
+  .filter((section) => section.hidden)
+  .map((section) => section.dir);
+
+/** その URL が隠し部のページかどうか */
+export function isHiddenHref(href: string): boolean {
+  return hiddenDirs.some((dir) => href === dir || href.startsWith(`${dir}/`));
+}
 
 interface PageFrontmatter {
   title?: string;
@@ -127,9 +144,12 @@ export const siteNav: NavSection[] = sections
       .map((article) => ({ title: article.title, href: article.href }));
     const href = inDir.find((article) => article.isIndex)?.href;
 
-    return { title: section.title, badge: section.badge, href, items };
+    return { title: section.title, badge: section.badge, href, items, hidden: section.hidden };
   })
   .filter((section) => section.items.length > 0 || section.href);
+
+/** 目次に出してよい部だけ（隠し部を除いたもの）。SiteNav はこちらを使う。 */
+export const visibleNav: NavSection[] = siteNav.filter((section) => !section.hidden);
 
 const normalize = (path: string): string =>
   path !== "/" && path.endsWith("/") ? path.slice(0, -1) : path;
@@ -139,7 +159,7 @@ export function isCurrent(href: string, pathname: string): boolean {
 }
 
 export function flattenPages(nav: NavSection[] = siteNav): NavLink[] {
-  return nav.flatMap((section) => section.items);
+  return nav.filter((section) => !section.hidden).flatMap((section) => section.items);
 }
 
 export function findLocation(pathname: string, nav: NavSection[] = siteNav) {
@@ -156,7 +176,12 @@ export function findLocation(pathname: string, nav: NavSection[] = siteNav) {
 }
 
 export function getAdjacentPages(pathname: string, nav: NavSection[] = siteNav) {
-  const pages = flattenPages(nav);
+  // 隠し部のページは全体の流れに混ぜない（前の分野の最終章から続いて見えてしまう）。
+  // その部の中だけで前後を作る。
+  const hiddenOwner = nav.find(
+    (section) => section.hidden && section.items.some((item) => isCurrent(item.href, pathname))
+  );
+  const pages = hiddenOwner ? hiddenOwner.items : flattenPages(nav);
   const index = pages.findIndex((page) => isCurrent(page.href, pathname));
 
   return {

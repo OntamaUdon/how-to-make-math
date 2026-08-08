@@ -1,0 +1,424 @@
+---
+layout: ../../layouts/BaseLayout.astro
+title: 第4章 動かす・当たる
+description: 毎フレームの処理とdeltaの意味、キー入力の受け取り方、4種類の物理ボディの使い分け、当たり判定とコリジョンレイヤーまで。
+---
+
+import Term from "../../components/assets/Term.astro";
+import Statement from "../../components/assets/Statement.astro";
+
+# 第4章 動かす・当たる
+
+## ゲームは「毎秒60回の書き直し」でできている
+
+パラパラ漫画を思い浮かべてください。ゲームも同じです。
+1枚の絵を描いて、少しだけ状態を更新して、また描く。これを毎秒60回。
+この1枚ぶんを<Term>フレーム</Term>と呼びます。
+
+つまりゲームのプログラムは、こういう形をしています。
+
+```text
+ずっと繰り返す:
+    入力を調べる
+    位置や状態を更新する
+    画面を描く
+```
+
+この「繰り返しの1回ぶん」に、あなたのコードを差し込むための入口が2つあります。
+
+<Statement kind="definition" title="_process と _physics_process">
+
+```gdscript
+func _process(delta: float) -> void:
+	# 毎フレーム呼ばれる。呼ばれる回数はPCの速さで変わる
+	pass
+
+func _physics_process(delta: float) -> void:
+	# 一定間隔で呼ばれる（既定で毎秒60回、固定）
+	pass
+```
+
+**使い分け**：物を動かす・当たり判定に関わる処理は `_physics_process`。
+UIの更新や見た目だけの処理は `_process`。迷ったら `_physics_process` で構いません。
+</Statement>
+
+なぜ分かれているかというと、物理計算は**間隔が一定でないと結果がぶれる**からです。
+高性能なPCで毎秒240回、古いPCで毎秒30回動くと、当たり判定がすり抜けたりします。
+だから物理だけは「必ず毎秒60回」に固定されているわけです。
+
+## `delta` の意味 — 掛け忘れが全部を狂わせる
+
+引数の `delta` は、**前のフレームからの経過秒数**です。
+毎秒60フレームなら、だいたい `0.0166...`（60分の1秒）になります。
+
+これがなぜ重要か。次の2つを比べてください。
+
+```gdscript
+# ❌ 悪い：1フレームに5ずつ動かす
+position.x += 5
+
+# ✅ 良い：1秒あたり300動かす
+position.x += 300 * delta
+```
+
+上は「フレーム数」に依存します。毎秒60フレームのPCでは毎秒300動きますが、
+毎秒120フレームの高性能PCでは**毎秒600動いてしまう**。同じゲームが人によって別物になります。
+
+下は違います。フレームが半分の速さなら `delta` が倍になるので、
+移動量は常に「1秒で300」に落ち着きます。
+
+<Statement kind="remark" title="ルール：時間で変わる量には必ず delta を掛ける">
+移動、回転、加速、クールタイムの減少……。
+「秒あたり◯◯」の量には全部 `delta` を掛ける。
+逆に、一発で決まる処理（ジャンプの瞬間の初速など）には掛けません。
+</Statement>
+
+## 入力を受け取る
+
+### アクション名で受け取る
+
+Godot では「Aキーが押されたか」ではなく、
+「`move_left` というアクションが押されたか」で判定します。ワンクッション置くわけです。
+
+なぜか。あとから「WASD にも対応したい」「ゲームパッドにも対応したい」となったとき、
+**コードを1行も直さずに済む**からです。設定側で「`move_left` はAキーでも←キーでもゲームパッドの左でも」
+と足すだけで済みます。
+
+Godot には最初から `ui_left` `ui_right` `ui_up` `ui_down` `ui_accept`（Enter/Space）
+などが定義されています。まずはこれを使えば設定不要です。
+
+### 自分でアクションを作る
+
+**プロジェクト → プロジェクト設定 → インプットマップ** タブを開きます。
+
+1. 上の欄に `jump` と入力して「追加」。
+2. できた `jump` の右の「＋」を押す。
+3. その状態でスペースキーを押して「OK」。
+
+これで `jump` というアクションができました。同じ要領で、
+`jump` にゲームパッドのAボタンを追加登録することもできます。
+
+### 読み取る4つの書き方
+
+```gdscript
+func _physics_process(delta: float) -> void:
+	# ① 押されている間ずっと true（移動に使う）
+	if Input.is_action_pressed("ui_right"):
+		position.x += 300 * delta
+
+	# ② 押した「瞬間」だけ true（ジャンプ・ショットに使う）
+	if Input.is_action_just_pressed("jump"):
+		jump()
+
+	# ③ 離した瞬間だけ true（チャージショットなどに）
+	if Input.is_action_just_released("shoot"):
+		fire_charged()
+
+	# ④ 左右をまとめて -1.0 〜 1.0 で取る
+	var direction := Input.get_axis("ui_left", "ui_right")
+	position.x += direction * 300 * delta
+```
+
+④ の `get_axis` が便利です。左が押されていれば `-1`、右なら `+1`、
+両方または何も押されていなければ `0`。`if` を2つ書く必要がなくなります。
+
+上下左右まとめて取るなら `get_vector` です。
+
+```gdscript
+var input_vector := Input.get_vector("ui_left", "ui_right", "ui_up", "ui_down")
+# 斜め入力でも長さが 1 に揃う（斜めだけ速くなる問題が起きない）
+velocity = input_vector * speed
+```
+
+<Statement kind="remark" title="斜めが速くなる問題">
+右と下を同時に押すと、素朴な実装では移動量が $\sqrt{2}$ 倍＝約1.41倍になります。
+斜めだけ速いゲームになるわけです。`get_vector` はこれを自動で正規化してくれます。
+自分で書くなら `input_vector.normalized()` を掛けます。
+</Statement>
+
+<Statement kind="example" title="やってみる：矢印キーで動くロゴ">
+
+1. 新規シーン → ルートに `Node2D`。名前を `Main` に。
+2. 子に `Sprite2D` を追加。`Texture` に `icon.svg` をドラッグ。
+3. `Sprite2D` を選んでスクリプトをアタッチ。
+4. 中身をこう書き換える。
+
+```gdscript
+extends Sprite2D
+
+@export var speed: float = 300.0
+
+func _physics_process(delta: float) -> void:
+	var input_vector := Input.get_vector("ui_left", "ui_right", "ui_up", "ui_down")
+	position += input_vector * speed * delta
+```
+
+5. `F6` で実行。矢印キーでロゴが動きます。
+6. 実行したままインスペクタの `Speed` を `1000` に変えてみてください。その場で速くなります。
+
+</Statement>
+
+## 座標の話
+
+- 画面の**左上が原点** `(0, 0)`。右に行くほど x が増え、**下に行くほど y が増える**。
+- `position` は**親から見た位置**。`global_position` は**画面全体（ワールド）での位置**。
+- `rotation` はラジアン。度で書きたいときは `rotation_degrees` を使う。
+- `scale` は倍率。`Vector2(2, 2)` で2倍。
+
+```gdscript
+position = Vector2(100, 50)          # 親から見て右100・下50
+global_position = Vector2(0, 0)      # 画面の左上へ
+rotation_degrees = 45                 # 45度回す
+scale = Vector2(0.5, 0.5)             # 半分の大きさ
+```
+
+親が動くキャラの中の部品なら `position`、
+「敵を画面の決まった場所に出したい」なら `global_position` を使います。
+
+## 物理ボディ4種 — どれを使えばいいか
+
+Godot の2D物理には4つのノードがあります。**この使い分けが第4章の本題**です。
+
+<Statement kind="definition" title="4つの物理ボディ">
+
+| ノード | 動くか | 押し返すか | 主な用途 |
+| --- | --- | --- | --- |
+| `StaticBody2D` | 動かない | 押し返す | 地面、壁、床、動かない足場 |
+| `RigidBody2D` | 物理法則で動く | 押し返す | 転がる箱、跳ねるボール、破片 |
+| `CharacterBody2D` | コードで動かす | 押し返す | プレイヤー、敵などの操作キャラ |
+| `Area2D` | 好きに動かす | **押し返さない**（検知のみ） | アイテム、弾、ダメージ判定、トリガー |
+
+</Statement>
+
+初心者がいちばん迷うのが `RigidBody2D` と `CharacterBody2D` です。はっきり書きます。
+
+> **キャラクターは `RigidBody2D` で作ってはいけません。**
+> `RigidBody2D` は物理エンジンが勝手に動かすので、
+> 「ぴたっと止まる」「一定速度で歩く」といった**ゲームらしい動き**が作れません。
+> 操作するものは `CharacterBody2D` です。
+
+`RigidBody2D` は「リアルに転がってほしい物」専用と覚えてください。
+
+### どのボディにも `CollisionShape2D` が要る
+
+物理ボディは**それ自体には形がありません**。子に `CollisionShape2D` を足して、
+そのインスペクタの `Shape` で形（`RectangleShape2D` や `CircleShape2D`）を選びます。
+
+```text
+Player (CharacterBody2D)
+├── Sprite2D            ← 見た目
+└── CollisionShape2D    ← 当たり判定の形（見た目とは別物！）
+```
+
+<Statement kind="remark" title="つまずき第1位：CollisionShape2D の付け忘れ">
+Godot は黄色い警告アイコンを出して教えてくれますが、見落としがちです。
+「当たり判定が効かない」ときは、まずこれを疑ってください。
+`Shape` が `[空]` のままになっている、というのも定番です。
+</Statement>
+
+**見た目と当たり判定は別物**です。絵が丸くても当たり判定は四角にできます。
+むしろ、あえて当たり判定を絵より少し小さくすると「理不尽に当たった」感が減って、
+遊び心地がよくなります。プロもよくやる調整です。
+
+## `CharacterBody2D` でキャラを動かす
+
+これがこの部で一番使うノードです。使い方は決まっています。
+
+```gdscript
+extends CharacterBody2D
+
+@export var speed: float = 300.0
+
+func _physics_process(delta: float) -> void:
+	var input_vector := Input.get_vector("ui_left", "ui_right", "ui_up", "ui_down")
+	velocity = input_vector * speed
+	move_and_slide()
+```
+
+<Statement kind="definition" title="CharacterBody2D の作法">
+
+1. `velocity`（速度）という組み込みの変数に、**行きたい向きと速さ**を入れる。
+2. `move_and_slide()` を呼ぶ。
+
+これだけです。`move_and_slide()` が、壁にぶつかったら止め、
+斜めの壁なら滑らせ、実際に `position` を更新してくれます。
+**自分で `position` をいじる必要はありません。**
+</Statement>
+
+### 横スクロールアクション用の書き方（重力とジャンプ）
+
+上から見下ろすゲームではなく、横から見たジャンプアクションならこうなります。
+
+```gdscript
+extends CharacterBody2D
+
+@export var speed: float = 300.0
+@export var jump_velocity: float = -400.0   # 上向きなのでマイナス
+@export var gravity: float = 980.0
+
+func _physics_process(delta: float) -> void:
+	# 空中にいるなら落下させる
+	if not is_on_floor():
+		velocity.y += gravity * delta
+
+	# 地面にいるときだけジャンプできる
+	if Input.is_action_just_pressed("jump") and is_on_floor():
+		velocity.y = jump_velocity
+
+	# 左右移動
+	var direction := Input.get_axis("ui_left", "ui_right")
+	if direction != 0.0:
+		velocity.x = direction * speed
+	else:
+		# 入力がなければ滑らかに止める
+		velocity.x = move_toward(velocity.x, 0.0, speed * delta * 5.0)
+
+	move_and_slide()
+```
+
+読みどころを挙げます。
+
+- `jump_velocity` が**マイナス**なのは、y が下向きに正だからです（第3章）。
+- 重力は「毎秒◯◯ずつ速度が増える」ものなので `* delta` が要ります。
+  一方ジャンプの初速は一瞬の代入なので `delta` は掛けません。
+- `is_on_floor()` は `move_and_slide()` が更新してくれる判定です。
+  地面に触れていれば `true` になります。
+- `move_toward` で減速させると、ぴたっと止まらず少し滑って気持ちよくなります。
+
+<Statement kind="remark" title="重力の値はプロジェクト設定にもある">
+`プロジェクト設定 → Physics → 2D → Default Gravity` に既定値（980）があります。
+Godot 4.3 以降なら `velocity += get_gravity() * delta` と書いて
+設定側の値を使うこともできます。
+ただしゲームらしい挙動を作るには、キャラごとに数字を調整したくなることが多いので、
+この部では `@export` した自前の値を使います。
+</Statement>
+
+## 当たり判定を「検知する」— `Area2D`
+
+コインを拾う、弾が敵に当たる、ゴール地点に入る。
+これらは**押し返す必要がない**ので `Area2D` を使います。
+
+`Area2D` を選ぶと、右のドックに **「ノード」タブ → シグナル** の一覧が出ます。
+ここに使えるシグナル（出来事の通知）が並んでいます。
+
+| シグナル | いつ飛ぶか |
+| --- | --- |
+| `body_entered(body)` | 物理ボディ（`CharacterBody2D` など）が入ってきた |
+| `body_exited(body)` | 物理ボディが出ていった |
+| `area_entered(area)` | 別の `Area2D` が入ってきた |
+| `area_exited(area)` | 別の `Area2D` が出ていった |
+
+**`body` と `area` の区別が重要です。**
+`Area2D` どうしがぶつかっても `body_entered` は飛びません。`area_entered` です。
+「当たり判定が効かない」原因の第2位がこれです。
+
+### 実際のつなぎ方
+
+コインの `Area2D` にスクリプトを貼って、こう書きます。
+
+```gdscript
+extends Area2D
+
+func _ready() -> void:
+	body_entered.connect(_on_body_entered)
+
+func _on_body_entered(body: Node2D) -> void:
+	if body.is_in_group("player"):
+		print("コイン取得！")
+		queue_free()      # 自分を消す
+```
+
+`body_entered.connect(...)` が「この出来事が起きたら、この関数を呼んで」という登録です。
+**シグナルの詳しい話は第6章**でやります。ここでは形だけ覚えてください。
+
+エディタから接続することもできます。シグナル一覧の `body_entered` をダブルクリックし、
+接続先のノードを選ぶと、関数が自動で生成されます。慣れるまではこちらが分かりやすいです。
+
+## コリジョンレイヤーとマスク
+
+「プレイヤーの弾が、プレイヤー自身に当たってしまう」
+「敵どうしがぶつかって進めなくなる」——これを解決するのがレイヤーとマスクです。
+
+<Statement kind="definition" title="レイヤーとマスク">
+
+- **レイヤー**（Layer）… 「**自分がどのグループに属しているか**」
+- **マスク**（Mask）… 「**自分がどのグループを見張るか**」
+
+`A` が `B` を検知するには、**`B` のレイヤー**が **`A` のマスク**に入っている必要があります。
+</Statement>
+
+インスペクタの `Collision` を開くと、番号付きの四角が32個並んでいます。
+番号のままでは何が何だか分からないので、名前を付けましょう。
+
+**プロジェクト設定 → レイヤー名 → 2D Physics** で、こんなふうに決めます。
+
+| 番号 | 名前 |
+| --- | --- |
+| 1 | player |
+| 2 | enemy |
+| 3 | player_bullet |
+| 4 | enemy_bullet |
+| 5 | world |
+
+そのうえで、各ノードをこう設定します。
+
+| ノード | レイヤー（自分は） | マスク（見張るのは） |
+| --- | --- | --- |
+| プレイヤー | player | world, enemy, enemy_bullet |
+| 敵 | enemy | world, player_bullet |
+| プレイヤーの弾 | player_bullet | enemy, world |
+| 地形 | world | （なし） |
+
+こうすると、プレイヤーの弾は敵と地形だけを見て、プレイヤー自身や味方の弾は無視します。
+敵どうしも互いを見張っていないのですり抜けます。狙いどおりです。
+
+<Statement kind="remark" title="設定したのに当たらない/当たりすぎるとき">
+チェックリストです。
+
+1. `CollisionShape2D` があり、`Shape` が空でないか
+2. `Area2D` どうしなのに `body_entered` を使っていないか
+3. **レイヤーとマスクを逆に**設定していないか（これが本当に多い）
+4. ノードの `Monitoring`（`Area2D`）や `Disabled`（`CollisionShape2D`）がオフになっていないか
+
+**デバッグ → 衝突形状を表示** をオンにして実行すると、
+当たり判定の形が画面に描かれます。目で見るのが最速です。
+</Statement>
+
+## 動くけれど物理に従わせたい：`RigidBody2D` を少しだけ
+
+参考までに、転がる箱の作り方も見ておきます。
+
+```text
+Crate (RigidBody2D)
+├── Sprite2D
+└── CollisionShape2D
+```
+
+これだけで**もう落ちて転がります**。コードは1行も要りません。
+インスペクタで調整するのは主にこの4つ。
+
+| 項目 | 意味 |
+| --- | --- |
+| `Mass` | 重さ。重いほど押されにくい |
+| `Gravity Scale` | 重力の効き具合。`0` にすると浮く |
+| `Physics Material Override → Bounce` | 跳ね返り（`0`〜`1`） |
+| `Physics Material Override → Friction` | 摩擦（`0` でツルツル） |
+
+力を加えたいときは `apply_impulse(Vector2(300, -500))` のように書きます。
+`position` を直接いじると物理計算と喧嘩するので、やめておきましょう。
+
+## この章のまとめ
+
+- ゲームは**毎フレームの更新の繰り返し**。物理は `_physics_process`、見た目は `_process`。
+- **時間で変わる量には `delta` を掛ける**。掛け忘れるとPCの速さでゲームが変わる。
+- 入力は**アクション名**で受ける。`get_axis` / `get_vector` を使うと短く書ける。
+- 物理ボディは4種。**操作キャラは `CharacterBody2D`**、検知だけなら `Area2D`、
+  地形は `StaticBody2D`、転がる物だけ `RigidBody2D`。
+- `CharacterBody2D` の作法は「`velocity` を決めて `move_and_slide()`」の2手。
+- 当たり判定には `CollisionShape2D` が必須。**見た目とは別物**。
+- `Area2D` どうしは `area_entered`、物理ボディ相手は `body_entered`。
+- **レイヤー＝自分の所属、マスク＝見張る相手**。名前を付けて表で管理する。
+- 困ったら **デバッグ → 衝突形状を表示**。
+
+次章は見た目と音です。四角と丸のままでも遊べますが、
+絵とアニメーションと効果音が入った瞬間、同じゲームが別物に感じられます。

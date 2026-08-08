@@ -4,7 +4,7 @@
    ・二段構え：軽い「見出し索引」(/search-index.json) と重い「本文索引」(/search-body.json) を
      別々のエンドポイントに出す。どちらも下の searchDocs から作るので順番は必ず一致する。
    ・このファイルを読むのはサーバ側（エンドポイント）だけ。生テキストがブラウザに渡ることはない。 */
-import { siteNav } from "./navigation";
+import { siteNav, isHiddenHref } from "./navigation";
 
 const rawPages = import.meta.glob("/src/pages/**/*.{md,mdx}", {
   eager: true,
@@ -112,6 +112,9 @@ function labelFor(href: string): { section: string; badge: string } {
 /** 全ページの索引。/search-index.json と /search-body.json は
     どちらもこの配列をそのままの順で出すので、添字で対応が取れる。 */
 export const searchDocs: SearchDoc[] = Object.entries(rawPages)
+  // 隠し部（navigation.ts で hidden: true）は索引に入れない。
+  // 目次にも検索にも出さず、URL を直接開いた人だけが読む扱いにする。
+  .filter(([filePath]) => !isHiddenHref(pathToHref(filePath)))
   .map(([filePath, raw]): SearchDoc => {
     const href = pathToHref(filePath);
     const { title, description } = readFrontmatter(raw);

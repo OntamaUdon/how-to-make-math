@@ -1,0 +1,391 @@
+---
+layout: ../../layouts/BaseLayout.astro
+title: 第7章 ゲーム① よけゲーを作る（前編）
+description: 素材を1枚もダウンロードせずに、星をひろって岩をよけるゲームを遊べる状態まで作る。プロジェクト設定からプレイヤー、落下物、生成、当たり判定まで。
+---
+
+import Term from "../../components/assets/Term.astro";
+import Statement from "../../components/assets/Statement.astro";
+
+# 第7章 ゲーム① よけゲーを作る（前編）
+
+## 作るもの
+
+**「スターダイブ」**——縦画面のシンプルなよけゲームです。
+
+- 画面下のキャラを**左右に動かす**
+- 上から**星**と**岩**が降ってくる
+- 星を取ると **+10点**、岩に当たると**ゲームオーバー**
+- だんだん降ってくるペースが速くなる
+- ハイスコアが保存される
+- **ブラウザで遊べる形で世界に公開する**
+
+前編（この章）で「遊べる」状態まで、後編（第8章）で「作品」にして公開まで持っていきます。
+
+<Statement kind="remark" title="素材のダウンロードは不要です">
+絵は Godot が最初から用意している `icon.svg`（あのロゴ）を、
+色と大きさを変えて使い回します。**1枚もダウンロードしません。**
+
+「素材がないから作れない」を最初に潰しておきたいからです。
+絵の差し替えは第8章の最後で触れます。中身が完成していれば、絵は5分で入れ替わります。
+</Statement>
+
+## まず設計する（5分でいい）
+
+コードを書く前に、**必要な部品を書き出します**。これをやるかどうかで完成率が変わります。
+
+| 部品（シーン） | ルートノード | 仕事 |
+| --- | --- | --- |
+| `player.tscn` | `Area2D` | 左右に動く。何かに触れたら知らせる |
+| `star.tscn` | `Area2D` | 落ちてくる。取られたら消える |
+| `rock.tscn` | `Area2D` | 落ちてくる。触れたらゲームオーバー |
+| `main.tscn` | `Node2D` | 全体を並べる。時間で星と岩を出す。点を数える |
+
+そして、**部品どうしのつながり**を決めます。
+
+```text
+Player ──「星を取った」（scored シグナル）──▶ Main ──▶ スコア+10
+Player ──「岩に当たった」（hit シグナル）───▶ Main ──▶ ゲームオーバー
+Main   ──「時間が来た」（Timer の timeout）──▶ 星か岩を1つ生成
+```
+
+第6章の合言葉どおり、**プレイヤーはスコアの存在を知りません**。叫ぶだけです。
+
+## プロジェクトを作る
+
+1. プロジェクトマネージャで **新規プロジェクト**。名前は `star-dive`。
+2. **レンダラーは `Compatibility`**（Web公開のため。第1章参照）。
+3. 「作成して編集」。
+
+### プロジェクト設定を先に済ませる
+
+**プロジェクト → プロジェクト設定 → 一般** で、検索欄を使って次を設定します。
+
+| 設定項目 | 値 |
+| --- | --- |
+| `表示 → ウィンドウ → ビューポートの幅` | `480` |
+| `表示 → ウィンドウ → ビューポートの高さ` | `720` |
+| `表示 → ウィンドウ → ストレッチ → モード` | `canvas_items` |
+| `表示 → ウィンドウ → ストレッチ → アスペクト` | `keep` |
+| `レンダリング → 環境 → Default Clear Color` | 好きな暗い色（例：濃い紺） |
+
+最後の背景色は、右下の色見本をクリックして選びます。
+真っ黒より少し青みがある色にすると、星が映えます。
+
+### フォルダを作る
+
+ファイルシステムパネルの `res://` を右クリック → **新規 → フォルダ** で、
+`scenes` と `scripts` を作っておきます。
+
+## プレイヤーを作る
+
+### シーンを組む
+
+1. **シーン → 新規シーン**。
+2. 「その他のノード」→ 検索欄に `Area2D` → 作成。
+3. できたノードの名前を **`Player`** に変更（ダブルクリックで変更）。
+4. `Player` を選んで `Ctrl+A` → `Sprite2D` を追加。
+5. `Sprite2D` を選び、インスペクタの `Texture` に、
+   ファイルシステムの `icon.svg` を**ドラッグ＆ドロップ**。
+6. 同じくインスペクタで `Transform → Scale` を `(0.5, 0.5)` に。
+   （`icon.svg` は 128×128 なので、64×64 になります）
+7. `Player` を選んで `Ctrl+A` → `CollisionShape2D` を追加。
+8. `CollisionShape2D` のインスペクタで `Shape` → **新規 CircleShape2D**。
+   できた `CircleShape2D` をクリックして `Radius` を `26` に。
+9. `Ctrl+S` で `res://scenes/player.tscn` として保存。
+
+できあがりはこうです。
+
+```text
+Player (Area2D)
+├── Sprite2D            (icon.svg / Scale 0.5)
+└── CollisionShape2D    (CircleShape2D / Radius 26)
+```
+
+<Statement kind="remark" title="当たり判定を絵より少し小さくする">
+絵は半径32、当たり判定は半径26にしました。わざとです。
+**「見た目では当たっていないのに死んだ」という理不尽さ**を減らすための定番の調整です。
+逆に敵に当てる側の判定は少し大きめにすると、気持ちよくなります。
+</Statement>
+
+### スクリプトを書く
+
+`Player` を選び、**スクリプトをアタッチ**（巻物アイコン）。
+パスを `res://scripts/player.gd` にして作成。中身を全部消して、こう書きます。
+
+```gdscript
+extends Area2D
+
+# 「星を取った」「岩に当たった」を外に知らせるためのシグナル
+signal scored
+signal hit
+
+@export var speed: float = 420.0
+
+var screen_size: Vector2
+
+func _ready() -> void:
+	screen_size = get_viewport_rect().size
+	area_entered.connect(_on_area_entered)
+
+func _process(delta: float) -> void:
+	# 左が押されていれば -1、右なら +1、何もなければ 0
+	var direction := Input.get_axis("ui_left", "ui_right")
+	position.x += direction * speed * delta
+
+	# 画面の外に出ないように押し戻す
+	position.x = clamp(position.x, 32.0, screen_size.x - 32.0)
+
+func _on_area_entered(area: Area2D) -> void:
+	if area.is_in_group("star"):
+		area.queue_free()      # 星を消して
+		scored.emit()          # 「取った！」と叫ぶ
+	elif area.is_in_group("rock"):
+		hit.emit()             # 「当たった！」と叫ぶ
+```
+
+読みどころ。
+
+- `get_viewport_rect().size` で**画面の大きさ**が取れます。`480 × 720` が入ります。
+- `clamp` で「32 から 画面幅-32 の間」に押し込めています。
+  32は半径ぶんです。これで端で半分はみ出すことがなくなります。
+- `area_entered` は**別の `Area2D` が重なったとき**に飛ぶシグナル（第4章）。
+- 判定に**グループ名**を使っています。相手のクラスを調べるより壊れにくい書き方です。
+
+`F6` で実行してみてください。矢印キーでロゴが左右に動き、端で止まれば成功です。
+
+<Statement kind="remark" title="ゲームパッドやWASDにも対応させたいなら">
+プロジェクト設定 → インプットマップで、`ui_left` の右の「＋」から
+Aキーやゲームパッドの左スティックを**追加登録**するだけです。
+コードは1行も変わりません。これがアクション名で受け取る利点でした（第4章）。
+</Statement>
+
+## 落ちてくるものを作る
+
+星と岩は「落ちる」という同じ動きをします。**スクリプトは1つだけ書いて共有**します。
+
+### 落下スクリプト
+
+ファイルシステムの `scripts` フォルダを右クリック → **新規 → スクリプト**。
+名前を `falling_item.gd` にして作成。継承元（Inherits）は `Area2D` にします。
+
+```gdscript
+extends Area2D
+
+@export var fall_speed: float = 260.0
+
+func _process(delta: float) -> void:
+	position.y += fall_speed * delta
+
+	# 画面の下まで行ったら、自分を消す（放置するとメモリを食い続ける）
+	if position.y > get_viewport_rect().size.y + 64.0:
+		queue_free()
+```
+
+<Statement kind="remark" title="画面外の掃除は必須">
+消さないと、落ちたオブジェクトが画面外に無限に溜まり続けます。
+数分でカクつき始め、やがて落ちます。**生成したものは必ず消す**——
+これはゲーム作りの鉄則です。
+</Statement>
+
+### 星のシーン
+
+1. **シーン → 新規シーン** → `Area2D` → 名前を **`Star`** に。
+2. 子に `Sprite2D`：`Texture` に `icon.svg`、`Scale` を `(0.25, 0.25)`、
+   `Modulate` を**黄色**に（インスペクタの `Modulate` の色見本をクリック）。
+3. 子に `CollisionShape2D`：`Shape` → 新規 `CircleShape2D`、`Radius` を `16`。
+4. ルートの `Star` を選び、右のドックの **「グループ」タブ** → `star` と入力して「追加」。
+5. `Star` にスクリプトをアタッチ…**ではなく**、
+   インスペクタの上にある **スクリプトの欄**（または巻物アイコンの右の「読み込み」）から
+   さっき作った `falling_item.gd` を**選んで**割り当てます。
+6. `res://scenes/star.tscn` として保存。
+
+<Statement kind="remark" title="スクリプトは「新規作成」だけでなく「既存を割り当て」もできる">
+巻物アイコンを押すダイアログには「作成」のほかに、
+既存のスクリプトを開くボタンがあります。
+シーンドックでノードを選び、インスペクタ最上部の `Script` 欄に
+ファイルシステムから `.gd` をドラッグしても割り当てられます。
+</Statement>
+
+### 岩のシーン
+
+同じ手順で、値だけ変えます。
+
+1. `Area2D` → 名前 **`Rock`**。
+2. `Sprite2D`：`icon.svg`、`Scale` `(0.32, 0.32)`、`Modulate` を**灰色〜赤**に。
+3. `CollisionShape2D`：`CircleShape2D`、`Radius` `20`。
+4. グループに **`rock`** を追加。
+5. `falling_item.gd` を割り当て。
+6. インスペクタで `Fall Speed` を `320` に（岩のほうが少し速い）。
+7. `res://scenes/rock.tscn` として保存。
+
+`Fall Speed` がインスペクタに出てくるのは、スクリプトで `@export` を付けたからです（第3章）。
+**同じスクリプトを使いながら、シーンごとに違う値**にできる。これが `@export` の威力です。
+
+## Main シーンで組み立てる
+
+### シーンを組む
+
+1. **シーン → 新規シーン** → 「2Dシーン」を選ぶ（`Node2D` ができる）。名前を **`Main`** に。
+2. ファイルシステムから `player.tscn` を**ビューポートにドラッグ**して配置。
+3. 配置した `Player` を選び、インスペクタで `Position` を `(240, 640)` に。
+   （画面中央下です）
+4. `Main` を選んで `Ctrl+A` → `Timer` を追加。名前を **`SpawnTimer`** に。
+5. `SpawnTimer` のインスペクタで
+   - `Wait Time` を `0.7`
+   - `Autostart` を**オン**
+   （`One Shot` はオフのまま＝繰り返し）
+6. `res://scenes/main.tscn` として保存。
+
+```text
+Main (Node2D)
+├── Player          (player.tscn のインスタンス / Position 240, 640)
+└── SpawnTimer      (Timer / Wait Time 0.7 / Autostart オン)
+```
+
+### メインシーンに設定する
+
+**プロジェクト → プロジェクト設定 → 一般 → アプリケーション → 実行** の
+`Main Scene` に `res://scenes/main.tscn` を指定します。
+（初回に `F5` を押したときのダイアログで選んでも同じです）
+
+### スクリプトを書く
+
+`Main` にスクリプトをアタッチ（`res://scripts/main.gd`）。
+
+```gdscript
+extends Node2D
+
+# シーンファイルを先に読み込んでおく（毎回読むと重いので）
+const STAR_SCENE := preload("res://scenes/star.tscn")
+const ROCK_SCENE := preload("res://scenes/rock.tscn")
+
+# 星が出る確率（0.6 なら 10回中6回が星）
+@export var star_ratio: float = 0.6
+
+var score := 0
+
+func _ready() -> void:
+	$Player.scored.connect(_on_player_scored)
+	$Player.hit.connect(_on_player_hit)
+	$SpawnTimer.timeout.connect(_on_spawn_timer_timeout)
+
+func _on_spawn_timer_timeout() -> void:
+	# 星か岩かをランダムに決める
+	var item: Area2D
+	if randf() < star_ratio:
+		item = STAR_SCENE.instantiate()
+	else:
+		item = ROCK_SCENE.instantiate()
+
+	# 画面の上、左右ランダムな位置に置く
+	var width := get_viewport_rect().size.x
+	item.position = Vector2(randf_range(40.0, width - 40.0), -40.0)
+	add_child(item)
+
+func _on_player_scored() -> void:
+	score += 10
+	print("スコア: ", score)
+
+func _on_player_hit() -> void:
+	print("ゲームオーバー！ 最終スコア: ", score)
+	get_tree().paused = true
+```
+
+### 動かしてみる
+
+`F5` を押してください。
+
+星と岩が降ってきます。矢印キーで動いて、黄色い星に触れると
+出力タブに「スコア: 10」「スコア: 20」と出る。岩に触れると止まる。
+
+**ここまでで、ゲームとして成立しています。** おめでとうございます。
+
+## コードの読み合わせ
+
+大事なところを確認しておきます。あとで自分で改造するときに効きます。
+
+### `preload` と `instantiate` と `add_child`
+
+```gdscript
+const STAR_SCENE := preload("res://scenes/star.tscn")   # ①設計図を読む（起動時に1回）
+var item = STAR_SCENE.instantiate()                      # ②実物を1つ作る（まだ見えない）
+item.position = Vector2(200, -40)                        # ③置く場所を決める
+add_child(item)                                          # ④ツリーに加える＝画面に出る
+```
+
+`preload` は `const` に入れておくのが定番です。
+毎回ファイルを読みに行かず、起動時に一度だけ読み込むので速くなります。
+
+### シグナルの接続はコードで
+
+`Player` は**エディタでシーンに置いてある**ので、エディタから接続してもよかったのですが、
+ここではコードで書きました。理由は**一箇所にまとまって読みやすい**からです。
+`_ready()` を見れば「このシーンが何と何をつないでいるか」が全部分かります。
+
+一方、`_on_spawn_timer_timeout` で作る星と岩は
+**エディタでは接続できません**（実行時に生まれるので）。
+コードで接続する必要があるケースがあることを、頭の隅に置いておいてください。
+
+## よくあるトラブル
+
+<Statement kind="remark" title="困ったときのチェックリスト">
+
+**星に触れても反応しない**
+- `Star` のグループに `star` を追加したか（右ドックの「グループ」タブ）。
+  スペルミス（`Star` と大文字）に注意。グループ名は大文字小文字を区別します。
+- `CollisionShape2D` の `Shape` が `[空]` になっていないか。
+- **デバッグ → 衝突形状を表示** をオンにして実行し、判定の丸が見えるか確認。
+
+**何も降ってこない**
+- `SpawnTimer` の `Autostart` はオンか。
+- 出力タブに赤いエラーが出ていないか。
+- `preload` のパスが合っているか（`res://scenes/star.tscn`）。
+  ファイルシステムでファイルを右クリック → **「パスをコピー」** すると確実です。
+
+**プレイヤーが動かない**
+- `_process` の中に書いたか（`_ready` に書いていないか）。
+- スクリプトが `Player` に割り当たっているか。
+
+**ゲームオーバー後に何も操作できない**
+- 正常です。`get_tree().paused = true` で止めています。第8章でちゃんとした画面を出します。
+
+**エラー：`Invalid access ... on a base object of type 'Nil'`**
+- `$Player` や `$SpawnTimer` の名前が、シーンドックの名前と一致しているか確認。
+  大文字小文字も一致させる必要があります。
+</Statement>
+
+## 遊んで、数字を調整する
+
+いまの状態で何度か遊んでみてください。そして**数字をいじってみましょう**。
+インスペクタで変えられるようにしてあります。
+
+| 変える場所 | 項目 | 効果 |
+| --- | --- | --- |
+| `Player`（Main内） | `Speed` | 動きの速さ。`420` → `600` で軽快に |
+| `SpawnTimer` | `Wait Time` | 出現間隔。`0.7` → `0.4` で忙しく |
+| `Main` | `Star Ratio` | 星の割合。`0.6` → `0.8` で優しく |
+| `star.tscn` / `rock.tscn` | `Fall Speed` | 落下速度 |
+
+<Statement kind="remark" title="この工程が「ゲームデザイン」です">
+プログラムを書くことより、**この数字いじりのほうがゲームの面白さを決めます。**
+「難しすぎる」「簡単すぎる」「もっさりする」と感じたら、それは正しい感想です。
+納得のいく数字が見つかるまで、10回でも20回でも遊んで調整してください。
+
+`@export` を書いておいたのは、まさにこの作業を軽くするためでした。
+</Statement>
+
+## この章のまとめ
+
+- 作る前に**部品の表**と**つながりの図**を書いた。これで迷子にならない。
+- プレイヤーは `Area2D`。`Input.get_axis` で左右、`clamp` で画面外に出さない。
+- 星と岩は**スクリプトを共有**し、`@export` した値だけシーンごとに変えた。
+- 生成は `preload` → `instantiate()` → `add_child()`。
+  **画面外に出たら `queue_free()`** で必ず片付ける。
+- 当たり判定は**グループ名**で見分ける。
+- プレイヤーは**シグナルで叫ぶだけ**。スコアの管理は `Main` の仕事。
+- 遊んで数字を調整する時間こそが、ゲーム作りの本体。
+
+次章では、これを**人に見せられる作品**にします。
+スコア表示、タイトル画面、ゲームオーバー画面、ハイスコア保存、
+そして**ブラウザで遊べる形にして公開**します。

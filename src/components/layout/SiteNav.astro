@@ -2,8 +2,9 @@
 /* SiteNav.astro — ページ下部に置く「サイト全体の目次」。
    分野名だけを並べる（章タイトルは載せない）。章までたどるには、
    各分野の地図ページか、上部バーの検索を使う。
-   分野の一覧は Sidebar と同じ siteNav から作るので、片方を直せば両方そろう。 */
-import { siteNav, isCurrent } from "../../config/navigation";
+   分野の一覧は Sidebar と同じ siteNav から作るので、片方を直せば両方そろう。
+   ただし「隠し部」（navigation.ts で hidden: true）はここに載せない。 */
+import { visibleNav, isCurrent } from "../../config/navigation";
 
 const pathname = Astro.url.pathname;
 
@@ -16,7 +17,7 @@ const inSection = (href?: string): boolean =>
   <p class="sitemap-head">サイト全体の目次</p>
 
   <div class="sitemap-grid">
-    {siteNav.map((section) =>
+    {visibleNav.map((section) =>
       section.href ? (
         <a
           href={section.href}

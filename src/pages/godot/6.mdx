@@ -1,0 +1,453 @@
+---
+layout: ../../layouts/BaseLayout.astro
+title: 第6章 シグナル・UI・保存
+description: 部品どうしを疎結合につなぐシグナル、スコア表示やボタンを作るUI、シーン遷移とポーズ、オートロードによるデータ共有、そしてセーブ機能まで。
+---
+
+import Term from "../../components/assets/Term.astro";
+import Statement from "../../components/assets/Statement.astro";
+
+# 第6章 シグナル・UI・保存
+
+## 部品はできた。あとは「つなぐ」
+
+前章までで、動くキャラも、当たり判定も、絵も音もそろいました。
+残っているのは、それらを**ひとつの作品にまとめる**部分です。
+
+- 敵に当たったことを、どうやってスコア表示に伝えるのか（**シグナル**）
+- スコアやボタンをどう画面に置くのか（**UI**）
+- タイトル画面からゲームへどう移るのか（**シーン遷移**）
+- ハイスコアをどう覚えておくのか（**セーブ**）
+
+この4つで、ゲームは「作品」になります。
+
+## シグナル — 下から上へ「叫ぶ」
+
+第2章の最後で、こういうコードは良くないと書きました。
+
+```gdscript
+# 悪い例：親の親の…と辿って、直接いじりにいく
+get_parent().get_parent().get_node("HUD/ScoreLabel").text = "100"
+```
+
+これがなぜ良くないか。**コインが、HUDの構造を知ってしまっている**からです。
+HUD の場所を変えた瞬間、コインが壊れます。コインは HUD のことなど知るべきではありません。
+
+正しい形はこうです。
+
+> **コインは「取られた！」と叫ぶだけ。**
+> **誰がそれを聞いて何をするかは、コインの知ったことではない。**
+
+この「叫ぶ」仕組みが<Term>シグナル</Term>です。
+
+<Statement kind="definition" title="シグナル（signal）">
+ノードが「こういう出来事が起きた」と発信する通知。
+発信側は誰が聞いているか知らない。受信側が「この通知が来たらこの関数を呼んで」と
+**登録（connect）**しておく。
+
+これにより、部品どうしが互いを直接知らないまま連携できる。
+</Statement>
+
+### 組み込みシグナルを使う
+
+多くのノードが最初からシグナルを持っています。
+ノードを選び、右のドックの **「ノード」タブ → シグナル** で一覧が見られます。
+
+| ノード | よく使うシグナル |
+| --- | --- |
+| `Button` | `pressed` … 押された |
+| `Area2D` | `body_entered` / `area_entered` … 何かが入ってきた |
+| `Timer` | `timeout` … 時間が来た |
+| `AnimationPlayer` | `animation_finished` … 再生が終わった |
+| `AnimatedSprite2D` | `animation_finished` … 同上 |
+
+**つなぎ方は2通りあります。**
+
+**方法A：エディタでつなぐ（分かりやすい）**
+
+1. シグナル一覧の `pressed` をダブルクリック。
+2. 「どのノードのスクリプトに関数を作るか」を選ぶ。
+3. 「接続」を押すと、そのスクリプトに `_on_button_pressed()` が自動生成される。
+
+つないだシグナルには、シーンドックの該当ノードに**緑の接続アイコン**が付きます。
+
+**方法B：コードでつなぐ（動的に作るものはこちら）**
+
+```gdscript
+func _ready() -> void:
+	$StartButton.pressed.connect(_on_start_pressed)
+	$SpawnTimer.timeout.connect(_on_spawn_timer_timeout)
+
+func _on_start_pressed() -> void:
+	print("スタート！")
+
+func _on_spawn_timer_timeout() -> void:
+	spawn_enemy()
+```
+
+<Statement kind="remark" title="どちらを使うべきか">
+**シーンに最初から置いてあるノードはエディタ接続**、
+**コードで生成したノードはコード接続**。これが自然な分担です。
+
+コードで生成した敵のシグナルは、エディタでは接続できません（まだ存在しないので）。
+第7章で実際にそうします。
+</Statement>
+
+### 自分でシグナルを作る
+
+ここからが本番です。自作シグナルは、こう宣言します。
+
+```gdscript
+# player.gd
+extends CharacterBody2D
+
+signal died                      # 引数なし
+signal health_changed(new_hp: int)   # 引数あり
+
+var hp := 100
+
+func take_damage(amount: int) -> void:
+	hp -= amount
+	health_changed.emit(hp)      # 「HPが変わった」と叫ぶ
+	if hp <= 0:
+		died.emit()              # 「死んだ」と叫ぶ
+		queue_free()
+```
+
+`emit()` が「叫ぶ」です。プレイヤーは、誰が聞いているかを一切知りません。
+
+聞く側（`main.gd`）はこうです。
+
+```gdscript
+# main.gd
+extends Node2D
+
+@onready var player: CharacterBody2D = $Player
+@onready var hp_bar: ProgressBar = %HpBar
+
+func _ready() -> void:
+	player.died.connect(_on_player_died)
+	player.health_changed.connect(_on_player_health_changed)
+
+func _on_player_died() -> void:
+	get_tree().paused = true
+	%GameOverPanel.show()
+
+func _on_player_health_changed(new_hp: int) -> void:
+	hp_bar.value = new_hp
+```
+
+これで、プレイヤーは HP バーの存在を知らないまま HP バーが更新されます。
+HP バーを消したければ `main.gd` を1行変えるだけ。プレイヤーには一切手を触れません。
+**これが疎結合です。**
+
+<Statement kind="remark" title="設計の合言葉">
+**「シグナルは下から上へ、呼び出しは上から下へ」**
+
+子ノードは親に向かってシグナルで叫ぶ。
+親は子の関数を直接呼んでよい（`$Player.take_damage(10)` は問題なし）。
+この向きを守るだけで、構成が破綻しにくくなります。
+</Statement>
+
+## `Timer` — 時間を計る
+
+「3秒ごとに敵を出す」「1秒後に爆発する」に使います。2つの書き方があります。
+
+### ノードとして置く（繰り返しに向く）
+
+`Timer` ノードを追加し、インスペクタで設定します。
+
+| 項目 | 意味 |
+| --- | --- |
+| `Wait Time` | 何秒で鳴るか |
+| `One Shot` | オンなら1回きり。オフなら繰り返し |
+| `Autostart` | オンならシーン開始と同時に動き出す |
+
+```gdscript
+func _ready() -> void:
+	$SpawnTimer.timeout.connect(_on_spawn_timeout)
+	$SpawnTimer.start()          # Autostart オフなら手動で開始
+
+func _on_spawn_timeout() -> void:
+	spawn_enemy()
+```
+
+### その場で待つ（1回きりに向く）
+
+```gdscript
+func explode() -> void:
+	$AnimatedSprite2D.play("explode")
+	await get_tree().create_timer(0.5).timeout    # 0.5秒待つ
+	queue_free()
+```
+
+`await` を使うと、**その行で処理を止めて待ち、続きから再開**します。
+ノードを置かずに済むので、1回きりの待ちにはこちらが便利です。
+
+## UI を作る
+
+### Control ノードの考え方
+
+UI は緑アイコンの `Control` 系ノードで作ります。
+2Dの世界（青）とは**位置の決め方がまったく違う**ので、そこだけ押さえてください。
+
+`Control` の位置は、**画面のどこに貼り付くか（アンカー）＋そこからのずれ** で決まります。
+だからウィンドウサイズが変わっても、右上のスコアは右上のままでいられます。
+
+ビューポート上部の **「レイアウト」ボタン**（`Control` を選ぶと出ます）から、
+`左上` `中央` `右下` `全面` などのプリセットを選ぶのが手っ取り早い使い方です。
+
+### よく使う UI ノード
+
+| ノード | 用途 |
+| --- | --- |
+| `Label` | 文字の表示。スコア、メッセージ |
+| `Button` | ボタン。`pressed` シグナルを使う |
+| `ProgressBar` | 数値をバーで表示。HP、ゲージ |
+| `TextureRect` | 画像の表示 |
+| `Panel` | 背景の板。メニューの下敷き |
+| `LineEdit` | 1行の文字入力 |
+| `RichTextLabel` | 色やサイズを混ぜられる文字表示 |
+
+### コンテナ — 並べるのを任せる
+
+ボタンを縦に3つ並べるとき、ひとつずつ座標を打つのは苦痛です。
+**コンテナ**に入れると、自動で並べてくれます。
+
+| コンテナ | 並べ方 |
+| --- | --- |
+| `VBoxContainer` | 縦に並べる |
+| `HBoxContainer` | 横に並べる |
+| `MarginContainer` | 外側に余白を作る |
+| `CenterContainer` | 中身を中央に置く |
+| `GridContainer` | 格子状に並べる |
+
+```text
+TitleScreen (Control)
+└── CenterContainer          ← 画面中央に
+	└── VBoxContainer         ← 縦並び
+		├── TitleLabel
+		├── StartButton
+		└── QuitButton
+```
+
+コンテナの中に入れたノードは、**位置を自分で動かせなくなります**（コンテナが決めるので）。
+これは「壊れているのでは？」と誤解しやすいポイントですが、正常な動作です。
+間隔を変えたいときはコンテナの `Theme Overrides → Constants → Separation` を触ります。
+
+### HUD の作り方（第7章で使う形）
+
+```text
+Main (Node2D)
+├── Player
+└── HUD (CanvasLayer)           ← カメラの影響を受けない層
+	└── MarginContainer
+		└── ScoreLabel (Label)
+```
+
+`ScoreLabel` を右クリックして **「シーンのユニークな名前としてアクセス」** をオンにすると、
+どこからでも `%ScoreLabel` で届きます（第2章）。
+
+```gdscript
+# hud.gd （HUD の CanvasLayer に貼る）
+extends CanvasLayer
+
+func set_score(value: int) -> void:
+	%ScoreLabel.text = "スコア: %d" % value
+```
+
+`"スコア: %d" % value` は**書式指定**という書き方で、
+`%d` の位置に整数が埋め込まれます。`%s`（何でも文字に）、`%.2f`（小数2桁）も使えます。
+
+## シーン遷移
+
+タイトル → ゲーム → リザルト、と画面を切り替えます。
+
+```gdscript
+# 別のシーンへ移る
+get_tree().change_scene_to_file("res://scenes/game.tscn")
+
+# 今のシーンをやり直す（リトライ）
+get_tree().reload_current_scene()
+
+# ゲームを終了する
+get_tree().quit()
+```
+
+`change_scene_to_file` は、**いまのシーンを丸ごと捨てて**新しいシーンを読み込みます。
+だから「スコアを次の画面に持っていきたい」ときは工夫が要ります。それが次の節です。
+
+<Statement kind="remark" title="Web書き出しでは quit() が効かない">
+ブラウザで動かす場合、`get_tree().quit()` は何も起きません（ブラウザのタブは閉じられません）。
+Web公開するゲームでは「終了」ボタンを置かないか、
+`OS.has_feature("web")` で判定して隠すのが親切です。
+</Statement>
+
+## ポーズ
+
+```gdscript
+get_tree().paused = true      # 止める
+get_tree().paused = false     # 再開
+```
+
+ただしこれだけだと、**ポーズメニュー自体も止まってしまいます**（ボタンが押せない）。
+そこで、止めたくないノードのインスペクタで
+`Process → Process Mode` を **`Always`** にします。
+
+| Process Mode | 意味 |
+| --- | --- |
+| `Inherit` | 親に従う（既定） |
+| `Pausable` | ポーズ中は止まる |
+| `Always` | ポーズ中も動く ← **ポーズメニューはこれ** |
+| `When Paused` | ポーズ中だけ動く |
+| `Disabled` | 常に止まる |
+
+## オートロード — 画面をまたいでデータを持つ
+
+シーンを切り替えると中身は全部消えます。ではスコアやハイスコアはどこに置くのか。
+
+答えは<Term>オートロード</Term>（シングルトン）です。
+**シーンが切り替わっても生き残る、特別なノード**を用意します。
+
+<Statement kind="example" title="やってみる：ゲーム全体のデータ置き場を作る">
+
+1. `res://scripts/game_data.gd` を新規作成（ファイルシステムで右クリック → 新規 → スクリプト）。
+
+```gdscript
+extends Node
+
+var score := 0
+var high_score := 0
+
+func reset_score() -> void:
+	score = 0
+
+func add_score(amount: int) -> void:
+	score += amount
+	if score > high_score:
+		high_score = score
+```
+
+2. **プロジェクト設定 → オートロード** タブを開く。
+3. パスに `res://scripts/game_data.gd` を指定。
+4. ノード名に `GameData` と入れて「追加」。
+
+これで、**どのシーンのどのスクリプトからでも** `GameData` と書けます。
+
+```gdscript
+GameData.add_score(10)
+print(GameData.high_score)
+```
+
+</Statement>
+
+<Statement kind="remark" title="オートロードは便利すぎるので、決めごとを作る">
+何でもオートロードに入れると、どこから何が変えられるか分からなくなります。
+**入れてよいのは「本当にゲーム全体のもの」だけ**にしましょう。
+
+典型的には `GameData`（スコア・進行状況）、`AudioManager`（BGM再生）、
+`SceneChanger`（画面遷移の演出）くらい。3〜4個を超えたら設計を疑う合図です。
+</Statement>
+
+## セーブ — データをファイルに残す
+
+### 保存先は `user://`
+
+```text
+res://    … プロジェクトの中。読み取り専用（書き出し後は書き込めない）
+user://   … プレイヤーのPC上の保存先。ここに書く
+```
+
+`res://` に書き込もうとするのは典型的な失敗です。エディタ上では動きますが、
+書き出したゲームでは失敗します。**セーブは必ず `user://`**。
+
+実際の場所は OS ごとに違います（Windows なら `%APPDATA%\Godot\app_userdata\プロジェクト名`）。
+エディタの **プロジェクト → ユーザーデータフォルダーを開く** で確認できます。
+
+### JSON で保存する
+
+```gdscript
+# game_data.gd （オートロード）
+extends Node
+
+const SAVE_PATH := "user://save.json"
+
+var high_score := 0
+
+func save_data() -> void:
+	var data := {
+		"high_score": high_score,
+	}
+	var file := FileAccess.open(SAVE_PATH, FileAccess.WRITE)
+	if file == null:
+		push_error("セーブに失敗しました")
+		return
+	file.store_string(JSON.stringify(data))
+	file.close()
+
+func load_data() -> void:
+	if not FileAccess.file_exists(SAVE_PATH):
+		return                      # 初回起動。何もしないでよい
+	var file := FileAccess.open(SAVE_PATH, FileAccess.READ)
+	var text := file.get_as_text()
+	file.close()
+
+	var parsed = JSON.parse_string(text)
+	if typeof(parsed) != TYPE_DICTIONARY:
+		return                      # 壊れていたら初期値のまま進む
+	high_score = int(parsed.get("high_score", 0))
+
+func _ready() -> void:
+	load_data()
+```
+
+ポイントを3つ。
+
+- `JSON.stringify` で辞書を文字列に、`JSON.parse_string` で文字列を辞書に戻します。
+- **読み込みは必ず失敗を想定します。** ファイルが無い（初回）、
+  中身が壊れている（バージョン違い）。落ちずに初期値で進めるようにしておくこと。
+- `parsed.get("high_score", 0)` は「あればその値、無ければ `0`」という取り方です。
+
+<Statement kind="remark" title="設定値だけなら ConfigFile も楽">
+音量やキー設定のような単純な設定なら、`ConfigFile` クラスを使うと
+`ini` 形式で読み書きできて手軽です。
+セーブデータのように構造があるものは JSON、設定は ConfigFile、と使い分けると迷いません。
+</Statement>
+
+<Statement kind="remark" title="Web版のセーブはブラウザの中に保存される">
+ブラウザで動かす場合、`user://` はブラウザのローカルストレージ（IndexedDB）に保存されます。
+ちゃんと動きますが、**ブラウザのデータを消すと一緒に消えます**。
+また、シークレットウィンドウでは残らないことがあります。
+Web公開するゲームは「消えても致命的でない」データだけを保存する設計にしましょう。
+</Statement>
+
+## 乱数
+
+```gdscript
+randi_range(1, 6)              # 1〜6 の整数
+randf_range(0.5, 2.0)          # 0.5〜2.0 の小数
+[1, 2, 3].pick_random()        # 配列からランダムに1つ
+
+var arr := [1, 2, 3, 4, 5]
+arr.shuffle()                   # 並びをシャッフル
+```
+
+Godot 4 では起動ごとに自動でシード（種）が変わるので、
+`randomize()` を呼ぶ必要はありません（Godot 3 では必要でした）。
+
+逆に「毎回同じ結果にしたい」（デバッグやリプレイ）なら `seed(12345)` を呼びます。
+
+## この章のまとめ
+
+- **シグナルは疎結合の要**。子は「起きたよ」と叫ぶだけ、対応は親が決める。
+  `signal 名前` → `名前.emit()` → `相手.名前.connect(関数)`。
+- **シグナルは下から上へ、関数呼び出しは上から下へ。**
+- `Timer` ノードは繰り返しに、`await get_tree().create_timer(x).timeout` は1回きりに。
+- UI は `Control` 系。**アンカーで画面に貼り付け**、並べるのは**コンテナ**に任せる。
+- HUD は `CanvasLayer` の中。`%` のユニーク名でどこからでも触れるようにしておく。
+- シーン遷移は `change_scene_to_file`。持ち越したいデータは**オートロード**に置く。
+- ポーズは `get_tree().paused`。メニューは `Process Mode` を `Always` に。
+- セーブは **必ず `user://`**。JSON で書き、**読み込みは失敗しても落ちない**ように書く。
+
+道具はこれで全部そろいました。
+次章から、いよいよ**実際にゲームを作ります**。第7章と第8章で1本、完成させて公開します。

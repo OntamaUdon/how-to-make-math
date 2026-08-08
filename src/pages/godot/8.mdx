@@ -1,0 +1,572 @@
+---
+layout: ../../layouts/BaseLayout.astro
+title: 第8章 ゲーム① 仕上げてWebに公開する（後編）
+description: スコア表示・タイトル画面・ゲームオーバー・ハイスコア保存・難易度上昇を足して作品にし、Web向けに書き出してitch.ioで世界に公開するまで。
+---
+
+import Term from "../../components/assets/Term.astro";
+import Statement from "../../components/assets/Statement.astro";
+
+# 第8章 ゲーム① 仕上げてWebに公開する（後編）
+
+## 「遊べる」から「作品」へ
+
+前章で、星を取って岩をよけるゲームは動くようになりました。
+でも今のままでは、スコアは出力タブにしか出ないし、始まりも終わりもありません。
+
+この章でやることは4つです。
+
+1. **画面にスコアを出す**（HUD）
+2. **タイトル画面とゲームオーバー画面を作る**（シーン遷移）
+3. **ハイスコアを保存する**（オートロード＋セーブ）
+4. **書き出して公開する**（ここが本命）
+
+最後まで行けば、URLを友達に送って遊んでもらえます。
+
+## 1. スコアを画面に出す
+
+`main.tscn` を開いて、HUD を組みます。
+
+1. `Main` を選んで `Ctrl+A` → **`CanvasLayer`** を追加。名前を **`HUD`** に。
+2. `HUD` の子に **`MarginContainer`** を追加。
+3. `MarginContainer` を選び、ビューポート上部の **「レイアウト」→「全画面」** を選ぶ。
+4. インスペクタの `Theme Overrides → Constants` を開き、
+   `Margin Left` と `Margin Top` を `20` に。
+5. `MarginContainer` の子に **`Label`** を追加。名前を **`ScoreLabel`** に。
+6. `ScoreLabel` のインスペクタで
+   - `Text` に `SCORE 0`
+   - `Theme Overrides → Font Sizes → Font Size` に `32`
+     （チェックボックスをオンにしてから数値を入れます）
+7. `ScoreLabel` を右クリック → **「シーンのユニークな名前としてアクセス」** をオン。
+   名前の横に `%` が付きます。
+
+```text
+Main (Node2D)
+├── Player
+├── SpawnTimer
+└── HUD (CanvasLayer)
+	└── MarginContainer      (レイアウト: 全画面 / Margin 20)
+		└── ScoreLabel (Label)   (%付き / Font Size 32)
+```
+
+<Statement kind="remark" title="なぜ表示を英語にしたか">
+Godot に最初から入っているフォントは**日本語の字を持っていません**（第5章）。
+`SCORE` と書けばそのまま出ますが、`スコア` と書くと何も表示されません。
+
+日本語で表示したい場合は、第5章の手順で Noto Sans JP などを取り込み、
+**プロジェクト設定 → GUI → Theme → Custom Font** に指定してください。
+そのあとなら日本語がそのまま出ます。
+</Statement>
+
+`main.gd` を書き換えます。
+
+```gdscript
+func _on_player_scored() -> void:
+	score += 10
+	%ScoreLabel.text = "SCORE %d" % score
+```
+
+`%d` のところに `score` の数が入ります（第6章の書式指定）。
+`F5` で実行すると、左上のスコアが増えていきます。
+
+## 2. ゲームオーバー画面
+
+同じ `main.tscn` の中に、普段は隠しておくパネルを作ります。
+
+1. `HUD` の子に **`Control`** を追加。名前を **`GameOverPanel`** に。
+2. `GameOverPanel` を選んで、レイアウト → **「全画面」**。
+3. インスペクタの `Process → Process Mode` を **`Always`** にする。
+   （ポーズ中でもボタンを押せるようにするため。第6章）
+4. `GameOverPanel` の子に **`ColorRect`** を追加 → レイアウト「全画面」。
+   `Color` を黒にして、`A`（アルファ＝不透明度）を `140` くらいに。半透明の暗幕です。
+5. `GameOverPanel` の子に **`CenterContainer`** → レイアウト「全画面」。
+6. `CenterContainer` の子に **`VBoxContainer`**。
+7. `VBoxContainer` の子に、次の3つを追加。
+
+| ノード | 名前 | 設定 |
+| --- | --- | --- |
+| `Label` | `TitleLabel` | `Text` に `GAME OVER`、Font Size `48` |
+| `Label` | `ResultLabel` | `Text` に `SCORE 0`、Font Size `28`、`%` を付ける |
+| `Button` | `RetryButton` | `Text` に `RETRY`、Font Size `28` |
+
+8. `VBoxContainer` の `Theme Overrides → Constants → Separation` を `24` に。
+9. **`GameOverPanel` を選んで、インスペクタの `Visible` のチェックを外す**（最初は隠す）。
+10. `GameOverPanel` にも `%`（ユニーク名）を付けておきます。
+11. `RetryButton` にも `%` を付けます。
+
+`main.gd` に追記します。
+
+```gdscript
+func _ready() -> void:
+	$Player.scored.connect(_on_player_scored)
+	$Player.hit.connect(_on_player_hit)
+	$SpawnTimer.timeout.connect(_on_spawn_timer_timeout)
+	%RetryButton.pressed.connect(_on_retry_pressed)
+
+func _on_player_hit() -> void:
+	%ResultLabel.text = "SCORE %d" % score
+	%GameOverPanel.show()
+	get_tree().paused = true
+
+func _on_retry_pressed() -> void:
+	get_tree().paused = false          # ★先にポーズを解除する
+	get_tree().reload_current_scene()
+```
+
+<Statement kind="remark" title="ポーズ解除を忘れると詰む">
+`reload_current_scene()` だけ呼んでポーズを解除し忘れると、
+**新しいシーンが最初から止まった状態**で始まります。
+「リトライを押したら何も動かない」の原因はほぼこれです。
+</Statement>
+
+`F5` で確認。岩に当たると暗くなって `GAME OVER` が出て、`RETRY` で最初から。
+**もうゲームの体裁になっています。**
+
+## 3. タイトル画面
+
+別のシーンとして作ります。
+
+1. **シーン → 新規シーン** → 「ユーザーインターフェース」を選ぶ（`Control` ができる）。
+   名前を **`Title`** に。
+2. 子に `ColorRect` → レイアウト「全画面」→ 背景色を好きな色に。
+3. 子に `CenterContainer` → レイアウト「全画面」。
+4. `CenterContainer` の子に `VBoxContainer`、その子に：
+
+| ノード | 名前 | 設定 |
+| --- | --- | --- |
+| `Label` | `GameTitle` | `Text` に `STAR DIVE`、Font Size `56` |
+| `Label` | `HighScoreLabel` | `Text` に `HIGH 0`、Font Size `24`、`%` を付ける |
+| `Button` | `StartButton` | `Text` に `START`、Font Size `32`、`%` を付ける |
+| `Label` | `HintLabel` | `Text` に `LEFT / RIGHT to move`、Font Size `18` |
+
+5. `res://scenes/title.tscn` として保存。
+6. `Title` にスクリプトをアタッチ（`res://scripts/title.gd`）。
+
+```gdscript
+extends Control
+
+func _ready() -> void:
+	%StartButton.pressed.connect(_on_start_pressed)
+	%StartButton.grab_focus()        # キーボードでも Enter で押せるように
+
+func _on_start_pressed() -> void:
+	get_tree().change_scene_to_file("res://scenes/main.tscn")
+```
+
+7. **プロジェクト設定 → アプリケーション → 実行 → Main Scene** を
+   `res://scenes/title.tscn` に変更。
+
+`F5` で、タイトル → `START` → ゲーム、という流れになりました。
+
+<Statement kind="remark" title="操作説明は必ず入れる">
+`LEFT / RIGHT to move` の1行を侮らないでください。
+公開したゲームで最も多い離脱理由は「**操作が分からなくて何もできなかった**」です。
+タイトル画面に1行書くだけで、遊んでもらえる率が変わります。
+</Statement>
+
+## 4. ハイスコアを保存する
+
+シーンをまたいでデータを持ち、ファイルに残します（第6章の総復習です）。
+
+### オートロードを作る
+
+`res://scripts/game_data.gd` を新規作成。
+
+```gdscript
+extends Node
+
+const SAVE_PATH := "user://save.json"
+
+var high_score := 0
+
+func _ready() -> void:
+	load_data()
+
+## スコアを渡して、記録を更新したかどうかを返す
+func submit_score(value: int) -> bool:
+	if value <= high_score:
+		return false
+	high_score = value
+	save_data()
+	return true
+
+func save_data() -> void:
+	var file := FileAccess.open(SAVE_PATH, FileAccess.WRITE)
+	if file == null:
+		push_error("セーブに失敗しました")
+		return
+	file.store_string(JSON.stringify({"high_score": high_score}))
+	file.close()
+
+func load_data() -> void:
+	if not FileAccess.file_exists(SAVE_PATH):
+		return                          # 初回起動。初期値のままでよい
+	var file := FileAccess.open(SAVE_PATH, FileAccess.READ)
+	var text := file.get_as_text()
+	file.close()
+
+	var parsed = JSON.parse_string(text)
+	if typeof(parsed) != TYPE_DICTIONARY:
+		return                          # 壊れていたら初期値で進む
+	high_score = int(parsed.get("high_score", 0))
+```
+
+**プロジェクト設定 → オートロード** タブで、
+パスに `res://scripts/game_data.gd`、ノード名に `GameData` を入れて「追加」。
+
+### 使う
+
+`main.gd` のゲームオーバー処理を書き換えます。
+
+```gdscript
+func _on_player_hit() -> void:
+	var is_new_record := GameData.submit_score(score)
+	if is_new_record:
+		%ResultLabel.text = "NEW RECORD  %d" % score
+	else:
+		%ResultLabel.text = "SCORE %d   (HIGH %d)" % [score, GameData.high_score]
+	%GameOverPanel.show()
+	get_tree().paused = true
+```
+
+`"%d と %d" % [a, b]` のように、**複数の値は配列で渡します**。
+
+`title.gd` にも1行足します。
+
+```gdscript
+func _ready() -> void:
+	%StartButton.pressed.connect(_on_start_pressed)
+	%StartButton.grab_focus()
+	%HighScoreLabel.text = "HIGH %d" % GameData.high_score
+```
+
+`F5` で確認。何回か遊んで、**エディタを閉じて開き直しても**ハイスコアが残っていれば成功です。
+
+## 5. だんだん難しくする
+
+一定のペースのままだと、上手い人には永遠に終わりません。時間で難しくします。
+
+`main.gd` に追加します。
+
+```gdscript
+@export var min_wait_time: float = 0.28
+@export var difficulty_rate: float = 0.985   # 1回ごとに間隔を何倍にするか
+
+func _on_spawn_timer_timeout() -> void:
+	# ...（生成の処理はそのまま）...
+
+	# 出現間隔を少しずつ詰める（下限あり）
+	$SpawnTimer.wait_time = max($SpawnTimer.wait_time * difficulty_rate, min_wait_time)
+
+	# 岩の割合も少しずつ増やす
+	star_ratio = max(star_ratio - 0.002, 0.35)
+```
+
+`0.985` を掛け続けると、50回で約0.47倍、100回で約0.22倍になります。
+遊びながら `difficulty_rate` を `0.99`（緩やか）や `0.97`（急）に変えて、
+自分が「ちょうどいい」と感じる値を探してください。
+
+<Statement kind="remark" title="下限を必ず付ける">
+`min_wait_time` の下限がないと、いずれ間隔が 0 に近づいて
+**1フレームに何十個も生成され、フリーズします**。
+「増え続ける／減り続ける」値には必ず `clamp` か `min` / `max` で歯止めを付けましょう。
+</Statement>
+
+## 6. 手触りを良くする（Tween を2箇所）
+
+3行足すだけで、体感がはっきり変わります。
+
+`player.gd` に追記。
+
+```gdscript
+func _on_area_entered(area: Area2D) -> void:
+	if area.is_in_group("star"):
+		area.queue_free()
+		scored.emit()
+		_pop()
+	elif area.is_in_group("rock"):
+		hit.emit()
+
+func _pop() -> void:
+	var tween := create_tween()
+	tween.tween_property(self, "scale", Vector2(1.25, 1.25), 0.06)
+	tween.tween_property(self, "scale", Vector2(1.0, 1.0), 0.10)
+```
+
+`main.gd` に「当たったときの画面の赤フラッシュ」を足します。
+`HUD` の子に `ColorRect` を追加（名前 `FlashRect`、レイアウト全画面、色は赤、
+`A` は `0`、ユニーク名 `%` を付ける。`Mouse → Filter` を `Ignore` に）。
+
+```gdscript
+func _on_player_hit() -> void:
+	var tween := create_tween()
+	tween.tween_property(%FlashRect, "color:a", 0.45, 0.05)
+	tween.tween_property(%FlashRect, "color:a", 0.0, 0.35)
+	# ...以降はさっきのゲームオーバー処理...
+```
+
+<Statement kind="remark" title="演出を足す順番">
+やることが無限にあるように見えたら、**効果の大きい順**に手を付けてください。
+
+1. 取得・被弾の**瞬間の反応**（今やった Tween）
+2. **効果音**（次の節）
+3. パーティクル・背景・BGM
+
+1と2だけで、体感の8割は決まります。
+</Statement>
+
+## 7. 音を足す（任意）
+
+素材が必要なので任意です。やる場合の手順だけ置いておきます。
+
+1. 効果音を入手する（**freesound**、**Kenney の Audio パック** など。CC0 を選ぶと安全）。
+2. `res://audio/` にドラッグして取り込む。
+3. `main.tscn` の `Main` の子に `AudioStreamPlayer` を2つ追加。
+   名前を `CoinSound` と `HitSound` にし、それぞれ `Stream` に音を入れる。
+4. コードから鳴らす。
+
+```gdscript
+func _on_player_scored() -> void:
+	score += 10
+	%ScoreLabel.text = "SCORE %d" % score
+	$CoinSound.play()
+```
+
+音量が大きすぎたら、インスペクタの `Volume Db` を `-8` などマイナスにします（第5章）。
+
+## 8. 絵を差し替える（任意）
+
+ここまで `icon.svg` のままでした。差し替えは簡単です。
+
+1. Kenney などから CC0 の 2D 素材を入手し、`res://art/` に入れる。
+2. `player.tscn` を開き、`Sprite2D` の `Texture` に新しい画像をドラッグ。
+3. 大きさが変わるので `Scale` と `CollisionShape2D` の `Radius` を調整。
+4. `star.tscn` `rock.tscn` も同様に。`Modulate` は白（`FFFFFF`）に戻す。
+
+**中身が完成しているので、絵の差し替えは10分の作業**です。
+これが「四角と丸で作る」ことの利点でした。
+
+---
+
+# 公開する
+
+ここからが本番です。**作ったものを、世界の誰でも遊べる場所に置きます。**
+
+## 書き出しの前にやること
+
+### アプリケーション名とアイコン
+
+**プロジェクト設定 → 一般 → アプリケーション → 設定** で、
+
+- `Name` … `Star Dive`（ウィンドウのタイトルになります）
+- `Description` … 一言説明
+- `Icon` … `res://icon.svg`（自分の絵に差し替えてもよい）
+
+### 動作確認
+
+- タイトル → ゲーム → ゲームオーバー → リトライ が全部通るか
+- 出力タブに**赤いエラーが1つも出ていない**か
+- ウィンドウサイズを変えても画面が崩れないか（ストレッチ設定の確認）
+
+## エクスポートテンプレートをインストールする
+
+<Statement kind="definition" title="エクスポートテンプレートとは">
+書き出し先ごとに必要な「実行部分の本体」です。
+Godot エディタ本体には含まれていないので、**最初に一度だけダウンロード**します。
+数百MBあるので、時間に余裕のあるときに。
+</Statement>
+
+メニューの **エディター → エクスポートテンプレートの管理** →
+**「ダウンロードしてインストール」**。
+エディタのバージョンとテンプレートのバージョンは一致している必要があります。
+（Godot を更新したら、テンプレートも入れ直します。）
+
+## Web 向けに書き出す
+
+1. **プロジェクト → エクスポート** を開く。
+2. 「追加」→ **`Web`** を選ぶ。
+3. 右側の設定で、
+   - **`Thread Support` のチェックを外す**（重要。理由は下で説明）
+   - `Variant → Extensions Support` はオフのままでよい
+4. 下の **`エクスポートパス`** に `build/web/index.html` と入力。
+   （フォルダは「フォルダを作成」で先に作っておきます）
+5. **「プロジェクトのエクスポート」** ボタンを押す。
+   「デバッグでエクスポート」の**チェックは外して**ください。
+
+<Statement kind="remark" title="なぜ Thread Support を切るのか">
+Godot の Web 版はマルチスレッド機能を使うと、
+ブラウザ側で **SharedArrayBuffer** という機能が必要になります。
+これを有効にするには、配信するサーバが特別なヘッダ
+（cross-origin isolation）を返す必要があり、置き場所を選びます。
+
+`Thread Support` を外すと単一スレッド動作になり、
+**普通のサーバに置くだけで動きます**。この規模のゲームなら性能上の問題はありません。
+（この設定は Godot 4.3 以降で使えます。）
+</Statement>
+
+書き出すと、`build/web/` にこんなファイルができます。
+
+```text
+build/web/
+├── index.html               ← 入口
+├── index.js
+├── index.wasm               ← エンジン本体（大きい）
+├── index.pck                ← あなたのゲームのデータ
+├── index.audio.worklet.js
+├── index.icon.png
+└── index.apple-touch-icon.png
+```
+
+**この一式で1つのゲーム**です。1つでも欠けると動きません。
+
+## ローカルで動作確認する
+
+<Statement kind="remark" title="index.html をダブルクリックしても動きません">
+ブラウザのセキュリティ制限（`file://` では読み込めない）のため、
+**必ずWebサーバ経由で開く必要があります。** 「書き出したのに真っ白」の
+最大の原因がこれです。
+</Statement>
+
+**方法A：エディタから直接（いちばん楽）**
+
+エクスポート設定の一覧で `Web` プリセットの **「実行可能」** にチェックを入れておくと、
+エディタ右上の実行ボタンの近くに**リモートデバッグのアイコン**が出ます。
+そこから **「ブラウザーで実行」** を選ぶと、Godot が一時サーバを立てて開いてくれます。
+
+**方法B：自分でサーバを立てる**
+
+Python が入っていれば、`build/web` フォルダで次を実行し、
+ブラウザで `http://localhost:8000` を開きます。
+
+```bash
+python -m http.server 8000
+```
+
+### 確認するポイント
+
+- ちゃんと起動して遊べるか
+- キーボード操作が効くか（**クリックして画面にフォーカスを当ててから**試す）
+- 音が鳴るか（ブラウザは「ユーザーが操作するまで音を出さない」規則があるので、
+  タイトルの `START` を押したあとに鳴るかを見る）
+- ハイスコアが保存されるか（一度リロードして確認）
+
+## itch.io で公開する
+
+<Statement kind="definition" title="itch.io とは">
+個人制作ゲームの配布サイト。**無料で、審査なしで、その日のうちに公開**できます。
+ブラウザゲームをそのまま埋め込んで遊ばせられるので、
+「URLを送るだけで遊んでもらえる」状態を作れます。
+</Statement>
+
+### 手順
+
+**1. zip にまとめる**
+
+`build/web` フォルダの**中身**（`index.html` など全ファイル）を選択して zip にします。
+
+> **重要**：`web` フォルダごと zip にしないでください。
+> zip を開いたとき、**いきなり `index.html` が見える**状態が正解です。
+> フォルダが1段挟まっていると itch.io が入口を見つけられません。
+
+**2. アカウントを作る**
+
+itch.io で「Register」からアカウントを作ります（無料）。
+
+**3. 新規プロジェクトを作る**
+
+右上のメニューから **Upload new project**。次のように設定します。
+
+| 項目 | 設定 |
+| --- | --- |
+| Title | `Star Dive` |
+| Short description | 1行の説明 |
+| Classification | `Games` |
+| Kind of project | **`HTML`** ← これが重要 |
+| Pricing | `No payments`（無料で公開） |
+| Uploads | 作った zip をアップロード |
+| （アップ後）チェック | **`This file will be played in the browser`** をオン |
+
+**4. 埋め込みサイズを決める**
+
+`Embed options` で、
+
+- `Viewport dimensions` … `480 × 720`（ゲームの解像度に合わせる）
+- `Fullscreen button` … オン（推奨）
+- `Mobile friendly` … スマホでも遊ばせたいならオン
+
+`Thread Support` を外して書き出した場合、
+**`SharedArrayBuffer support` のチェックは不要**です。
+（もし有効のまま書き出したなら、ここをオンにする必要があります。）
+
+**5. 説明文とスクリーンショット**
+
+`Description` に、
+
+- どんなゲームか（2〜3行）
+- **操作方法**（これは必須）
+- 使った素材のクレジット（CC BY の素材を使ったなら必ず）
+
+`Screenshots` に、ゲーム画面のスクリーンショットを1〜3枚。
+**サムネイル（Cover image）は必ず設定してください。** 無いと一覧で目立ちません。
+
+**6. 公開する**
+
+`Visibility & access` を **`Public`** にして、下部の **Save** を押す。
+**View page** を開けば、そこがあなたのゲームのページです。
+
+URL は `https://あなたのユーザー名.itch.io/star-dive` のような形になります。
+**その URL を誰かに送ってください。それで公開は完了です。**
+
+<Statement kind="remark" title="最初は Draft のままテストしてもよい">
+`Visibility` を `Draft` にしておくと、自分（とURLを知る人）だけが見られます。
+きちんと動くか確認してから `Public` にする、という進め方でも構いません。
+ただし**「あとで公開しよう」と思ったまま出さないのが最大の失敗**です。
+今日のうちに `Public` にしましょう。
+</Statement>
+
+## Windows / macOS / Linux 版も出す（おまけ）
+
+同じ「エクスポート」画面で「追加」→ `Windows Desktop` を選び、
+エクスポートパスを `build/windows/star_dive.exe` にして書き出すだけです。
+
+itch.io の同じページに、Web版と一緒に zip でアップロードできます
+（`This file will be played in the browser` は**オフ**にします）。
+
+<Statement kind="remark" title="Windows でウイルス判定されることがある">
+Godot で書き出した exe が、ウイルス対策ソフトに誤検知されることがあります。
+署名がないためで、個人開発では珍しくありません。
+配布ページに「誤検知されることがあります」と書いておくと親切です。
+Web版が動くなら、まずはそちらを主軸にするのが無難です。
+</Statement>
+
+## 公開後のチェックリスト
+
+<Statement kind="remark" title="出したあとに必ず確認すること">
+
+- [ ] **別のブラウザ**で開いて動くか（Chrome / Firefox / Safari）
+- [ ] **スマホ**で開いたとき、画面が入り切っているか
+- [ ] 操作方法がページに書いてあるか
+- [ ] 使った素材のライセンス表記をしたか
+- [ ] タイトル画面のゲーム名と、itch.io のタイトルが一致しているか
+- [ ] 友達に URL を送って、**何も説明せずに遊んでもらった**か
+
+最後の項目がいちばん価値があります。
+自分では分からない「どこでつまずくか」が、5分で全部見えます。
+</Statement>
+
+## この章のまとめ
+
+- HUD は `CanvasLayer` の中に。`%` のユニーク名でどこからでも触る。
+- ゲームオーバー画面は**同じシーンの中に隠しておいて出す**のが簡単。
+  ポーズ中に操作させるノードは `Process Mode = Always`。
+- タイトルは別シーン。`change_scene_to_file` で移動。**操作説明を必ず書く**。
+- ハイスコアは**オートロード＋`user://` の JSON**。
+- 難易度は時間で上げる。**増減する値には必ず下限・上限**を付ける。
+- Tween を2箇所足すだけで手触りが変わる。
+- 公開手順：**エクスポートテンプレート導入 → Web書き出し（Thread Support オフ）
+  → ローカルでサーバ経由の確認 → zip（中身だけ）→ itch.io に HTML として公開**。
+- `index.html` をダブルクリックしても動かない。**必ずサーバ経由**。
+
+**1本目、完成おめでとうございます。**
+次章からは2本目、横スクロールアクションです。
+タイルの地形、重力、ジャンプ、敵、ステージ遷移——アクションゲームの基本一式を作ります。

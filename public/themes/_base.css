@@ -171,6 +171,9 @@ a:hover { color: var(--ai-soft, var(--ai)); text-decoration: underline; text-und
   border-radius: var(--radius, 8px);
   overflow-x: auto;
   line-height: 1.7;
+  /* コード例のインデントはタブ。既定の 8 だと深くなりすぎるので
+     エディタでよくある 4 に合わせる（GDScript の既定と同じ）。 */
+  tab-size: 4;
 }
 .prose pre code { background: none; padding: 0; }
 

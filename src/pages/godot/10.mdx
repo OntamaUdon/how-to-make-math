@@ -1,0 +1,524 @@
+---
+layout: ../../layouts/BaseLayout.astro
+title: 第10章 ゲーム② 敵とゴールとセーブ（後編）
+description: 往復する敵と踏みつけ判定、HPと無敵時間、ゴールとステージ遷移、クリア画面、進行状況のセーブ、そして2本目の公開まで。
+---
+
+import Term from "../../components/assets/Term.astro";
+import Statement from "../../components/assets/Statement.astro";
+
+# 第10章 ゲーム② 敵とゴールとセーブ（後編）
+
+前章で「走って跳んでコインを取る」ところまで来ました。
+この章で、**敵・ゴール・ステージ2・セーブ・公開**を一気に片付けます。
+
+## 敵を作る
+
+### `slime.tscn`
+
+1. 新規シーン → **`CharacterBody2D`** → 名前 **`Slime`**。
+2. 子に `Sprite2D`：`icon.svg`、`Scale` `(0.35, 0.35)`、`Modulate` を緑に。
+3. 子に `CollisionShape2D`：`RectangleShape2D`、`Size` を `(40, 40)`。
+4. 子に **`Area2D`** を追加して名前を **`HurtBox`** に。
+   その子に `CollisionShape2D`：`RectangleShape2D`、`Size` を `(46, 46)`。
+5. `res://scenes/slime.tscn` として保存。
+
+```text
+Slime (CharacterBody2D)
+├── Sprite2D
+├── CollisionShape2D      (地形とぶつかるための判定 40x40)
+└── HurtBox (Area2D)      (プレイヤーを検知するための判定)
+	└── CollisionShape2D  (46x46)
+```
+
+<Statement kind="definition" title="なぜ当たり判定が2つ要るのか">
+役割が違うからです。
+
+- `CharacterBody2D` 自身の `CollisionShape2D` … **地面に立つ・壁で止まる**ための判定
+- `HurtBox`（`Area2D`）… **プレイヤーと触れたことを知る**ための判定
+
+物理的にぶつかる判定と、イベントを起こす判定は分けるのが定石です。
+分けておくと、「見た目より少し小さい攻撃判定」のような調整も自由にできます。
+</Statement>
+
+### 敵のスクリプト
+
+```gdscript
+extends CharacterBody2D
+
+@export var speed: float = 90.0
+@export var patrol_distance: float = 192.0   # 出発点から何px先まで歩くか
+@export var gravity: float = 1400.0
+
+var start_x := 0.0
+var direction := 1.0
+
+@onready var sprite: Sprite2D = $Sprite2D
+
+func _ready() -> void:
+	start_x = global_position.x
+	add_to_group("enemy")
+	$HurtBox.body_entered.connect(_on_hurt_box_body_entered)
+
+func _physics_process(delta: float) -> void:
+	velocity.y = min(velocity.y + gravity * delta, 900.0)
+	velocity.x = direction * speed
+
+	# 決めた範囲の端まで来たら折り返す
+	if direction > 0.0 and global_position.x > start_x + patrol_distance:
+		direction = -1.0
+	elif direction < 0.0 and global_position.x < start_x:
+		direction = 1.0
+
+	move_and_slide()
+
+	# 壁にぶつかったときも折り返す
+	if is_on_wall():
+		direction *= -1.0
+
+	sprite.flip_h = direction < 0.0
+
+func _on_hurt_box_body_entered(body: Node2D) -> void:
+	if not body.is_in_group("player"):
+		return
+
+	# 「落下中」かつ「敵より上にいる」なら踏みつけ
+	if body.velocity.y > 0.0 and body.global_position.y < global_position.y - 16.0:
+		body.bounce()
+		die()
+	else:
+		body.take_damage()
+
+func die() -> void:
+	set_physics_process(false)
+	$HurtBox.set_deferred("monitoring", false)
+	var tween := create_tween()
+	tween.tween_property(self, "scale", Vector2(1.2, 0.2), 0.12)   # ぺしゃんこに
+	tween.tween_property(self, "modulate:a", 0.0, 0.15)
+	await tween.finished
+	queue_free()
+```
+
+<Statement kind="remark" title="踏みつけ判定の考え方">
+「上から踏んだ」を厳密に判定するのは意外と難しく、いろいろな方法があります。
+ここでは**いちばん単純で、実用上よく効く**条件を使いました。
+
+`body.velocity.y > 0.0`（落下中）かつ
+`body.global_position.y < global_position.y - 16.0`（敵の中心より16px以上うえ）。
+
+`- 16.0` の余裕がないと、真横から当たったときに踏み判定になったり、
+逆に真上から踏んでもダメージになったりします。
+**遊んでみて、判定がおかしいと感じたらこの数字を調整してください。**
+</Statement>
+
+## プレイヤーに HP と無敵時間を付ける
+
+敵が触るたびに即死では厳しすぎます。HP と、被弾後の無敵時間を足します。
+
+`player.gd` に追記します。
+
+```gdscript
+@export var max_hp: int = 3
+@export var invincible_time: float = 1.2
+@export var knockback_y: float = -300.0
+
+var hp := 3
+var invincible_timer := 0.0
+
+func _ready() -> void:
+	hp = max_hp
+
+func _physics_process(delta: float) -> void:
+	invincible_timer -= delta
+	# ...（以下、前章の移動処理はそのまま）...
+
+## 敵に触れたときに敵から呼ばれる
+func take_damage(amount: int = 1) -> void:
+	if invincible_timer > 0.0:
+		return                       # 無敵中は何も起きない
+
+	hp -= amount
+	invincible_timer = invincible_time
+	velocity.y = knockback_y          # 少し跳ね上げて仕切り直し
+	damaged.emit(hp)
+	_flash()
+
+	if hp <= 0:
+		died.emit()
+
+## 無敵中に点滅させる
+func _flash() -> void:
+	var tween := create_tween().set_loops(6)
+	tween.tween_property(sprite, "modulate:a", 0.25, 0.1)
+	tween.tween_property(sprite, "modulate:a", 1.0, 0.1)
+```
+
+`player.gd` の先頭にあるシグナル宣言も、引数付きに直しておきます。
+
+```gdscript
+signal coin_collected
+signal damaged(new_hp: int)
+signal died
+```
+
+<Statement kind="definition" title="無敵時間（インビンシブルフレーム）">
+被弾直後の一定時間、ダメージを受けなくする仕組み。
+これがないと、敵の中に埋まった瞬間に毎フレーム判定が走り、
+**1秒で HP が全部消えます**。ダメージのあるゲームには必ず入れる仕掛けです。
+
+点滅させるのは「いま無敵ですよ」をプレイヤーに伝えるためです。
+仕組みと表示はセットで用意します。
+</Statement>
+
+## ゴールを作る
+
+### `goal.tscn`
+
+1. 新規シーン → `Area2D` → 名前 **`Goal`**。
+2. 子に `ColorRect`：`Size` `(24, 128)`、`Color` を白や黄色に。
+3. 子に `CollisionShape2D`：`RectangleShape2D`、`Size` `(40, 128)`、`Position` `(12, 64)`。
+4. `res://scenes/goal.tscn` として保存。スクリプトをアタッチ。
+
+```gdscript
+extends Area2D
+
+signal reached
+
+var is_reached := false
+
+func _ready() -> void:
+	body_entered.connect(_on_body_entered)
+
+func _on_body_entered(body: Node2D) -> void:
+	if is_reached or not body.is_in_group("player"):
+		return
+	is_reached = true          # 二重発火を防ぐ
+	reached.emit()
+```
+
+<Statement kind="remark" title="「1回きり」は自分で保証する">
+`body_entered` は、プレイヤーが出入りするたびに何度でも飛びます。
+ゴール・イベント・会話など**1回きりであってほしいもの**は、
+`is_reached` のようなフラグで自分で止めます。
+これを忘れると「クリア画面が2回出る」「アイテムを2個もらえる」といったバグになります。
+</Statement>
+
+## セーブデータ（オートロード）
+
+`res://scripts/game_data.gd` を作り、**プロジェクト設定 → オートロード** に
+`GameData` という名前で登録します（手順は第8章と同じ）。
+
+```gdscript
+extends Node
+
+const SAVE_PATH := "user://jumprun_save.json"
+
+var total_coins := 0
+var cleared_stages: Array = []
+
+func _ready() -> void:
+	load_data()
+
+func add_coins(amount: int) -> void:
+	total_coins += amount
+	save_data()
+
+func mark_cleared(stage_id: String) -> void:
+	if not cleared_stages.has(stage_id):
+		cleared_stages.append(stage_id)
+	save_data()
+
+func is_cleared(stage_id: String) -> bool:
+	return cleared_stages.has(stage_id)
+
+func save_data() -> void:
+	var file := FileAccess.open(SAVE_PATH, FileAccess.WRITE)
+	if file == null:
+		push_error("セーブに失敗しました")
+		return
+	file.store_string(JSON.stringify({
+		"total_coins": total_coins,
+		"cleared_stages": cleared_stages,
+	}))
+	file.close()
+
+func load_data() -> void:
+	if not FileAccess.file_exists(SAVE_PATH):
+		return
+	var file := FileAccess.open(SAVE_PATH, FileAccess.READ)
+	var text := file.get_as_text()
+	file.close()
+
+	var parsed = JSON.parse_string(text)
+	if typeof(parsed) != TYPE_DICTIONARY:
+		return
+	total_coins = int(parsed.get("total_coins", 0))
+	cleared_stages = parsed.get("cleared_stages", [])
+```
+
+## ステージのスクリプトを仕上げる
+
+`stage.gd` を完成形にします。**ステージ1でも2でも同じスクリプトを使います。**
+
+```gdscript
+extends Node2D
+
+@export var stage_id: String = "stage_1"
+@export var next_scene_path: String = "res://scenes/stage_2.tscn"
+@export var camera_limits: Rect2 = Rect2(0, -200, 3200, 900)
+
+var coins := 0
+
+@onready var player: CharacterBody2D = $Player
+@onready var hud: CanvasLayer = $HUD
+
+func _ready() -> void:
+	_setup_camera()
+
+	player.died.connect(_on_player_died)
+	player.damaged.connect(_on_player_damaged)
+
+	for coin in $Coins.get_children():
+		coin.collected.connect(_on_coin_collected)
+
+	$Goal.reached.connect(_on_goal_reached)
+
+	hud.set_coins(0)
+	hud.set_hp(player.max_hp)
+
+func _setup_camera() -> void:
+	var cam: Camera2D = player.get_node("Camera2D")
+	cam.limit_left = int(camera_limits.position.x)
+	cam.limit_top = int(camera_limits.position.y)
+	cam.limit_right = int(camera_limits.position.x + camera_limits.size.x)
+	cam.limit_bottom = int(camera_limits.position.y + camera_limits.size.y)
+
+func _on_coin_collected() -> void:
+	coins += 1
+	hud.set_coins(coins)
+
+func _on_player_damaged(new_hp: int) -> void:
+	hud.set_hp(new_hp)
+
+func _on_player_died() -> void:
+	await get_tree().create_timer(0.6).timeout    # 少し間を置いてから
+	get_tree().reload_current_scene()
+
+func _on_goal_reached() -> void:
+	GameData.add_coins(coins)
+	GameData.mark_cleared(stage_id)
+
+	if next_scene_path == "":
+		get_tree().change_scene_to_file("res://scenes/clear.tscn")
+	else:
+		get_tree().change_scene_to_file(next_scene_path)
+```
+
+`stage_id` と `next_scene_path` を **`@export`** にしたのがポイントです。
+ステージごとにインスペクタで違う値を入れれば、**スクリプトは1つで足ります**。
+
+## ステージ1を完成させる
+
+`stage_1.tscn` を開いて、次を追加します。
+
+1. `Stage1` の子に `Node2D` を追加、名前を **`Enemies`** に。
+2. `slime.tscn` を `Enemies` の中に2〜3体配置。足場の上に置き、
+   それぞれ `Patrol Distance` を足場の長さに合わせて調整（`128`〜`256` くらい）。
+3. `goal.tscn` をステージの右端に配置。
+4. `Stage1` を選び、インスペクタで
+   - `Stage Id` … `stage_1`
+   - `Next Scene Path` … `res://scenes/stage_2.tscn`
+   - `Camera Limits` … ステージの実際の広さに合わせる
+
+`F6` で実行。**敵を踏めて、当たるとHPが減って、ゴールに触れると…**
+（まだステージ2が無いのでエラーになります。次で作ります。）
+
+## ステージ2を作る
+
+ここは**まるごとコピーから始めるのが速い**です。
+
+1. ファイルシステムで `stage_1.tscn` を右クリック → **複製** → `stage_2.tscn`。
+2. `stage_2.tscn` を開き、ルートの名前を `Stage2` に変更。
+3. 地形・コイン・敵を並べ替えて、別のステージにする。
+   - 足場の間隔を広げる（ジャンプの精度が要る）
+   - 敵を増やす、`Speed` を上げる
+   - 縦に登る構成にしてみる
+4. インスペクタで
+   - `Stage Id` … `stage_2`
+   - `Next Scene Path` … **空欄にする**（これが最終ステージ）
+   - `Camera Limits` … 新しい広さに合わせる
+
+<Statement kind="remark" title="ステージ2は「1より少し難しい」でよい">
+2ステージ目でいきなり難易度を跳ね上げないこと。
+遊ぶ人はまだ操作に慣れていません。**1で覚えたことを少しだけ試す**構成が理想です。
+
+たとえば「1では地面の上に敵がいた → 2では細い足場の上に敵がいる」。
+新しい要素は1つずつ足す、が鉄則です。
+</Statement>
+
+## クリア画面
+
+1. 新規シーン → 「ユーザーインターフェース」（`Control`）→ 名前 **`Clear`**。
+2. `ColorRect`（全画面・暗い色）、`CenterContainer`（全画面）、`VBoxContainer` を重ねる。
+3. `VBoxContainer` の中に：
+
+| ノード | 名前 | Text / 設定 |
+| --- | --- | --- |
+| `Label` | `TitleLabel` | `ALL CLEAR!` / Font Size `56` |
+| `Label` | `CoinLabel` | `TOTAL COIN 0` / Font Size `28` / `%` 付き |
+| `Button` | `RetryButton` | `PLAY AGAIN` / Font Size `28` / `%` 付き |
+
+4. `res://scenes/clear.tscn` として保存。スクリプトをアタッチ。
+
+```gdscript
+extends Control
+
+func _ready() -> void:
+	%CoinLabel.text = "TOTAL COIN %d" % GameData.total_coins
+	%RetryButton.pressed.connect(_on_retry_pressed)
+	%RetryButton.grab_focus()
+
+func _on_retry_pressed() -> void:
+	get_tree().change_scene_to_file("res://scenes/stage_1.tscn")
+```
+
+## タイトル画面
+
+第8章と同じ作りなので手短に。`res://scenes/title.tscn`（`Control`）を作り、
+
+- `Label`：`JUMP RUN`（Font Size `56`）
+- `Label`：`%TotalCoinLabel`（`TOTAL COIN 0`）
+- `Button`：`%StartButton`（`START`）
+- `Label`：`A / D or ARROW to move,  SPACE to jump`（操作説明）
+
+```gdscript
+extends Control
+
+func _ready() -> void:
+	%TotalCoinLabel.text = "TOTAL COIN %d" % GameData.total_coins
+	%StartButton.pressed.connect(_on_start_pressed)
+	%StartButton.grab_focus()
+
+func _on_start_pressed() -> void:
+	get_tree().change_scene_to_file("res://scenes/stage_1.tscn")
+```
+
+**プロジェクト設定 → アプリケーション → 実行 → Main Scene** を
+`res://scenes/title.tscn` に設定します。
+
+`F5` で、**タイトル → ステージ1 → ステージ2 → クリア** の一周が通るはずです。
+通ったら、**2本目のゲームが完成**しています。
+
+## 仕上げ（時間があれば）
+
+効果の大きい順に並べます。上から2つだけでも十分に変わります。
+
+| やること | 効果 | 手間 |
+| --- | --- | --- |
+| ジャンプ・コイン・被弾の**効果音** | 大 | 小 |
+| 敵を踏んだときの**画面の軽い揺れ** | 中 | 小 |
+| `AnimatedSprite2D` で**歩きアニメ** | 大 | 中 |
+| 背景（`ParallaxBackground` で奥行き） | 中 | 中 |
+| コインの数に応じた**ランク表示** | 中 | 小 |
+
+画面揺れは、カメラの `offset` を Tween で振るだけです。
+
+```gdscript
+func shake_camera(strength: float = 6.0) -> void:
+	var cam: Camera2D = player.get_node("Camera2D")
+	var tween := create_tween()
+	tween.tween_property(cam, "offset", Vector2(strength, 0), 0.04)
+	tween.tween_property(cam, "offset", Vector2(-strength, 0), 0.04)
+	tween.tween_property(cam, "offset", Vector2.ZERO, 0.04)
+```
+
+---
+
+# 2本目を公開する
+
+手順は第8章とほぼ同じです。**違うところだけ**押さえます。
+
+## 書き出し前の確認
+
+- **プロジェクト設定 → アプリケーション → 設定 → Name** を `Jump Run` に。
+- 全ステージが通しでクリアできるか。**行き止まりや、絶対に跳べない箇所がないか。**
+- 落下死してもきちんとやり直せるか。
+- ゲームパッドや別のキー配置でも動くか（インプットマップに複数登録したはず）。
+
+<Statement kind="remark" title="他人にテストしてもらう前に自分でやること">
+**わざと変な操作をしてください。**
+
+- ゴールに何度も出入りする
+- 敵と地形の隙間に潜り込む
+- ジャンプ連打しながら壁に張り付く
+- クリア直前で落下死する
+
+バグは「想定外の操作」から出ます。自分で一通り壊しにいくと、
+公開後に見つかる恥ずかしいバグが激減します。
+</Statement>
+
+## Web 向けに書き出す
+
+第8章と同じです。要点だけ再掲します。
+
+1. **エディター → エクスポートテンプレートの管理**（未導入なら）。
+2. **プロジェクト → エクスポート** → 追加 → **`Web`**。
+3. **`Thread Support` のチェックを外す。**
+4. エクスポートパスを `build/web/index.html` に。
+5. 「プロジェクトのエクスポート」。**「デバッグでエクスポート」はオフ。**
+
+横長のゲームなので、itch.io の `Embed options` の
+`Viewport dimensions` は **`1152 × 648`** に合わせます。
+画面が大きいので、**`Fullscreen button` は必ずオン**にしてください。
+
+## デスクトップ版も出す
+
+1. 「追加」→ **`Windows Desktop`**（macOS / Linux も同様）。
+2. エクスポートパスを `build/windows/jump_run.exe` に。
+3. 書き出したら、**exe と同じフォルダにできる `.pck` も一緒に** zip にします。
+   `.pck` はゲームのデータ本体で、これが無いと起動しません。
+
+<Statement kind="definition" title="pck を埋め込む設定もある">
+エクスポート設定の `Binary Format → Embed PCK` をオンにすると、
+exe 1つだけで動く形になります。配布は楽ですが、
+ファイルサイズが大きくなり、ウイルス対策ソフトの誤検知率も上がる傾向があります。
+
+**配布を zip でするなら、埋め込まないほうが無難**です。
+</Statement>
+
+## itch.io に出す・更新する
+
+新規公開の手順は第8章と同じです。ここでは**更新のしかた**を書いておきます。
+
+1. itch.io の **Dashboard** から該当プロジェクトの **Edit** を開く。
+2. `Uploads` の該当ファイルの右にある **「Replace file」** から新しい zip を選ぶ。
+   （古いファイルを消して新しくアップし直しても構いませんが、
+   Replace のほうがリンクが変わらず安全です。）
+3. `Devlog` に「v1.1：敵の判定を修正しました」などと書くと、
+   遊んだ人が戻ってきてくれます。
+
+<Statement kind="remark" title="バージョン番号を付ける">
+`プロジェクト設定 → アプリケーション → 設定 → Version` に `1.0.0` と入れておき、
+更新のたびに上げましょう。zip の名前も `jump_run_web_v1_0_0.zip` のようにすると、
+「どれが最新か分からない」事故が防げます。
+
+コマンドラインでの一括アップロードには itch.io 公式ツールの **butler** もあります。
+更新が頻繁になってきたら調べてみてください。
+</Statement>
+
+## この章のまとめ
+
+- 敵は**当たり判定を2つ**持つ：地形用（`CollisionShape2D`）と検知用（`Area2D` の HurtBox）。
+- 踏みつけは「**落下中**かつ**相手より上**」で判定。数字は遊びながら調整する。
+- ダメージには**無敵時間が必須**。点滅で状態を見せる。
+- 1回きりのイベントは**自分でフラグを持って**二重発火を防ぐ。
+- `stage_id` と `next_scene_path` を `@export` にすれば、
+  **ステージが何個増えてもスクリプトは1つ**で済む。
+- ステージ2は複製から作る。**新しい要素は1つずつ**足す。
+- 進行状況はオートロード＋`user://` に保存。
+- 公開前に**自分でわざと壊しにいく**。更新は itch.io の Replace file で。
+
+**2本目、完成おめでとうございます。**
+次章は3本目、ミニシューティングを**1章で一気に**作ります。
+ここまでの知識でほとんど書けるはずです。実際、説明はぐっと短くなります。
+それが「身についた」ということです。
