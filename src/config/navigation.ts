@@ -58,6 +58,7 @@ const sections: SectionDef[] = [
   // ── 番外（隠し部） ──
   // 目次には載せない。URL を知っている人だけが読める番外編。
   { dir: "/godot", title: "Godotの使い方", badge: "ゲーム制作", hidden: true },
+  { dir: "/github-claude", title: "GitHubとClaudeの使い方", badge: "開発", hidden: true },
 ];
 
 /** 隠し部のディレクトリ（"/godot" など）。検索の索引づくりが参照する。 */

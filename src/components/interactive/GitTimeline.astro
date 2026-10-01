@@ -1,0 +1,154 @@
+---
+/* GitTimeline.astro — コミット・ブランチ・マージを手で触って確かめる図。
+   「main」と「作業ブランチ」の2本のレーンに、コミット（丸）が積まれていく。
+   ・main にコミット／作業ブランチを作る／ブランチにコミット／main に取り込む（マージ）
+   ・ブランチ上のコミットは、マージするまで main には影響しない、を目で見せるのが目的。
+   状態はメモリ内のみ（storage 不使用）。 */
+---
+
+<figure class="gt" role="group" aria-label="ブランチとマージの体験図">
+  <div class="gt-buttons">
+    <button type="button" id="gt-main-commit">main にコミット</button>
+    <button type="button" id="gt-branch">作業ブランチを作る</button>
+    <button type="button" id="gt-branch-commit">ブランチにコミット</button>
+    <button type="button" id="gt-merge">main に取り込む（マージ）</button>
+    <button type="button" id="gt-reset" class="gt-ghost">最初から</button>
+  </div>
+  <svg id="gt-svg" class="gt-svg" viewBox="0 0 640 150" role="img" aria-label="コミットの並び"></svg>
+  <p id="gt-note" class="gt-note" aria-live="polite"></p>
+</figure>
+
+<script>
+  const svg = document.getElementById("gt-svg");
+  const note = document.getElementById("gt-note");
+  const bMain = document.getElementById("gt-main-commit") as HTMLButtonElement | null;
+  const bBranch = document.getElementById("gt-branch") as HTMLButtonElement | null;
+  const bBC = document.getElementById("gt-branch-commit") as HTMLButtonElement | null;
+  const bMerge = document.getElementById("gt-merge") as HTMLButtonElement | null;
+  const bReset = document.getElementById("gt-reset");
+
+  if (svg && note && bMain && bBranch && bBC && bMerge && bReset) {
+    const NS = "http://www.w3.org/2000/svg";
+    const STEP = 56;
+    const X0 = 50;
+    const Y_MAIN = 40;
+    const Y_BR = 105;
+
+    // main: 各コミットの x 位置の列。branch: 作業ブランチ上のコミット数と分岐位置
+    let mainCount = 3;
+    let branch: null | { from: number; count: number } = null; // from = 分岐元の main コミット番号（0始まり）
+    let merged = false;
+    let message = "main には3つのコミット（セーブポイント）があります。ボタンを押して動かしてみましょう。";
+
+    const el = (name: string, attrs: Record<string, string | number>, text?: string) => {
+      const e = document.createElementNS(NS, name);
+      for (const [k, v] of Object.entries(attrs)) e.setAttribute(k, String(v));
+      if (text) e.textContent = text;
+      return e;
+    };
+    const mx = (i: number) => X0 + i * STEP;
+
+    const draw = () => {
+      while (svg.firstChild) svg.removeChild(svg.firstChild);
+
+      // レーン名
+      svg.appendChild(el("text", { x: 4, y: 18, class: "gt-lane" }, "main"));
+      if (branch) svg.appendChild(el("text", { x: 4, y: 83, class: "gt-lane gt-lane-br" }, "作業ブランチ"));
+
+      // main の線とコミット
+      svg.appendChild(el("line", { x1: mx(0), y1: Y_MAIN, x2: mx(mainCount - 1), y2: Y_MAIN, class: "gt-line" }));
+      for (let i = 0; i < mainCount; i++) {
+        svg.appendChild(el("circle", { cx: mx(i), cy: Y_MAIN, r: 9, class: "gt-dot" }));
+      }
+
+      if (branch) {
+        const bx = mx(branch.from);
+        const last = branch.count > 0 ? bx + branch.count * STEP : bx;
+        // 分岐の線（main から斜めに降りる）
+        svg.appendChild(el("path", {
+          d: `M ${bx} ${Y_MAIN} C ${bx} ${Y_BR - 20}, ${bx + 20} ${Y_BR}, ${bx + STEP} ${Y_BR}`,
+          class: "gt-line gt-line-br",
+          fill: "none",
+        }));
+        if (branch.count > 1) {
+          svg.appendChild(el("line", { x1: bx + STEP, y1: Y_BR, x2: last, y2: Y_BR, class: "gt-line gt-line-br" }));
+        }
+        for (let j = 1; j <= branch.count; j++) {
+          svg.appendChild(el("circle", { cx: bx + j * STEP, cy: Y_BR, r: 9, class: "gt-dot gt-dot-br" }));
+        }
+        if (merged) {
+          // 取り込まれた印：main の最後のコミットへ戻る線
+          svg.appendChild(el("path", {
+            d: `M ${last} ${Y_BR} C ${last + 25} ${Y_BR}, ${mx(mainCount - 1) - 10} ${Y_MAIN + 40}, ${mx(mainCount - 1)} ${Y_MAIN}`,
+            class: "gt-line gt-line-br",
+            fill: "none",
+            "stroke-dasharray": "4 4",
+          }));
+        }
+      }
+
+      note.textContent = message;
+      bMain.disabled = mainCount >= 8;
+      bBranch.disabled = branch !== null;
+      bBC.disabled = !branch || merged || branch.count >= 4;
+      bMerge.disabled = !branch || merged || branch.count === 0;
+    };
+
+    bMain.addEventListener("click", () => {
+      mainCount += 1;
+      message = branch && !merged
+        ? "main だけが進みました。作業ブランチは分岐したときの状態のまま。別々に進められるのがブランチの強みです。"
+        : "main にコミットが1つ増えました。";
+      draw();
+    });
+    bBranch.addEventListener("click", () => {
+      branch = { from: mainCount - 1, count: 0 };
+      merged = false;
+      message = "いまの main の先端から、作業ブランチを切りました。ここで何をしても main は変わりません。";
+      draw();
+    });
+    bBC.addEventListener("click", () => {
+      if (!branch) return;
+      branch.count += 1;
+      message = "作業ブランチにコミットが増えました。main の丸の数は変わっていません。つまり本体は無事です。";
+      draw();
+    });
+    bMerge.addEventListener("click", () => {
+      if (!branch || branch.count === 0) return;
+      merged = true;
+      mainCount += 1;
+      message = "作業ブランチの変更が main に取り込まれました（点線）。main の先に「取り込み」のコミットが1つ増えます。GitHub ではこれを Pull Request の「Merge」ボタンで行います。";
+      draw();
+    });
+    bReset.addEventListener("click", () => {
+      mainCount = 3;
+      branch = null;
+      merged = false;
+      message = "最初の状態に戻しました。";
+      draw();
+    });
+
+    draw();
+  }
+</script>
+
+<style>
+  .gt { margin: 26px 0; padding: 16px 18px 14px; border: 1px solid var(--line); border-radius: 10px; background: var(--card); }
+  .gt-buttons { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 10px; }
+  .gt-buttons button {
+    appearance: none; border: 1px solid var(--line); background: transparent; color: var(--ink);
+    font-family: var(--sans); font-size: 13px; padding: 6px 12px; border-radius: 999px; cursor: pointer;
+  }
+  .gt-buttons button:hover:not(:disabled) { border-color: var(--ai); color: var(--ai); }
+  .gt-buttons button:focus-visible { outline: 2px solid var(--ai); outline-offset: 2px; }
+  .gt-buttons button:disabled { opacity: 0.4; cursor: not-allowed; }
+  .gt-ghost { color: var(--ink-faint) !important; }
+  .gt-svg { width: 100%; height: auto; display: block; }
+  .gt-svg :global(.gt-lane) { font-family: var(--sans); font-size: 12px; fill: var(--ink-faint); }
+  .gt-svg :global(.gt-lane-br) { fill: var(--shu); }
+  .gt-svg :global(.gt-line) { stroke: var(--ai); stroke-width: 3; }
+  .gt-svg :global(.gt-line-br) { stroke: var(--shu); }
+  .gt-svg :global(.gt-dot) { fill: var(--card); stroke: var(--ai); stroke-width: 3; }
+  .gt-svg :global(.gt-dot-br) { stroke: var(--shu); }
+  .gt-note { margin: 8px 0 0; font-size: 13px; line-height: 1.7; color: var(--ink-faint); font-family: var(--sans); min-height: 3.4em; }
+</style>
