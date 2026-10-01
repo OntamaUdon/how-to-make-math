@@ -71,6 +71,8 @@ export function isHiddenHref(href: string): boolean {
   return hiddenDirs.some((dir) => href === dir || href.startsWith(`${dir}/`));
 }
 
+import { stripBase } from "./base";
+
 interface PageFrontmatter {
   title?: string;
   navTitle?: string;
@@ -156,7 +158,7 @@ const normalize = (path: string): string =>
   path !== "/" && path.endsWith("/") ? path.slice(0, -1) : path;
 
 export function isCurrent(href: string, pathname: string): boolean {
-  return normalize(href) === normalize(pathname);
+  return normalize(href) === normalize(stripBase(pathname));
 }
 
 export function flattenPages(nav: NavSection[] = siteNav): NavLink[] {

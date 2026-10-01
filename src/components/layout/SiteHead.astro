@@ -3,6 +3,7 @@
    メタ情報・ファビコン・フォント・配色テーマ・KaTeX のCSSをまとめる。
    配色テーマは保存済みがあれば描画前に <link> を差し替える（ちらつき防止）。 */
 import { defaultTheme, themeStorageKey } from "../../config/themes";
+import { withBase } from "../../config/base";
 
 interface Props {
   /** <title> に入れる完成済みの文字列 */
@@ -16,8 +17,8 @@ const { title, description = "" } = Astro.props;
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <meta name="generator" content={Astro.generator} />
 {description && <meta name="description" content={description} />}
-<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-<link rel="icon" href="/favicon.ico" />
+<link rel="icon" type="image/svg+xml" href={withBase("/favicon.svg")} />
+<link rel="icon" href={withBase("/favicon.ico")} />
 <title>{title}</title>
 
 <!-- フォントは各テーマCSS（public/themes/theme-*.css）が @import で読み込む。
@@ -26,12 +27,12 @@ const { title, description = "" } = Astro.props;
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 
 <!-- 配色テーマ：既定を読み込み、保存済みがあれば描画前に差し替える -->
-<link id="site-theme-css" rel="stylesheet" href={`/themes/theme-${defaultTheme}.css`} />
-<script is:inline define:vars={{ defaultTheme, themeStorageKey }}>
+<link id="site-theme-css" rel="stylesheet" href={withBase(`/themes/theme-${defaultTheme}.css`)} />
+<script is:inline define:vars={{ defaultTheme, themeStorageKey, themeDir: withBase("/themes") }}>
   try {
     const saved = localStorage.getItem(themeStorageKey);
     if (saved && saved !== defaultTheme) {
-      document.getElementById("site-theme-css").href = `/themes/theme-${saved}.css`;
+      document.getElementById("site-theme-css").href = `${themeDir}/theme-${saved}.css`;
     }
   } catch (e) { /* localStorage が使えない環境では既定のまま */ }
 </script>

@@ -4,10 +4,12 @@
    見た目は _base.css の .term（差し色＋点線下線）を共有。
    使い方: <Term>論理式</Term> */
 import { termHref } from "../../config/terms";
+import { withBase } from "../../config/base";
 
 // スロットの中身（用語名のテキスト）を取り出して、詳細ページの有無を調べる
 const text = (await Astro.slots.render("default")).trim();
-const href = termHref(text);
+const termUrl = termHref(text);
+const href = termUrl && withBase(termUrl);
 ---
 {href
   ? <a class="term term-link" href={href} set:html={text} />

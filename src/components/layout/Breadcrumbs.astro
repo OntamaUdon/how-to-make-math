@@ -2,6 +2,7 @@
 /* Breadcrumbs.astro — 現在地（ホーム → 章 → ページ）。
    findLocation() が返す section / page をそのまま受け取る。 */
 import type { NavSection, NavLink } from "../../config/navigation";
+import { withBase } from "../../config/base";
 
 interface Props {
   section?: NavSection;
@@ -10,12 +11,12 @@ interface Props {
 const { section, page } = Astro.props;
 ---
 <nav class="breadcrumbs" aria-label="現在地">
-  <a href="/">ホーム</a>
+  <a href={withBase("/")}>ホーム</a>
   {section && (
     <Fragment>
       <span class="sep">›</span>
       {section.href
-        ? <a href={section.href}>{section.title}</a>
+        ? <a href={withBase(section.href)}>{section.title}</a>
         : <span>{section.title}</span>}
     </Fragment>
   )}
