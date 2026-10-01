@@ -1,0 +1,140 @@
+---
+/* PrFlow.astro — 「Claude に頼む → Pull Request → 確認 → マージ」の流れを1段ずつ進める図。
+   各段階で「いま誰の番か」「main は変わったか」「あなたがやること」を並べて見せる。
+   とくに「PR を作っただけでは main は変わらない」を目で確かめるのが目的。
+   状態はメモリ内のみ（storage 不使用）。 */
+const steps = [
+  {
+    title: "1. あなたが頼む",
+    who: "あなた",
+    main: "変わらない",
+    body: "「第3章の誤字を直して」「この図の説明を足して」のように、やってほしいことを言葉で伝えます。ここでは何もまだ変わっていません。",
+    todo: "目的と範囲をはっきり伝える。「どのページの何を」まで書くと外れにくい。",
+  },
+  {
+    title: "2. Claude が作業ブランチで直す",
+    who: "Claude",
+    main: "変わらない",
+    body: "Claude は main を直接いじらず、専用の作業ブランチを作ってそこで変更し、コミットして GitHub に送ります。",
+    todo: "まだ待つだけ。ブランチ名（claude/… など）を覚えておくと後で探しやすい。",
+  },
+  {
+    title: "3. Pull Request を出す",
+    who: "Claude（頼んだとき）",
+    main: "変わらない",
+    body: "「この作業ブランチの変更を main に取り込んでください」という申請書が作られます。変更の要約と、変わった行の一覧（差分）が付きます。",
+    todo: "Pull Request は頼んだときだけ作られる。頼んでいなければ、ブランチに変更が載っているだけ。",
+  },
+  {
+    title: "4. あなたが差分を確認する",
+    who: "あなた",
+    main: "変わらない",
+    body: "GitHub の「Files changed」で、緑（追加）と赤（削除）の行を見ます。直してほしい所があれば、コメントで伝えれば Claude が続きを直します。",
+    todo: "ここが一番大事。意図どおりか、余計な変更が混ざっていないか、を見る。",
+  },
+  {
+    title: "5. マージする",
+    who: "あなた",
+    main: "変わる！",
+    body: "「Merge pull request」を押すと、作業ブランチの変更が main に取り込まれます。ここで初めて、本体が変わります。",
+    todo: "押すのはあなた。押す前なら、いつでも「やっぱりやめる」（Close）ができる。",
+  },
+];
+---
+
+<figure class="pf" role="group" aria-label="Pull Request の流れ">
+  <ol class="pf-track" id="pf-track">
+    {steps.map((s, i) => (
+      <li><button type="button" class="pf-dot" data-i={i} aria-label={s.title}>{i + 1}</button></li>
+    ))}
+  </ol>
+
+  <div class="pf-card">
+    <h4 id="pf-title" class="pf-title"></h4>
+    <dl class="pf-meta">
+      <div><dt>いまの担当</dt><dd id="pf-who"></dd></div>
+      <div><dt>main（本体）</dt><dd id="pf-main"></dd></div>
+    </dl>
+    <p id="pf-body" class="pf-body"></p>
+    <p class="pf-todo"><strong>あなたの心がまえ：</strong><span id="pf-todo"></span></p>
+  </div>
+
+  <div class="pf-nav">
+    <button type="button" id="pf-prev">← 戻る</button>
+    <button type="button" id="pf-next">進む →</button>
+  </div>
+
+  <script type="application/json" id="pf-data" set:html={JSON.stringify(steps)}></script>
+</figure>
+
+<script>
+  const dataEl = document.getElementById("pf-data");
+  const q = (id: string) => document.getElementById(id);
+  const title = q("pf-title");
+  const who = q("pf-who");
+  const mainEl = q("pf-main");
+  const body = q("pf-body");
+  const todo = q("pf-todo");
+  const prev = q("pf-prev") as HTMLButtonElement | null;
+  const next = q("pf-next") as HTMLButtonElement | null;
+  const dots = document.querySelectorAll<HTMLButtonElement>(".pf-dot");
+
+  if (dataEl && title && who && mainEl && body && todo && prev && next) {
+    const steps = JSON.parse(dataEl.textContent || "[]") as {
+      title: string; who: string; main: string; body: string; todo: string;
+    }[];
+    let cur = 0;
+
+    const show = () => {
+      const s = steps[cur];
+      title.textContent = s.title;
+      who.textContent = s.who;
+      mainEl.textContent = s.main;
+      mainEl.classList.toggle("pf-changed", s.main.startsWith("変わる"));
+      body.textContent = s.body;
+      todo.textContent = s.todo;
+      prev.disabled = cur === 0;
+      next.disabled = cur === steps.length - 1;
+      dots.forEach((d, i) => {
+        d.classList.toggle("pf-on", i === cur);
+        d.classList.toggle("pf-done", i < cur);
+        d.setAttribute("aria-current", i === cur ? "step" : "false");
+      });
+    };
+
+    prev.addEventListener("click", () => { if (cur > 0) { cur -= 1; show(); } });
+    next.addEventListener("click", () => { if (cur < steps.length - 1) { cur += 1; show(); } });
+    dots.forEach((d) => d.addEventListener("click", () => { cur = Number(d.dataset.i); show(); }));
+    show();
+  }
+</script>
+
+<style>
+  .pf { margin: 26px 0; padding: 16px 18px 14px; border: 1px solid var(--line); border-radius: 10px; background: var(--card); font-family: var(--sans); }
+  .pf-track { display: flex; gap: 8px; list-style: none; margin: 0 0 14px; padding: 0; }
+  .pf-track li { margin: 0; padding: 0; }
+  .pf-dot {
+    appearance: none; width: 34px; height: 34px; border-radius: 50%; cursor: pointer;
+    border: 2px solid var(--line); background: transparent; color: var(--ink-faint); font-size: 14px; font-weight: 700;
+  }
+  .pf-dot.pf-done { border-color: var(--ai); color: var(--ai); }
+  .pf-dot.pf-on { background: var(--ai); border-color: var(--ai); color: var(--card); }
+  .pf-dot:focus-visible { outline: 2px solid var(--ai); outline-offset: 2px; }
+  .pf-card { padding: 12px 14px; border-radius: 8px; background: var(--paper-sunk); }
+  .pf-title { margin: 0 0 8px; font-size: 16px; color: var(--ink); }
+  .pf-meta { display: flex; flex-wrap: wrap; gap: 6px 24px; margin: 0 0 8px; font-size: 13px; }
+  .pf-meta div { display: flex; gap: 8px; }
+  .pf-meta dt { color: var(--ink-faint); }
+  .pf-meta dd { margin: 0; font-weight: 700; color: var(--ink); }
+  .pf-meta dd.pf-changed { color: var(--shu); }
+  .pf-body { margin: 0 0 8px; font-size: 14px; line-height: 1.8; color: var(--ink); }
+  .pf-todo { margin: 0; font-size: 13px; line-height: 1.7; color: var(--ink-faint); }
+  .pf-nav { display: flex; justify-content: space-between; margin-top: 12px; }
+  .pf-nav button {
+    appearance: none; border: 1px solid var(--line); background: transparent; color: var(--ink);
+    font-size: 13px; padding: 6px 14px; border-radius: 999px; cursor: pointer;
+  }
+  .pf-nav button:hover:not(:disabled) { border-color: var(--ai); color: var(--ai); }
+  .pf-nav button:disabled { opacity: 0.4; cursor: not-allowed; }
+  .pf-nav button:focus-visible { outline: 2px solid var(--ai); outline-offset: 2px; }
+</style>

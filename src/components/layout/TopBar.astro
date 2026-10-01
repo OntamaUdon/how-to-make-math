@@ -5,13 +5,14 @@
    検索は SiteSearch.astro に閉じている（ボタンと、開いたときだけ出るオーバーレイ）。 */
 import { themes, defaultTheme, themeStorageKey } from "../../config/themes";
 import SiteSearch from "./SiteSearch.astro";
+import { withBase } from "../../config/base";
 
 const lightThemes = themes.filter((t) => t.group === "light");
 const darkThemes = themes.filter((t) => t.group === "dark");
 const funThemes = themes.filter((t) => t.group === "fun");
 ---
 <header class="topbar">
-  <a href="/" class="brand">
+  <a href={withBase("/")} class="brand">
     <span class="brand-mark">⟐</span>
     <span class="brand-text">
       <span class="brand-name">数学の作り方</span>
@@ -54,7 +55,7 @@ const funThemes = themes.filter((t) => t.group === "fun");
 
     select.addEventListener("change", () => {
       const id = select.value;
-      link.href = `/themes/theme-${id}.css`;
+      link.href = `${import.meta.env.BASE_URL.replace(/\/$/, "")}/themes/theme-${id}.css`;
       try { localStorage.setItem(themeStorageKey, id); } catch (e) { /* 保存できなくても切替は効く */ }
     });
   }

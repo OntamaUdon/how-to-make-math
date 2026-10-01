@@ -5,8 +5,9 @@
    分野の一覧は Sidebar と同じ siteNav から作るので、片方を直せば両方そろう。
    ただし「隠し部」（navigation.ts で hidden: true）はここに載せない。 */
 import { visibleNav, isCurrent } from "../../config/navigation";
+import { withBase, stripBase } from "../../config/base";
 
-const pathname = Astro.url.pathname;
+const pathname = stripBase(Astro.url.pathname);
 
 /** その分野のページ（地図でも各章でも）を今開いているか */
 const inSection = (href?: string): boolean =>
@@ -20,7 +21,7 @@ const inSection = (href?: string): boolean =>
     {visibleNav.map((section) =>
       section.href ? (
         <a
-          href={section.href}
+          href={withBase(section.href)}
           class:list={["sitemap-item", { active: inSection(section.href) }]}
           aria-current={inSection(section.href) ? "true" : undefined}
         >

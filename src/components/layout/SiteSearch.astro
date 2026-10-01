@@ -318,7 +318,7 @@
       if (started) return;
       started = true;
 
-      fetch("/search-index.json")
+      fetch(`${import.meta.env.BASE_URL.replace(/\/$/, "")}/search-index.json`)
         .then((r) => r.json())
         .then((json: { docs: MetaDoc[] }) => {
           docs = json.docs.map((d) => ({
@@ -334,7 +334,7 @@
           status!.textContent = "索引を読み込めませんでした。";
         });
 
-      fetch("/search-body.json")
+      fetch(`${import.meta.env.BASE_URL.replace(/\/$/, "")}/search-body.json`)
         .then((r) => r.json())
         .then((json: { bodies: string[] }) => {
           bodiesRaw = json.bodies;

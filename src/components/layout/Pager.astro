@@ -2,6 +2,7 @@
 /* Pager.astro — 前後ページ送り。prev / next は無ければ空欄になる。
    どちらも無いときは何も描画しない。 */
 import type { NavLink } from "../../config/navigation";
+import { withBase } from "../../config/base";
 
 interface Props {
   prev?: NavLink;
@@ -13,7 +14,7 @@ const { prev, next } = Astro.props;
   <nav class="pager" aria-label="前後のページ">
     {prev
       ? (
-        <a class="pager-link prev" href={prev.href}>
+        <a class="pager-link prev" href={withBase(prev.href)}>
           <span class="pager-dir">← 前のページ</span>
           <span class="pager-title">{prev.title}</span>
         </a>
@@ -21,7 +22,7 @@ const { prev, next } = Astro.props;
       : <span />}
     {next
       ? (
-        <a class="pager-link next" href={next.href}>
+        <a class="pager-link next" href={withBase(next.href)}>
           <span class="pager-dir">次のページ →</span>
           <span class="pager-title">{next.title}</span>
         </a>

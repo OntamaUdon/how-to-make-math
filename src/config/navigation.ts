@@ -58,6 +58,7 @@ const sections: SectionDef[] = [
   // ── 番外（隠し部） ──
   // 目次には載せない。URL を知っている人だけが読める番外編。
   { dir: "/godot", title: "Godotの使い方", badge: "ゲーム制作", hidden: true },
+  { dir: "/github-claude", title: "GitHubとClaudeの使い方", badge: "開発", hidden: true },
 ];
 
 /** 隠し部のディレクトリ（"/godot" など）。検索の索引づくりが参照する。 */
@@ -69,6 +70,8 @@ export const hiddenDirs: string[] = sections
 export function isHiddenHref(href: string): boolean {
   return hiddenDirs.some((dir) => href === dir || href.startsWith(`${dir}/`));
 }
+
+import { stripBase } from "./base";
 
 interface PageFrontmatter {
   title?: string;
@@ -155,7 +158,7 @@ const normalize = (path: string): string =>
   path !== "/" && path.endsWith("/") ? path.slice(0, -1) : path;
 
 export function isCurrent(href: string, pathname: string): boolean {
-  return normalize(href) === normalize(pathname);
+  return normalize(href) === normalize(stripBase(pathname));
 }
 
 export function flattenPages(nav: NavSection[] = siteNav): NavLink[] {

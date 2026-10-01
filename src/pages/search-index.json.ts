@@ -4,10 +4,11 @@
    d=description, g=headings）。 */
 import type { APIRoute } from "astro";
 import { searchDocs } from "../config/searchIndex";
+import { withBase } from "../config/base";
 
 const payload = JSON.stringify({
   docs: searchDocs.map((doc) => ({
-    h: doc.href,
+    h: withBase(doc.href),
     t: doc.title,
     s: doc.section,
     b: doc.badge,
